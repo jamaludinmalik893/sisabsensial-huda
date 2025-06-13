@@ -1,115 +1,40 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import LoginPage from '@/components/LoginPage';
 import AppSidebar from '@/components/AppSidebar';
 import Dashboard from '@/components/Dashboard';
-import { UserSession, Guru } from '@/types';
+import AbsensiPage from '@/components/AbsensiPage';
+import RiwayatAbsensiPage from '@/components/RiwayatAbsensiPage';
+import NilaiPage from '@/components/NilaiPage';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 const Index = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentPage, setCurrentPage] = useState('beranda');
-  const [userSession, setUserSession] = useState<UserSession | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { userSession, isLoggedIn, loading, login, logout } = useSupabaseAuth();
   const { toast } = useToast();
 
-  // Check existing session on app start
-  useEffect(() => {
-    const checkSession = () => {
-      const savedSession = localStorage.getItem('userSession');
-      if (savedSession) {
-        try {
-          const session = JSON.parse(savedSession);
-          setUserSession(session);
-          setIsLoggedIn(true);
-        } catch (error) {
-          console.error('Error parsing saved session:', error);
-          localStorage.removeItem('userSession');
-        }
-      }
-      setLoading(false);
-    };
-
-    checkSession();
-  }, []);
-
   const handleLogin = async (email: string, password: string): Promise<boolean> => {
-    try {
-      // Mock authentication - dalam implementasi nyata akan menggunakan Supabase Auth
-      console.log('Attempting login with:', { email, password });
-      
-      // Demo accounts
-      const demoAccounts = [
-        {
-          email: 'ahmad.wijaya@smkalhuda.sch.id',
-          password: 'admin123',
-          guru: {
-            id_guru: '1',
-            nip: '196801011990011001',
-            nama_lengkap: 'Drs. Ahmad Wijaya, M.Pd',
-            email: 'ahmad.wijaya@smkalhuda.sch.id',
-            nomor_telepon: '081234567890',
-            status: 'admin' as const,
-            alamat: 'Jl. Veteran No. 123, Kediri',
-            wali_kelas: undefined
-          }
-        },
-        {
-          email: 'sri.mulyati@smkalhuda.sch.id',
-          password: 'guru123',
-          guru: {
-            id_guru: '2',
-            nip: '197205151998022002',
-            nama_lengkap: 'Sri Mulyati, S.Kom',
-            email: 'sri.mulyati@smkalhuda.sch.id',
-            nomor_telepon: '081234567891',
-            status: 'guru' as const,
-            alamat: 'Jl. Hayam Wuruk No. 45, Kediri',
-            wali_kelas: 'kelas-1'
-          }
-        }
-      ];
-
-      const account = demoAccounts.find(acc => acc.email === email && acc.password === password);
-      
-      if (account) {
-        const session: UserSession = {
-          guru: account.guru,
-          isAdmin: account.guru.status === 'admin',
-          isWaliKelas: !!account.guru.wali_kelas,
-          kelasWali: account.guru.wali_kelas ? {
-            id_kelas: account.guru.wali_kelas,
-            nama_kelas: 'X RPL 1'
-          } : undefined
-        };
-
-        setUserSession(session);
-        setIsLoggedIn(true);
-        
-        // Save session to localStorage
-        localStorage.setItem('userSession', JSON.stringify(session));
-        
-        toast({
-          title: "Login Berhasil",
-          description: `Selamat datang, ${account.guru.nama_lengkap}!`,
-        });
-
-        return true;
-      } else {
-        return false;
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
+    const success = await login(email, password);
+    if (success && userSession) {
+      toast({
+        title: "Login Berhasil",
+        description: `Selamat datang, ${userSession.guru.nama_lengkap}!`,
+      });
+    } else {
+      toast({
+        title: "Login Gagal",
+        description: "Email atau password salah",
+        variant: "destructive"
+      });
     }
+    return success;
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
-    setUserSession(null);
+    logout();
     setCurrentPage('beranda');
-    localStorage.removeItem('userSession');
     
     toast({
       title: "Logout Berhasil",
@@ -128,26 +53,11 @@ const Index = () => {
       case 'beranda':
         return <Dashboard userSession={userSession} />;
       case 'absensi':
-        return (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Absensi Harian</h1>
-            <p className="text-gray-600">Halaman absensi akan segera dibuat...</p>
-          </div>
-        );
+        return <AbsensiPage userSession={userSession} />;
       case 'riwayat-absensi':
-        return (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Riwayat Absensi</h1>
-            <p className="text-gray-600">Halaman riwayat absensi akan segera dibuat...</p>
-          </div>
-        );
+        return <RiwayatAbsensiPage userSession={userSession} />;
       case 'nilai':
-        return (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Manajemen Nilai</h1>
-            <p className="text-gray-600">Halaman nilai akan segera dibuat...</p>
-          </div>
-        );
+        return <NilaiPage userSession={userSession} />;
       case 'jurnal':
         return (
           <div className="p-6">
