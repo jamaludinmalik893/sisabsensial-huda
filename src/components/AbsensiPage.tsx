@@ -57,6 +57,8 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
 
   const loadJurnalHarian = async () => {
     try {
+      console.log('Loading jurnal for guru ID:', userSession.guru.id_guru);
+      
       const { data, error } = await supabase
         .from('jurnal_harian')
         .select(`
@@ -73,7 +75,12 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
         .eq('tanggal_pelajaran', today)
         .order('waktu_mulai');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading jurnal:', error);
+        throw error;
+      }
+
+      console.log('Jurnal data loaded:', data);
       setJurnalList(data || []);
     } catch (error) {
       console.error('Error loading jurnal:', error);
@@ -90,13 +97,20 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
       const jurnal = jurnalList.find(j => j.id_jurnal === selectedJurnal);
       if (!jurnal) return;
 
+      console.log('Loading siswa for kelas:', jurnal.kelas.id_kelas);
+
       const { data, error } = await supabase
         .from('siswa')
         .select('id_siswa, nama_lengkap, nisn')
         .eq('id_kelas', jurnal.kelas.id_kelas)
         .order('nama_lengkap');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading siswa:', error);
+        throw error;
+      }
+
+      console.log('Siswa data loaded:', data);
       setSiswaList(data || []);
       
       // Initialize absensi data
@@ -106,8 +120,38 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
         catatan: ''
       }));
       setAbsensiData(initialAbsensi);
+
+      // Load existing absensi if any
+      loadExistingAbsensi(selectedJurnal);
     } catch (error) {
       console.error('Error loading siswa:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat data siswa",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const loadExistingAbsensi = async (jurnalId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('absensi')
+        .select('id_siswa, status, catatan')
+        .eq('id_jurnal', jurnalId);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setAbsensiData(prev => 
+          prev.map(item => {
+            const existing = data.find(abs => abs.id_siswa === item.id_siswa);
+            return existing ? { ...item, status: existing.status, catatan: existing.catatan || '' } : item;
+          })
+        );
+      }
+    } catch (error) {
+      console.error('Error loading existing absensi:', error);
     }
   };
 
