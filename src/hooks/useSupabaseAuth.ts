@@ -33,7 +33,7 @@ export const useSupabaseAuth = () => {
           email: guru.email,
           nomor_telepon: guru.nomor_telepon,
           alamat: guru.alamat,
-          status: guru.status,
+          status: guru.status as 'admin' | 'guru',
           wali_kelas: guru.wali_kelas?.id_kelas,
           foto_url: guru.foto_url
         },
