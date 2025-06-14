@@ -2,12 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Users } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import JurnalSelector from './absensi/JurnalSelector';
+import AbsensiList from './absensi/AbsensiList';
 
 interface AbsensiPageProps {
   userSession: UserSession;
@@ -208,16 +207,6 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Hadir': return 'bg-green-100 text-green-800';
-      case 'Izin': return 'bg-yellow-100 text-yellow-800';
-      case 'Sakit': return 'bg-blue-100 text-blue-800';
-      case 'Alpha': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -228,73 +217,20 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
         </Badge>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Pilih Pembelajaran
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Select value={selectedJurnal} onValueChange={setSelectedJurnal}>
-            <SelectTrigger>
-              <SelectValue placeholder="Pilih pembelajaran hari ini" />
-            </SelectTrigger>
-            <SelectContent>
-              {jurnalList.map((jurnal) => (
-                <SelectItem key={jurnal.id_jurnal} value={jurnal.id_jurnal}>
-                  {jurnal.waktu_mulai} - {jurnal.mata_pelajaran.nama_mapel} ({jurnal.kelas.nama_kelas})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          {jurnalList.length === 0 && (
-            <p className="text-gray-500 mt-2">Tidak ada pembelajaran hari ini</p>
-          )}
-        </CardContent>
-      </Card>
+      <JurnalSelector
+        jurnalList={jurnalList}
+        selectedJurnal={selectedJurnal}
+        onJurnalChange={setSelectedJurnal}
+      />
 
       {selectedJurnal && siswaList.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Daftar Siswa ({siswaList.length} siswa)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {siswaList.map((siswa, index) => (
-                <div key={siswa.id_siswa} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <p className="font-medium">{siswa.nama_lengkap}</p>
-                    <p className="text-sm text-gray-500">NISN: {siswa.nisn}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    {(['Hadir', 'Izin', 'Sakit', 'Alpha'] as const).map((status) => (
-                      <Button
-                        key={status}
-                        variant={absensiData[index]?.status === status ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => updateAbsensiStatus(siswa.id_siswa, status)}
-                        className={absensiData[index]?.status === status ? getStatusColor(status) : ''}
-                      >
-                        {status}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            <div className="mt-6 flex justify-end">
-              <Button onClick={saveAbsensi} disabled={loading}>
-                {loading ? 'Menyimpan...' : 'Simpan Absensi'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <AbsensiList
+          siswaList={siswaList}
+          absensiData={absensiData}
+          loading={loading}
+          onStatusUpdate={updateAbsensiStatus}
+          onSaveAbsensi={saveAbsensi}
+        />
       )}
     </div>
   );
