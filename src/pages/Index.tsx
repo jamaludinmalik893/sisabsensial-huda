@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
@@ -8,6 +7,9 @@ import Dashboard from '@/components/Dashboard';
 import AbsensiPage from '@/components/AbsensiPage';
 import RiwayatAbsensiPage from '@/components/RiwayatAbsensiPage';
 import NilaiPage from '@/components/NilaiPage';
+import JurnalPage from '@/components/JurnalPage';
+import ProfilSiswaPage from '@/components/ProfilSiswaPage';
+import WaliKelasPage from '@/components/WaliKelasPage';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 const Index = () => {
@@ -59,39 +61,11 @@ const Index = () => {
       case 'nilai':
         return <NilaiPage userSession={userSession} />;
       case 'jurnal':
-        return (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Jurnal Pembelajaran</h1>
-            <p className="text-gray-600">Halaman jurnal akan segera dibuat...</p>
-          </div>
-        );
+        return <JurnalPage userSession={userSession} />;
       case 'profil-siswa':
-        return (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Profil Siswa</h1>
-            <p className="text-gray-600">Halaman profil siswa akan segera dibuat...</p>
-          </div>
-        );
+        return <ProfilSiswaPage userSession={userSession} />;
       case 'wali-kelas':
-        return (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Dashboard Wali Kelas</h1>
-            {userSession.isWaliKelas ? (
-              <div>
-                <p className="text-gray-600 mb-4">
-                  Selamat datang, Anda adalah wali kelas {userSession.kelasWali?.nama_kelas}
-                </p>
-                <p className="text-gray-500">Laporan statistik kelas akan segera dibuat...</p>
-              </div>
-            ) : (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-yellow-800">
-                  Anda bukan wali kelas dari kelas manapun.
-                </p>
-              </div>
-            )}
-          </div>
-        );
+        return <WaliKelasPage userSession={userSession} />;
       // Admin pages
       case 'admin-siswa':
         return userSession.isAdmin ? (

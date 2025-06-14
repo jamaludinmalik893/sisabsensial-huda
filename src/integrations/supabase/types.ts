@@ -9,7 +9,346 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      absensi: {
+        Row: {
+          catatan: string | null
+          created_at: string | null
+          id_absensi: string
+          id_jurnal: string
+          id_siswa: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          catatan?: string | null
+          created_at?: string | null
+          id_absensi?: string
+          id_jurnal: string
+          id_siswa: string
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          catatan?: string | null
+          created_at?: string | null
+          id_absensi?: string
+          id_jurnal?: string
+          id_siswa?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "absensi_id_jurnal_fkey"
+            columns: ["id_jurnal"]
+            isOneToOne: false
+            referencedRelation: "jurnal_harian"
+            referencedColumns: ["id_jurnal"]
+          },
+          {
+            foreignKeyName: "absensi_id_siswa_fkey"
+            columns: ["id_siswa"]
+            isOneToOne: false
+            referencedRelation: "siswa"
+            referencedColumns: ["id_siswa"]
+          },
+        ]
+      }
+      guru: {
+        Row: {
+          alamat: string | null
+          created_at: string | null
+          email: string
+          foto_url: string | null
+          id_guru: string
+          nama_lengkap: string
+          nip: string
+          nomor_telepon: string | null
+          password: string
+          status: string | null
+          updated_at: string | null
+          wali_kelas: string | null
+        }
+        Insert: {
+          alamat?: string | null
+          created_at?: string | null
+          email: string
+          foto_url?: string | null
+          id_guru?: string
+          nama_lengkap: string
+          nip: string
+          nomor_telepon?: string | null
+          password: string
+          status?: string | null
+          updated_at?: string | null
+          wali_kelas?: string | null
+        }
+        Update: {
+          alamat?: string | null
+          created_at?: string | null
+          email?: string
+          foto_url?: string | null
+          id_guru?: string
+          nama_lengkap?: string
+          nip?: string
+          nomor_telepon?: string | null
+          password?: string
+          status?: string | null
+          updated_at?: string | null
+          wali_kelas?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_guru_wali_kelas"
+            columns: ["wali_kelas"]
+            isOneToOne: false
+            referencedRelation: "kelas"
+            referencedColumns: ["id_kelas"]
+          },
+        ]
+      }
+      jurnal_harian: {
+        Row: {
+          created_at: string | null
+          id_guru: string
+          id_jurnal: string
+          id_kelas: string
+          id_mapel: string
+          judul_materi: string
+          materi_diajarkan: string
+          tanggal_pelajaran: string
+          updated_at: string | null
+          waktu_mulai: string
+          waktu_selesai: string
+        }
+        Insert: {
+          created_at?: string | null
+          id_guru: string
+          id_jurnal?: string
+          id_kelas: string
+          id_mapel: string
+          judul_materi: string
+          materi_diajarkan: string
+          tanggal_pelajaran: string
+          updated_at?: string | null
+          waktu_mulai: string
+          waktu_selesai: string
+        }
+        Update: {
+          created_at?: string | null
+          id_guru?: string
+          id_jurnal?: string
+          id_kelas?: string
+          id_mapel?: string
+          judul_materi?: string
+          materi_diajarkan?: string
+          tanggal_pelajaran?: string
+          updated_at?: string | null
+          waktu_mulai?: string
+          waktu_selesai?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jurnal_harian_id_guru_fkey"
+            columns: ["id_guru"]
+            isOneToOne: false
+            referencedRelation: "guru"
+            referencedColumns: ["id_guru"]
+          },
+          {
+            foreignKeyName: "jurnal_harian_id_kelas_fkey"
+            columns: ["id_kelas"]
+            isOneToOne: false
+            referencedRelation: "kelas"
+            referencedColumns: ["id_kelas"]
+          },
+          {
+            foreignKeyName: "jurnal_harian_id_mapel_fkey"
+            columns: ["id_mapel"]
+            isOneToOne: false
+            referencedRelation: "mata_pelajaran"
+            referencedColumns: ["id_mapel"]
+          },
+        ]
+      }
+      kelas: {
+        Row: {
+          created_at: string | null
+          id_kelas: string
+          logo_url: string | null
+          nama_kelas: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id_kelas?: string
+          logo_url?: string | null
+          nama_kelas: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id_kelas?: string
+          logo_url?: string | null
+          nama_kelas?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      mata_pelajaran: {
+        Row: {
+          created_at: string | null
+          id_mapel: string
+          nama_mapel: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id_mapel?: string
+          nama_mapel: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id_mapel?: string
+          nama_mapel?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      nilai: {
+        Row: {
+          catatan: string | null
+          created_at: string | null
+          id_jurnal: string
+          id_mapel: string
+          id_nilai: string
+          id_siswa: string
+          jenis_nilai: string
+          skor: number
+          tanggal_nilai: string
+          updated_at: string | null
+        }
+        Insert: {
+          catatan?: string | null
+          created_at?: string | null
+          id_jurnal: string
+          id_mapel: string
+          id_nilai?: string
+          id_siswa: string
+          jenis_nilai: string
+          skor: number
+          tanggal_nilai: string
+          updated_at?: string | null
+        }
+        Update: {
+          catatan?: string | null
+          created_at?: string | null
+          id_jurnal?: string
+          id_mapel?: string
+          id_nilai?: string
+          id_siswa?: string
+          jenis_nilai?: string
+          skor?: number
+          tanggal_nilai?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nilai_id_jurnal_fkey"
+            columns: ["id_jurnal"]
+            isOneToOne: false
+            referencedRelation: "jurnal_harian"
+            referencedColumns: ["id_jurnal"]
+          },
+          {
+            foreignKeyName: "nilai_id_mapel_fkey"
+            columns: ["id_mapel"]
+            isOneToOne: false
+            referencedRelation: "mata_pelajaran"
+            referencedColumns: ["id_mapel"]
+          },
+          {
+            foreignKeyName: "nilai_id_siswa_fkey"
+            columns: ["id_siswa"]
+            isOneToOne: false
+            referencedRelation: "siswa"
+            referencedColumns: ["id_siswa"]
+          },
+        ]
+      }
+      siswa: {
+        Row: {
+          alamat: string
+          created_at: string | null
+          foto_url: string | null
+          id_guru_wali: string | null
+          id_kelas: string | null
+          id_siswa: string
+          jenis_kelamin: string
+          nama_lengkap: string
+          nama_orang_tua: string
+          nisn: string
+          nomor_telepon: string | null
+          nomor_telepon_orang_tua: string | null
+          tahun_masuk: number
+          tanggal_lahir: string
+          tempat_lahir: string
+          updated_at: string | null
+        }
+        Insert: {
+          alamat: string
+          created_at?: string | null
+          foto_url?: string | null
+          id_guru_wali?: string | null
+          id_kelas?: string | null
+          id_siswa?: string
+          jenis_kelamin: string
+          nama_lengkap: string
+          nama_orang_tua: string
+          nisn: string
+          nomor_telepon?: string | null
+          nomor_telepon_orang_tua?: string | null
+          tahun_masuk: number
+          tanggal_lahir: string
+          tempat_lahir: string
+          updated_at?: string | null
+        }
+        Update: {
+          alamat?: string
+          created_at?: string | null
+          foto_url?: string | null
+          id_guru_wali?: string | null
+          id_kelas?: string | null
+          id_siswa?: string
+          jenis_kelamin?: string
+          nama_lengkap?: string
+          nama_orang_tua?: string
+          nisn?: string
+          nomor_telepon?: string | null
+          nomor_telepon_orang_tua?: string | null
+          tahun_masuk?: number
+          tanggal_lahir?: string
+          tempat_lahir?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "siswa_id_guru_wali_fkey"
+            columns: ["id_guru_wali"]
+            isOneToOne: false
+            referencedRelation: "guru"
+            referencedColumns: ["id_guru"]
+          },
+          {
+            foreignKeyName: "siswa_id_kelas_fkey"
+            columns: ["id_kelas"]
+            isOneToOne: false
+            referencedRelation: "kelas"
+            referencedColumns: ["id_kelas"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
