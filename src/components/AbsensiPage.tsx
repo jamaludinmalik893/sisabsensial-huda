@@ -146,7 +146,11 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
         setAbsensiData(prev => 
           prev.map(item => {
             const existing = data.find(abs => abs.id_siswa === item.id_siswa);
-            return existing ? { ...item, status: existing.status, catatan: existing.catatan || '' } : item;
+            return existing ? { 
+              ...item, 
+              status: existing.status as 'Hadir' | 'Izin' | 'Sakit' | 'Alpha', 
+              catatan: existing.catatan || '' 
+            } : item;
           })
         );
       }
