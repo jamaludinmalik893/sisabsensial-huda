@@ -73,12 +73,13 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
           status,
           catatan,
           created_at,
-          siswa:siswa(nama_lengkap, nisn),
-          jurnal_harian:jurnal_harian(
+          siswa!inner(nama_lengkap, nisn),
+          jurnal_harian!inner(
             tanggal_pelajaran,
             judul_materi,
-            mata_pelajaran:mata_pelajaran(nama_mapel),
-            kelas:kelas(nama_kelas, id_kelas)
+            id_guru,
+            mata_pelajaran!inner(nama_mapel),
+            kelas!inner(nama_kelas, id_kelas)
           )
         `)
         .eq('jurnal_harian.id_guru', userSession.guru.id_guru);

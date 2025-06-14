@@ -20,7 +20,7 @@ interface JurnalHarian {
   waktu_selesai: string;
   judul_materi: string;
   mata_pelajaran: { nama_mapel: string };
-  kelas: { nama_kelas: string };
+  kelas: { nama_kelas: string; id_kelas: string };
 }
 
 interface Siswa {
@@ -65,8 +65,9 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
           waktu_mulai,
           waktu_selesai,
           judul_materi,
-          mata_pelajaran:mata_pelajaran(nama_mapel),
-          kelas:kelas(nama_kelas)
+          id_kelas,
+          mata_pelajaran!inner(nama_mapel),
+          kelas!inner(nama_kelas, id_kelas)
         `)
         .eq('id_guru', userSession.guru.id_guru)
         .eq('tanggal_pelajaran', today)
@@ -92,7 +93,7 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
       const { data, error } = await supabase
         .from('siswa')
         .select('id_siswa, nama_lengkap, nisn')
-        .eq('id_kelas', jurnal.kelas.nama_kelas)
+        .eq('id_kelas', jurnal.kelas.id_kelas)
         .order('nama_lengkap');
 
       if (error) throw error;

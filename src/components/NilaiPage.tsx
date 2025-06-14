@@ -86,8 +86,8 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
           skor,
           tanggal_nilai,
           catatan,
-          siswa:siswa(nama_lengkap, nisn),
-          mata_pelajaran:mata_pelajaran(nama_mapel)
+          siswa!inner(nama_lengkap, nisn),
+          mata_pelajaran!inner(nama_mapel)
         `)
         .order('tanggal_nilai', { ascending: false });
 
@@ -139,12 +139,19 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
     }
 
     try {
+      // Get the first available jurnal (simplified for demo)
+      const { data: jurnalData } = await supabase
+        .from('jurnal_harian')
+        .select('id_jurnal')
+        .limit(1)
+        .single();
+
       const { error } = await supabase
         .from('nilai')
         .insert({
           id_siswa: formData.id_siswa,
           id_mapel: formData.id_mapel,
-          id_jurnal: '00000000-0000-0000-0000-000000000000', // Temporary, should be from actual jurnal
+          id_jurnal: jurnalData?.id_jurnal || '00000000-0000-0000-0000-000000000000',
           jenis_nilai: formData.jenis_nilai,
           skor: parseFloat(formData.skor),
           tanggal_nilai: new Date().toISOString().split('T')[0],
