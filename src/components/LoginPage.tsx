@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,13 +32,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
     setLoading(true);
     try {
       const success = await onLogin(email, password);
-      if (!success) {
-        toast({
-          title: "Login Gagal",
-          description: "Email atau password salah",
-          variant: "destructive"
-        });
-      }
+      // Hapus duplikat toast error di sini!
+      // if (!success) {
+      //   toast({
+      //     title: "Login Gagal",
+      //     description: "Email atau password salah",
+      //     variant: "destructive"
+      //   });
+      // }
     } catch (error) {
       console.error('Login error:', error);
       toast({
