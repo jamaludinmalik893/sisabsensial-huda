@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Filter } from 'lucide-react';
+import ExportButtons from '../ExportButtons';
 
 interface MataPelajaran {
   id_mapel: string;
@@ -14,6 +15,22 @@ interface Kelas {
   nama_kelas: string;
 }
 
+interface StudentAttendance {
+  siswa: {
+    id_siswa: string;
+    nama_lengkap: string;
+    nisn: string;
+  };
+  attendances: { [dateKey: string]: {status: string; catatan?: string; materi: string; id_absensi: string} };
+  summary: {
+    hadir: number;
+    izin: number;
+    sakit: number;
+    alpha: number;
+    total: number;
+  };
+}
+
 interface RiwayatAbsensiFiltersProps {
   selectedMapel: string;
   selectedKelas: string;
@@ -21,6 +38,8 @@ interface RiwayatAbsensiFiltersProps {
   kelasList: Kelas[];
   onMapelChange: (value: string) => void;
   onKelasChange: (value: string) => void;
+  studentAttendanceData: StudentAttendance[];
+  dateList: Array<[string, string]>;
 }
 
 const RiwayatAbsensiFilters: React.FC<RiwayatAbsensiFiltersProps> = ({
@@ -29,8 +48,44 @@ const RiwayatAbsensiFilters: React.FC<RiwayatAbsensiFiltersProps> = ({
   mapelList,
   kelasList,
   onMapelChange,
-  onKelasChange
+  onKelasChange,
+  studentAttendanceData,
+  dateList
 }) => {
+
+  // Bentuk data export format rekapitulasi absensi
+  const exportData = React.useMemo(() => {
+    // Header rekap: No, Nama, [tanggal...], Hadir, Izin, Sakit, Alpha
+    return studentAttendanceData.map((student, idx) => {
+      // Untuk setiap tanggal, catat status singkat/H/I/S/A/-
+      const kehadiran = Object.fromEntries(
+        dateList.map(([date]) => [
+          date,
+          student.attendances[date]
+            ? (
+              student.attendances[date].status === 'Hadir' ? 'H'
+              : student.attendances[date].status === 'Izin' ? 'I'
+              : student.attendances[date].status === 'Sakit' ? 'S'
+              : student.attendances[date].status === 'Alpha' ? 'A'
+              : '-'
+            )
+            : '-'
+        ])
+      );
+      return {
+        No: idx + 1,
+        Nama: student.siswa.nama_lengkap,
+        ...kehadiran,
+        Hadir: student.summary.hadir,
+        Izin: student.summary.izin,
+        Sakit: student.summary.sakit,
+        Alpha: student.summary.alpha,
+      };
+    });
+  }, [studentAttendanceData, dateList]);
+
+  const columns = ["No", "Nama", ...dateList.map(([date]) => date), "Hadir", "Izin", "Sakit", "Alpha"];
+
   return (
     <Card>
       <CardHeader>
@@ -76,6 +131,11 @@ const RiwayatAbsensiFilters: React.FC<RiwayatAbsensiFiltersProps> = ({
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        {/* Tombol Export/Cetak */}
+        <div className="pt-2">
+          <ExportButtons data={exportData} fileName="Rekapitulasi_Absensi" columns={columns} />
         </div>
       </CardContent>
     </Card>

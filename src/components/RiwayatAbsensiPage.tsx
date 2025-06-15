@@ -1,10 +1,9 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { UserSession } from '@/types';
 import RiwayatAbsensiFilters from './absensi/RiwayatAbsensiFilters';
 import AbsensiOverviewTable from './absensi/AbsensiOverviewTable';
 import { useRiwayatAbsensiData } from '@/hooks/useRiwayatAbsensiData';
-import ExportButtons from './ExportButtons';
 
 interface RiwayatAbsensiPageProps {
   userSession: UserSession;
@@ -23,22 +22,78 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
     refreshData
   } = useRiwayatAbsensiData(userSession);
 
-  // Map & export: (absensi di data ini = kehadiran satu siswa untuk satu hari/pelajaran)
-  const exportData = riwayatAbsensi.map(item => ({
-    Tanggal: item.jurnal_harian?.tanggal_pelajaran ?? "",
-    Kelas: item.jurnal_harian?.kelas?.nama_kelas ?? "",
-    Mapel: item.jurnal_harian?.mata_pelajaran?.nama_mapel ?? "",
-    Siswa: item.siswa?.nama_lengkap ?? "",
-    NISN: item.siswa?.nisn ?? "",
-    Status: item.status ?? "",
-    Catatan: item.catatan ?? ""
-    // Optionally you could add: Guru: userSession.guru.nama_lengkap
-  }));
+  // Data filter dan rekap, mirip AbsensiOverviewTable
+  const relevantAbsensi = useMemo(() => {
+    return riwayatAbsensi.filter(absensi => {
+      const mapelName = mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel;
+      const kelasName = kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas;
+      const matchMapel = selectedMapel === 'all' || absensi.jurnal_harian.mata_pelajaran.nama_mapel === mapelName;
+      const matchKelas = selectedKelas === 'all' || absensi.jurnal_harian.kelas.nama_kelas === kelasName;
+      return matchMapel && matchKelas;
+    });
+  }, [riwayatAbsensi, selectedMapel, selectedKelas, mapelList, kelasList]);
+
+  // Dapatkan daftar tanggal unik beserta materi
+  const dateList = useMemo(() => {
+    const dateMap = new Map<string, string>();
+    relevantAbsensi.forEach(absensi => {
+      const dateKey = new Date(absensi.jurnal_harian.tanggal_pelajaran).toLocaleDateString('id-ID');
+      if (!dateMap.has(dateKey)) {
+        dateMap.set(dateKey, absensi.jurnal_harian.judul_materi);
+      }
+    });
+    return Array.from(dateMap.entries()).sort((a, b) => {
+      const dateA = new Date(a[0].split('/').reverse().join('-'));
+      const dateB = new Date(b[0].split('/').reverse().join('-'));
+      return dateA.getTime() - dateB.getTime();
+    });
+  }, [relevantAbsensi]);
+
+  // Rekap data siswa (mirip yang di AbsensiOverviewTable)
+  const studentAttendanceData = useMemo(() => {
+    const grouped: {
+      [siswaId: string]: {
+        siswa: typeof riwayatAbsensi[0]['siswa'];
+        attendances: { [dateKey: string]: {status: string; catatan?: string; materi: string; id_absensi: string} };
+        summary: { hadir: number; izin: number; sakit: number; alpha: number; total: number };
+      };
+    } = {};
+
+    relevantAbsensi.forEach(absensi => {
+      const siswaId = absensi.siswa.id_siswa;
+      const dateKey = new Date(absensi.jurnal_harian.tanggal_pelajaran).toLocaleDateString('id-ID');
+      if (!grouped[siswaId]) {
+        grouped[siswaId] = {
+          siswa: absensi.siswa,
+          attendances: {},
+          summary: { hadir: 0, izin: 0, sakit: 0, alpha: 0, total: 0 }
+        };
+      }
+      grouped[siswaId].attendances[dateKey] = {
+        status: absensi.status,
+        catatan: absensi.catatan,
+        materi: absensi.jurnal_harian.judul_materi,
+        id_absensi: absensi.id_absensi
+      };
+    });
+
+    Object.values(grouped).forEach(studentData => {
+      const attendances = Object.values(studentData.attendances);
+      studentData.summary = {
+        hadir: attendances.filter(a => a.status === 'Hadir').length,
+        izin: attendances.filter(a => a.status === 'Izin').length,
+        sakit: attendances.filter(a => a.status === 'Sakit').length,
+        alpha: attendances.filter(a => a.status === 'Alpha').length,
+        total: attendances.length
+      };
+    });
+
+    return Object.values(grouped).sort((a, b) => a.siswa.nama_lengkap.localeCompare(b.siswa.nama_lengkap));
+  }, [relevantAbsensi]);
 
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold">Riwayat Absensi</h1>
-      <ExportButtons data={exportData} fileName="Laporan_Absensi" />
 
       <RiwayatAbsensiFilters
         selectedMapel={selectedMapel}
@@ -47,6 +102,8 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
         kelasList={kelasList}
         onMapelChange={setSelectedMapel}
         onKelasChange={setSelectedKelas}
+        studentAttendanceData={studentAttendanceData}
+        dateList={dateList}
       />
 
       <AbsensiOverviewTable 
