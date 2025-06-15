@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { UserSession, Guru, Siswa } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -92,6 +91,7 @@ const ProfilePage: React.FC = () => {
             nomor_telepon: profile.nomor_telepon,
             foto_url: profile.foto_url,
             email: newEmail || profile.email,
+            // password is NOT included here
           })
           .eq("id_guru", session.guru.id_guru);
         if (error) throw error;
@@ -108,23 +108,28 @@ const ProfilePage: React.FC = () => {
             nama_lengkap: profile.nama_lengkap,
             alamat: profile.alamat,
             nomor_telepon: profile.nomor_telepon,
-            // Only include nomor_telepon_siswa if it's present in the profile object
             ...(typeof nomor_telepon_siswa !== "undefined"
               ? { nomor_telepon_siswa: nomor_telepon_siswa ?? profile.nomor_telepon ?? "" }
               : {}),
             foto_url: profile.foto_url,
             email: newEmail || profile.email,
+            // password is NOT included here
           })
           .eq("id_siswa", session.guru.id_guru); // id_siswa dari session
         if (error) throw error;
       }
-      // Ganti password jika ada input
+      // Ganti password jika ada input (done as a SEPARATE query)
       if (newPassword && newPassword.length >= 6) {
-        // Note: untuk benar-benar produksi, harus melalui Supabase Auth API, di contoh ini langsung update saja
         if (session?.isGuru) {
-          await supabase.from("guru").update({ password: newPassword }).eq("id_guru", session.guru.id_guru);
+          await supabase
+            .from("guru")
+            .update({ password: newPassword })
+            .eq("id_guru", session.guru.id_guru);
         } else if (session?.guru && session.guru.id_guru) {
-          await supabase.from("siswa").update({ password: newPassword }).eq("id_siswa", session.guru.id_guru);
+          await supabase
+            .from("siswa")
+            .update({ password: newPassword })
+            .eq("id_siswa", session.guru.id_guru);
         }
       }
 
