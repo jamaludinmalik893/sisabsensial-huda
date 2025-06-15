@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,23 @@ interface AdminSiswaPageProps {
   userSession: UserSession;
 }
 
-interface SiswaWithRelations extends Siswa {
+interface SiswaWithRelations {
+  id_siswa: string;
+  nisn: string;
+  nama_lengkap: string;
+  jenis_kelamin: 'Laki-laki' | 'Perempuan';
+  tanggal_lahir: string;
+  tempat_lahir: string;
+  alamat: string;
+  nomor_telepon?: string;
+  nama_orang_tua: string;
+  nomor_telepon_orang_tua?: string;
+  id_kelas: string;
+  id_guru_wali: string;
+  tahun_masuk: number;
+  foto_url?: string;
+  created_at?: string;
+  updated_at?: string;
   kelas?: { nama_kelas: string };
   guru_wali?: { nama_lengkap: string };
 }
@@ -29,7 +46,7 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedKelas, setSelectedKelas] = useState<string>('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingSiswa, setEditingSiswa] = useState<Siswa | null>(null);
+  const [editingSiswa, setEditingSiswa] = useState<SiswaWithRelations | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
