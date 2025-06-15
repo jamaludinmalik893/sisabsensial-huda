@@ -36,6 +36,11 @@ interface ProfilSiswaPopupProps {
 const ProfilSiswaPopup: React.FC<ProfilSiswaPopupProps> = ({ siswa, isOpen, onClose }) => {
   if (!siswa) return null;
 
+  // Tambahkan debug log untuk memastikan field penting ada
+  console.log("[DEBUG ProfilSiswaPopup] siswa prop", siswa);
+  console.log("[DEBUG ProfilSiswaPopup] siswa.foto_url:", siswa.foto_url);
+  console.log("[DEBUG ProfilSiswaPopup] siswa.nama_lengkap:", siswa.nama_lengkap);
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
@@ -182,4 +187,3 @@ const ProfilSiswaPopup: React.FC<ProfilSiswaPopupProps> = ({ siswa, isOpen, onCl
 };
 
 export default ProfilSiswaPopup;
-

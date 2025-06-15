@@ -15,6 +15,8 @@ export function useOpenProfilSiswaWithConversion() {
   // Adapter: pastikan data selalu sudah 'full' (sama seperti di rekapitulasi)
   const openProfilWithFullData = (siswa: any) => {
     const full = getFullSiswaForPopup(siswa);
+    console.log("[DEBUG useOpenProfilSiswaWithConversion] openProfilWithFullData: siswa input", siswa);
+    console.log("[DEBUG useOpenProfilSiswaWithConversion] openProfilWithFullData: siswa full", full);
     openProfil(full);
   };
 
