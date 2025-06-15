@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
@@ -143,6 +142,14 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
     setAbsensiData(prev => 
       prev.map(item => 
         item.id_siswa === id_siswa ? { ...item, status } : item
+      )
+    );
+  };
+
+  const updateAbsensiCatatan = (id_siswa: string, catatan: string) => {
+    setAbsensiData(prev => 
+      prev.map(item => 
+        item.id_siswa === id_siswa ? { ...item, catatan } : item
       )
     );
   };
@@ -315,6 +322,7 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
           absensiData={absensiData}
           loading={loading}
           onStatusUpdate={updateAbsensiStatus}
+          onCatatanUpdate={updateAbsensiCatatan}
           onSaveAbsensi={saveAbsensi}
         />
       )}

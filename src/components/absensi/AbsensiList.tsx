@@ -24,6 +24,7 @@ interface AbsensiListProps {
   absensiData: AbsensiData[];
   loading: boolean;
   onStatusUpdate: (id_siswa: string, status: 'Hadir' | 'Izin' | 'Sakit' | 'Alpha') => void;
+  onCatatanUpdate: (id_siswa: string, catatan: string) => void;
   onSaveAbsensi: () => void;
 }
 
@@ -32,6 +33,7 @@ const AbsensiList: React.FC<AbsensiListProps> = ({
   absensiData,
   loading,
   onStatusUpdate,
+  onCatatanUpdate,
   onSaveAbsensi
 }) => {
   const [selectedSiswa, setSelectedSiswa] = useState<any>(null);
@@ -58,29 +60,38 @@ const AbsensiList: React.FC<AbsensiListProps> = ({
     setIsProfilOpen(true);
   };
 
+  const getAbsensiForSiswa = (id_siswa: string) => {
+    return absensiData.find(item => item.id_siswa === id_siswa);
+  };
+
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Users className="h-5 w-5" />
             Daftar Siswa ({siswaList.length} siswa)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {siswaList.map((siswa, index) => (
-              <StudentAttendanceRow
-                key={siswa.id_siswa}
-                siswa={siswa}
-                status={absensiData[index]?.status || 'Hadir'}
-                onStatusChange={onStatusUpdate}
-                onSiswaClick={handleSiswaClick}
-              />
-            ))}
+          <div className="space-y-2">
+            {siswaList.map((siswa) => {
+              const absensiSiswa = getAbsensiForSiswa(siswa.id_siswa);
+              return (
+                <StudentAttendanceRow
+                  key={siswa.id_siswa}
+                  siswa={siswa}
+                  status={absensiSiswa?.status || 'Hadir'}
+                  catatan={absensiSiswa?.catatan || ''}
+                  onStatusChange={onStatusUpdate}
+                  onCatatanChange={onCatatanUpdate}
+                  onSiswaClick={handleSiswaClick}
+                />
+              );
+            })}
           </div>
           
-          <div className="mt-6 flex justify-end">
+          <div className="mt-4 flex justify-end">
             <Button onClick={onSaveAbsensi} disabled={loading}>
               {loading ? 'Menyimpan...' : 'Simpan Absensi'}
             </Button>
