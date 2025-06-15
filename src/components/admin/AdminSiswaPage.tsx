@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,7 +45,7 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
   const [guruList, setGuruList] = useState<Guru[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedKelas, setSelectedKelas] = useState<string>('');
+  const [selectedKelas, setSelectedKelas] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSiswa, setEditingSiswa] = useState<SiswaWithRelations | null>(null);
   const { toast } = useToast();
@@ -239,7 +240,7 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
   const filteredSiswa = siswaList.filter(siswa => {
     const matchesSearch = siswa.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          siswa.nisn.includes(searchTerm);
-    const matchesKelas = !selectedKelas || siswa.id_kelas === selectedKelas;
+    const matchesKelas = selectedKelas === 'all' || siswa.id_kelas === selectedKelas;
     return matchesSearch && matchesKelas;
   });
 
@@ -431,7 +432,7 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
                 <SelectValue placeholder="Filter kelas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Kelas</SelectItem>
+                <SelectItem value="all">Semua Kelas</SelectItem>
                 {kelasList.map((kelas) => (
                   <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
                     {kelas.nama_kelas}
@@ -507,3 +508,4 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
 };
 
 export default AdminSiswaPage;
+
