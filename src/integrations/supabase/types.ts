@@ -107,6 +107,35 @@ export type Database = {
           },
         ]
       }
+      guru_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          id_guru: string
+          role: Database["public"]["Enums"]["guru_role"]
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          id_guru: string
+          role: Database["public"]["Enums"]["guru_role"]
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          id_guru?: string
+          role?: Database["public"]["Enums"]["guru_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guru_roles_id_guru_fkey"
+            columns: ["id_guru"]
+            isOneToOne: false
+            referencedRelation: "guru"
+            referencedColumns: ["id_guru"]
+          },
+        ]
+      }
       jurnal_harian: {
         Row: {
           created_at: string | null
@@ -354,10 +383,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_guru_roles: {
+        Args: { guru_id: string }
+        Returns: Database["public"]["Enums"]["guru_role"][]
+      }
+      guru_has_role: {
+        Args: {
+          guru_id: string
+          check_role: Database["public"]["Enums"]["guru_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      guru_role: "admin" | "guru" | "wali_kelas"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -472,6 +511,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      guru_role: ["admin", "guru", "wali_kelas"],
+    },
   },
 } as const

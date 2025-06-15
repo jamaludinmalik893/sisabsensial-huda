@@ -1,4 +1,3 @@
-
 // Types untuk sistem sekolah SMK AL-HUDA
 export interface Guru {
   id_guru: string;
@@ -9,10 +8,19 @@ export interface Guru {
   nomor_telepon?: string;
   alamat?: string;
   wali_kelas?: string;
-  status: 'admin' | 'guru';
+  status: 'admin' | 'guru'; // Keep for backward compatibility
   foto_url?: string;
   created_at?: string;
   updated_at?: string;
+  // New fields for multiple roles
+  roles?: ('admin' | 'guru' | 'wali_kelas')[];
+}
+
+export interface GuruRole {
+  id: string;
+  id_guru: string;
+  role: 'admin' | 'guru' | 'wali_kelas';
+  created_at: string;
 }
 
 export interface Siswa {
@@ -139,10 +147,12 @@ export interface FilterNilai {
 // Types untuk view mode
 export type ViewMode = 'list' | 'grid';
 
-// Types untuk session/auth
+// Types untuk session/auth - updated to support multiple roles
 export interface UserSession {
   guru: Guru;
   isAdmin: boolean;
+  isGuru: boolean;
   isWaliKelas: boolean;
   kelasWali?: Kelas;
+  roles: ('admin' | 'guru' | 'wali_kelas')[];
 }

@@ -8,27 +8,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { User, Plus, Edit2, Trash2, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Guru, Kelas, MataPelajaran, UserSession } from '@/types';
+import { Guru, Kelas, MataPelajaran, UserSession, GuruRole } from '@/types';
 
 interface AdminGuruPageProps {
   userSession: UserSession;
 }
 
-interface GuruWithKelas extends Guru {
+interface GuruWithRoles extends Guru {
   kelas_wali?: { nama_kelas: string };
+  guru_roles?: GuruRole[];
+  roles?: ('admin' | 'guru' | 'wali_kelas')[];
 }
 
 const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
-  const [guruList, setGuruList] = useState<GuruWithKelas[]>([]);
+  const [guruList, setGuruList] = useState<GuruWithRoles[]>([]);
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [mataPelajaranList, setMataPelajaranList] = useState<MataPelajaran[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingGuru, setEditingGuru] = useState<Guru | null>(null);
+  const [editingGuru, setEditingGuru] = useState<GuruWithRoles | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -39,7 +42,7 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
     nomor_telepon: '',
     alamat: '',
     wali_kelas: '',
-    status: 'guru' as 'admin' | 'guru',
+    roles: [] as ('admin' | 'guru' | 'wali_kelas')[],
     mata_pelajaran: [] as string[]
   });
 
@@ -51,12 +54,13 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
     try {
       setLoading(true);
       
-      // Fetch guru with relations
+      // Fetch guru with relations and roles
       const { data: guruData, error: guruError } = await supabase
         .from('guru')
         .select(`
           *,
-          kelas_wali:wali_kelas(nama_kelas)
+          kelas_wali:wali_kelas(nama_kelas),
+          guru_roles(role)
         `);
 
       if (guruError) throw guruError;
@@ -77,11 +81,12 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
 
       if (mapelError) throw mapelError;
 
-      // Transform guru data to match our types
+      // Transform guru data to include roles array
       const transformedGuruData = guruData?.map(guru => ({
         ...guru,
         status: guru.status as 'admin' | 'guru',
-        kelas_wali: guru.kelas_wali
+        kelas_wali: guru.kelas_wali,
+        roles: guru.guru_roles?.map((gr: any) => gr.role) || []
       })) || [];
 
       setGuruList(transformedGuruData);
@@ -103,6 +108,16 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
     e.preventDefault();
     
     try {
+      // Validate that at least one role is selected
+      if (formData.roles.length === 0) {
+        toast({
+          title: "Error",
+          description: "Pilih minimal satu peran untuk guru",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const guruFormData = {
         nip: formData.nip,
         nama_lengkap: formData.nama_lengkap,
@@ -111,8 +126,10 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
         nomor_telepon: formData.nomor_telepon,
         alamat: formData.alamat,
         wali_kelas: formData.wali_kelas || null,
-        status: formData.status
+        status: formData.roles.includes('admin') ? 'admin' : 'guru' // Keep for backward compatibility
       };
+
+      let guruId: string;
 
       if (editingGuru) {
         // Update guru
@@ -122,11 +139,7 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
           .eq('id_guru', editingGuru.id_guru);
 
         if (error) throw error;
-
-        toast({
-          title: "Sukses",
-          description: "Data guru berhasil diperbarui",
-        });
+        guruId = editingGuru.id_guru;
       } else {
         // Create new guru
         const { data: newGuru, error } = await supabase
@@ -136,12 +149,36 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
           .single();
 
         if (error) throw error;
-
-        toast({
-          title: "Sukses",
-          description: "Guru baru berhasil ditambahkan",
-        });
+        guruId = newGuru.id_guru;
       }
+
+      // Update roles
+      // First, delete existing roles if editing
+      if (editingGuru) {
+        const { error: deleteError } = await supabase
+          .from('guru_roles')
+          .delete()
+          .eq('id_guru', guruId);
+        
+        if (deleteError) throw deleteError;
+      }
+
+      // Insert new roles
+      const roleInserts = formData.roles.map(role => ({
+        id_guru: guruId,
+        role: role
+      }));
+
+      const { error: rolesError } = await supabase
+        .from('guru_roles')
+        .insert(roleInserts);
+
+      if (rolesError) throw rolesError;
+
+      toast({
+        title: "Sukses",
+        description: editingGuru ? "Data guru berhasil diperbarui" : "Guru baru berhasil ditambahkan",
+      });
 
       setIsDialogOpen(false);
       resetForm();
@@ -156,7 +193,7 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
     }
   };
 
-  const handleEdit = (guru: GuruWithKelas) => {
+  const handleEdit = (guru: GuruWithRoles) => {
     setEditingGuru(guru);
     setFormData({
       nip: guru.nip,
@@ -166,7 +203,7 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
       nomor_telepon: guru.nomor_telepon || '',
       alamat: guru.alamat || '',
       wali_kelas: guru.wali_kelas || '',
-      status: guru.status,
+      roles: guru.roles || [],
       mata_pelajaran: []
     });
     setIsDialogOpen(true);
@@ -176,6 +213,15 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
     if (!confirm('Apakah Anda yakin ingin menghapus guru ini?')) return;
 
     try {
+      // Delete roles first (will cascade)
+      const { error: rolesError } = await supabase
+        .from('guru_roles')
+        .delete()
+        .eq('id_guru', id_guru);
+
+      if (rolesError) throw rolesError;
+
+      // Delete guru
       const { error } = await supabase
         .from('guru')
         .delete()
@@ -208,10 +254,32 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
       nomor_telepon: '',
       alamat: '',
       wali_kelas: '',
-      status: 'guru',
+      roles: [],
       mata_pelajaran: []
     });
     setEditingGuru(null);
+  };
+
+  const handleRoleToggle = (role: 'admin' | 'guru' | 'wali_kelas', checked: boolean) => {
+    if (checked) {
+      setFormData(prev => ({
+        ...prev,
+        roles: [...prev.roles, role]
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        roles: prev.roles.filter(r => r !== role)
+      }));
+    }
+  };
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'admin': return 'default';
+      case 'wali_kelas': return 'secondary';
+      default: return 'outline';
+    }
   };
 
   const filteredGuru = guruList.filter(guru => 
@@ -243,7 +311,7 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
               Tambah Guru
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingGuru ? 'Edit Guru' : 'Tambah Guru Baru'}
@@ -301,18 +369,6 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
                     onChange={(e) => setFormData({...formData, nomor_telepon: e.target.value})}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select value={formData.status} onValueChange={(value: 'admin' | 'guru') => setFormData({...formData, status: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="guru">Guru</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div className="col-span-2">
                   <Label htmlFor="alamat">Alamat</Label>
                   <Input
@@ -321,22 +377,66 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
                     onChange={(e) => setFormData({...formData, alamat: e.target.value})}
                   />
                 </div>
+                
+                {/* Multiple Roles Selection */}
                 <div className="col-span-2">
-                  <Label htmlFor="wali_kelas">Wali Kelas (Opsional)</Label>
-                  <Select value={formData.wali_kelas} onValueChange={(value) => setFormData({...formData, wali_kelas: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih kelas untuk menjadi wali" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Tidak menjadi wali kelas</SelectItem>
-                      {kelasList.map((kelas) => (
-                        <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
-                          {kelas.nama_kelas}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Peran/Status <span className="text-red-500">*</span></Label>
+                  <div className="space-y-3 mt-2 p-4 border rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="role-admin"
+                        checked={formData.roles.includes('admin')}
+                        onCheckedChange={(checked) => handleRoleToggle('admin', checked as boolean)}
+                      />
+                      <Label htmlFor="role-admin" className="cursor-pointer">
+                        Administrator - Akses penuh sistem
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="role-guru"
+                        checked={formData.roles.includes('guru')}
+                        onCheckedChange={(checked) => handleRoleToggle('guru', checked as boolean)}
+                      />
+                      <Label htmlFor="role-guru" className="cursor-pointer">
+                        Guru - Mengajar dan input nilai
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="role-wali"
+                        checked={formData.roles.includes('wali_kelas')}
+                        onCheckedChange={(checked) => handleRoleToggle('wali_kelas', checked as boolean)}
+                      />
+                      <Label htmlFor="role-wali" className="cursor-pointer">
+                        Wali Kelas - Mengelola kelas dan siswa
+                      </Label>
+                    </div>
+                  </div>
+                  {formData.roles.length === 0 && (
+                    <p className="text-sm text-red-500 mt-1">Pilih minimal satu peran</p>
+                  )}
                 </div>
+
+                {/* Wali Kelas Selection - only show if wali_kelas role is selected */}
+                {formData.roles.includes('wali_kelas') && (
+                  <div className="col-span-2">
+                    <Label htmlFor="wali_kelas">Kelas yang Diwali</Label>
+                    <Select value={formData.wali_kelas} onValueChange={(value) => setFormData({...formData, wali_kelas: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih kelas untuk menjadi wali" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Belum ditentukan</SelectItem>
+                        {kelasList.map((kelas) => (
+                          <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
+                            {kelas.nama_kelas}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -378,7 +478,7 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
                 <TableHead>NIP</TableHead>
                 <TableHead>Nama Lengkap</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Peran/Status</TableHead>
                 <TableHead>Wali Kelas</TableHead>
                 <TableHead>No. Telepon</TableHead>
                 <TableHead>Aksi</TableHead>
@@ -391,9 +491,18 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
                   <TableCell className="font-medium">{guru.nama_lengkap}</TableCell>
                   <TableCell>{guru.email}</TableCell>
                   <TableCell>
-                    <Badge variant={guru.status === 'admin' ? 'default' : 'secondary'}>
-                      {guru.status === 'admin' ? 'Admin' : 'Guru'}
-                    </Badge>
+                    <div className="flex flex-wrap gap-1">
+                      {guru.roles && guru.roles.length > 0 ? (
+                        guru.roles.map((role) => (
+                          <Badge key={role} variant={getRoleBadgeVariant(role)} className="text-xs">
+                            {role === 'admin' ? 'Admin' : 
+                             role === 'wali_kelas' ? 'Wali Kelas' : 'Guru'}
+                          </Badge>
+                        ))
+                      ) : (
+                        <Badge variant="secondary">Guru</Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {guru.kelas_wali ? (

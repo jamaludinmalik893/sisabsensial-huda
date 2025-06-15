@@ -104,6 +104,19 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
     },
   ];
 
+  // Helper function to get role display text
+  const getRoleDisplayText = () => {
+    const roleTexts = [];
+    if (userSession.isAdmin) roleTexts.push('Administrator');
+    if (userSession.isGuru) roleTexts.push('Guru');
+    if (userSession.isWaliKelas && userSession.kelasWali) {
+      roleTexts.push(`Wali ${userSession.kelasWali.nama_kelas}`);
+    } else if (userSession.isWaliKelas) {
+      roleTexts.push('Wali Kelas');
+    }
+    return roleTexts.join(' • ');
+  };
+
   return (
     <Sidebar className="border-r border-gray-200">
       <SidebarHeader className="bg-primary text-white p-6">
@@ -171,30 +184,32 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
           </SidebarGroup>
         )}
 
-        {/* Menu Wali Kelas */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-primary-100 font-semibold">
-            Wali Kelas
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuWaliKelas.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    onClick={() => onPageChange(item.url)}
-                    isActive={currentPage === item.url}
-                    className={`text-white hover:bg-primary-600 transition-colors ${
-                      currentPage === item.url ? 'bg-primary-700 font-semibold' : ''
-                    }`}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {/* Menu Wali Kelas - Hanya untuk Wali Kelas */}
+        {userSession.isWaliKelas && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-primary-100 font-semibold">
+              Wali Kelas
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {menuWaliKelas.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      onClick={() => onPageChange(item.url)}
+                      isActive={currentPage === item.url}
+                      className={`text-white hover:bg-primary-600 transition-colors ${
+                        currentPage === item.url ? 'bg-primary-700 font-semibold' : ''
+                      }`}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="bg-primary-700 p-4">
@@ -204,8 +219,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
             <p className="font-medium text-sm">{userSession.guru.nama_lengkap}</p>
             <p className="text-primary-200 text-xs">{userSession.guru.email}</p>
             <p className="text-primary-200 text-xs">
-              {userSession.isAdmin ? 'Administrator' : 'Guru'}
-              {userSession.isWaliKelas && ` • Wali ${userSession.kelasWali?.nama_kelas}`}
+              {getRoleDisplayText()}
             </p>
           </div>
           
