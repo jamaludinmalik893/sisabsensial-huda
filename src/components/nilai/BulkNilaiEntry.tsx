@@ -192,19 +192,10 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
                             }}
                             title="Lihat profil siswa"
                           >
-                            {/* Gunakan StudentAvatarCell, mapping field */}
+                            {/* ONLY pass expected props! */}
                             <StudentAvatarCell siswa={{
-                              ...siswa,
-                              // mapping for fallback fields if needed
-                              kelas: undefined,
-                              guru_wali: undefined,
-                              jenis_kelamin: siswa.jenis_kelamin || "",
-                              tanggal_lahir: "",
-                              tempat_lahir: "",
-                              alamat: "",
-                              nama_orang_tua: "",
-                              tahun_masuk: 0,
-                              // nisn, nama_lengkap, id_siswa, foto_url dari Siswa ada
+                              nama_lengkap: siswa.nama_lengkap,
+                              foto_url: siswa.foto_url
                             }} />
                           </div>
                         </TableCell>
@@ -276,9 +267,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
       <ProfilSiswaPopup
         siswa={selectedSiswa ? {
           ...selectedSiswa,
-          // mapping agar popup lancar (jaga agar field tidak undefined)
-          kelas: undefined,
-          guru_wali: undefined,
+          // Remove kelas and guru_wali, let popup handle missing fields as fallback
           jenis_kelamin: selectedSiswa.jenis_kelamin || "",
           tanggal_lahir: "",
           tempat_lahir: "",
