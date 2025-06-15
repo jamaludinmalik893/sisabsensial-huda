@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { UserSession } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,6 +5,7 @@ import BulkNilaiEntry from './nilai/BulkNilaiEntry';
 import NilaiOverviewTable from './nilai/NilaiOverviewTable';
 import NilaiFilters from './nilai/NilaiFilters';
 import { useNilaiData } from '@/hooks/useNilaiData';
+import { valuesToBulkNilaiEntry } from '@/utils/parseBulkNilai';
 
 interface NilaiPageProps {
   userSession: UserSession;
@@ -39,21 +39,16 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
     return matchMapel && matchKelas && matchJenis;
   });
 
-  // Convert string bulk values to the expected format for BulkNilaiEntry component
-  const convertedBulkValues = Object.entries(bulkValues).reduce((acc, [key, value]) => {
-    if (value.trim() !== '') {
-      acc[key] = {
-        id_siswa: key,
-        skor: parseFloat(value),
-        catatan: ''
-      };
-    }
-    return acc;
-  }, {} as Record<string, any>);
+  // Gunakan parser utility baru agar robust support nilai { skor, catatan }
+  const convertedBulkValues = valuesToBulkNilaiEntry(bulkValues);
 
   // Handle bulk value change with proper type conversion
   const handleBulkEntryChange = (siswaId: string, entry: any) => {
-    handleBulkValueChange(siswaId, entry.skor.toString());
+    // Selalu masukkan { skor, catatan }
+    handleBulkValueChange(siswaId, {
+      skor: entry.skor?.toString() ?? '',
+      catatan: entry.catatan ?? ''
+    });
   };
 
   return (
@@ -108,4 +103,3 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
 };
 
 export default NilaiPage;
-

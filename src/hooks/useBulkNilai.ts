@@ -6,21 +6,31 @@ import { BulkNilaiData, Siswa } from '@/types/nilai';
 import { useToast } from '@/hooks/use-toast';
 
 export const useBulkNilai = (userSession: UserSession) => {
-  const [bulkValues, setBulkValues] = useState<{ [key: string]: string | { skor: string, catatan: string } }>({});
+  const [bulkValues, setBulkValues] = useState<{ [key: string]: { skor: string; catatan: string } }>({});
   const { toast } = useToast();
 
-  const handleBulkValueChange = (siswaId: string, value: string | { skor: number, catatan: string }) => {
-    // Support both backward (just skor) and forward (skor+catatan) entry
-    setBulkValues(prev => ({
-      ...prev,
-      [siswaId]: typeof value === 'object'
-        ? { skor: String(value.skor), catatan: value.catatan }
-        : { skor: String(value), catatan: prev[siswaId]?.catatan ?? '' }
-    }));
+  const handleBulkValueChange = (siswaId: string, value: { skor: string; catatan: string } | string) => {
+    if (typeof value === 'object' && value !== null) {
+      setBulkValues(prev => ({
+        ...prev,
+        [siswaId]: {
+          skor: value.skor?.toString() ?? '',
+          catatan: value.catatan ?? ''
+        }
+      }));
+    } else {
+      setBulkValues(prev => ({
+        ...prev,
+        [siswaId]: {
+          skor: String(value),
+          catatan: prev[siswaId]?.catatan ?? ''
+        }
+      }));
+    }
   };
 
   const initializeBulkValues = (siswaList: Siswa[]) => {
-    const initialValues: { [key: string]: { skor: string, catatan: string } } = {};
+    const initialValues: { [key: string]: { skor: string; catatan: string } } = {};
     siswaList.forEach(siswa => {
       initialValues[siswa.id_siswa] = { skor: '', catatan: '' };
     });
@@ -50,26 +60,20 @@ export const useBulkNilai = (userSession: UserSession) => {
     }
 
     try {
-      // Insert skor & catatan
+      // filter & mapping skor & catatan valid
       const nilaiToInsert = Object.entries(bulkValues)
-        .filter(([_, value]) => {
-          const val = value as { skor: string, catatan: string };
-          return val && String(val.skor).trim() !== '';
-        })
-        .map(([siswaId, value]) => {
-          const val = value as { skor: string, catatan: string };
-          return {
-            id_siswa: siswaId,
-            id_mapel: selectedMapel,
-            skor: parseFloat(val.skor),
-            jenis_nilai: jenisNilai,
-            judul_tugas: judulTugas,
-            tanggal_tugas_dibuat: tanggalTugasDibuat,
-            tanggal_nilai: new Date().toISOString().split('T')[0],
-            catatan: val.catatan,
-            id_jurnal: null,
-          }
-        });
+        .filter(([_, value]) => String(value.skor).trim() !== '')
+        .map(([siswaId, value]) => ({
+          id_siswa: siswaId,
+          id_mapel: selectedMapel,
+          skor: parseFloat(value.skor),
+          jenis_nilai: jenisNilai,
+          judul_tugas: judulTugas,
+          tanggal_tugas_dibuat: tanggalTugasDibuat,
+          tanggal_nilai: new Date().toISOString().split('T')[0],
+          catatan: value.catatan,
+          id_jurnal: null,
+        }));
 
       if (nilaiToInsert.length === 0) {
         toast({
@@ -91,7 +95,6 @@ export const useBulkNilai = (userSession: UserSession) => {
         description: `${nilaiToInsert.length} nilai berhasil disimpan`
       });
 
-      // Reset bulk values
       setBulkValues({});
       return true;
     } catch (error) {
@@ -112,3 +115,5 @@ export const useBulkNilai = (userSession: UserSession) => {
     initializeBulkValues
   };
 };
+
+// ... end of file ...
