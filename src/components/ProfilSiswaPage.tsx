@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, Users, GraduationCap, Filter } from 'lucide-react';
+import { Search, Users, GraduationCap, Filter, Phone } from 'lucide-react';
 import ProfilSiswaPopup from './ProfilSiswaPopup';
 
 interface ProfilSiswaPageProps {
@@ -254,6 +254,7 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
                   <TableHead>Kelas</TableHead>
                   <TableHead>Jenis Kelamin</TableHead>
                   <TableHead>Umur</TableHead>
+                  <TableHead>No. Telepon</TableHead>
                   <TableHead>Tempat Lahir</TableHead>
                   <TableHead>Orang Tua</TableHead>
                   <TableHead>Wali Kelas</TableHead>
@@ -294,6 +295,16 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
                       </Badge>
                     </TableCell>
                     <TableCell>{calculateAge(siswa.tanggal_lahir)} tahun</TableCell>
+                    <TableCell>
+                      {siswa.nomor_telepon ? (
+                        <div className="flex items-center gap-1">
+                          <Phone className="h-3 w-3 text-gray-400" />
+                          <span className="text-sm">{siswa.nomor_telepon}</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-sm">-</span>
+                      )}
+                    </TableCell>
                     <TableCell>{siswa.tempat_lahir}</TableCell>
                     <TableCell>
                       <div>

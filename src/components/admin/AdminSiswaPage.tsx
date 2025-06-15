@@ -488,6 +488,7 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
                 <TableHead>Nama Lengkap</TableHead>
                 <TableHead>Kelas</TableHead>
                 <TableHead>Jenis Kelamin</TableHead>
+                <TableHead>No. Telepon</TableHead>
                 <TableHead>Tahun Masuk</TableHead>
                 <TableHead>Guru Wali</TableHead>
                 <TableHead>Aksi</TableHead>
@@ -520,6 +521,13 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
                     )}
                   </TableCell>
                   <TableCell>{siswa.jenis_kelamin}</TableCell>
+                  <TableCell>
+                    {siswa.nomor_telepon ? (
+                      <span className="text-sm">{siswa.nomor_telepon}</span>
+                    ) : (
+                      <span className="text-gray-400 text-sm">-</span>
+                    )}
+                  </TableCell>
                   <TableCell>{siswa.tahun_masuk}</TableCell>
                   <TableCell>
                     {siswa.guru_wali ? siswa.guru_wali.nama_lengkap : '-'}
