@@ -265,16 +265,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
         </CardContent>
       </Card>
       <ProfilSiswaPopup
-        siswa={selectedSiswa ? {
-          ...selectedSiswa,
-          // Remove kelas and guru_wali, let popup handle missing fields as fallback
-          jenis_kelamin: selectedSiswa.jenis_kelamin || "",
-          tanggal_lahir: "",
-          tempat_lahir: "",
-          alamat: "",
-          nama_orang_tua: "",
-          tahun_masuk: 0,
-        } : null}
+        siswa={selectedSiswa}
         isOpen={profilOpen}
         onClose={() => { setProfilOpen(false); setSelectedSiswa(null); }}
       />
