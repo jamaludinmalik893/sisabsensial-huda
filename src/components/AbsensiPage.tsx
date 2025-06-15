@@ -5,22 +5,15 @@ import { UserSession } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import JurnalForm from './absensi/JurnalForm';
-import JurnalSelector from './absensi/JurnalSelector';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import AbsensiList from './absensi/AbsensiList';
 
 interface AbsensiPageProps {
   userSession: UserSession;
-}
-
-interface JurnalHarian {
-  id_jurnal: string;
-  tanggal_pelajaran: string;
-  waktu_mulai: string;
-  waktu_selesai: string;
-  judul_materi: string;
-  mata_pelajaran: { nama_mapel: string };
-  kelas: { nama_kelas: string; id_kelas: string };
 }
 
 interface Siswa {
@@ -47,8 +40,12 @@ interface MataPelajaran {
 }
 
 const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
-  const [jurnalList, setJurnalList] = useState<JurnalHarian[]>([]);
-  const [selectedJurnal, setSelectedJurnal] = useState<string>('');
+  const [selectedKelas, setSelectedKelas] = useState<string>('');
+  const [selectedMapel, setSelectedMapel] = useState<string>('');
+  const [judulMateri, setJudulMateri] = useState<string>('');
+  const [materiDiajarkan, setMateriDiajarkan] = useState<string>('');
+  const [waktuMulai, setWaktuMulai] = useState<string>('');
+  const [waktuSelesai, setWaktuSelesai] = useState<string>('');
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
   const [absensiData, setAbsensiData] = useState<AbsensiData[]>([]);
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
@@ -63,57 +60,19 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
   }, [userSession]);
 
   useEffect(() => {
-    if (selectedJurnal) {
-      loadSiswaByJurnal();
+    if (selectedKelas) {
+      loadSiswaByKelas();
     }
-  }, [selectedJurnal]);
+  }, [selectedKelas]);
 
   const loadInitialData = async () => {
     try {
       await Promise.all([
-        loadJurnalHarian(),
         loadKelas(),
         loadMataPelajaran()
       ]);
     } catch (error) {
       console.error('Error loading initial data:', error);
-    }
-  };
-
-  const loadJurnalHarian = async () => {
-    try {
-      console.log('Loading jurnal for guru ID:', userSession.guru.id_guru);
-      
-      const { data, error } = await supabase
-        .from('jurnal_harian')
-        .select(`
-          id_jurnal,
-          tanggal_pelajaran,
-          waktu_mulai,
-          waktu_selesai,
-          judul_materi,
-          id_kelas,
-          mata_pelajaran!inner(nama_mapel),
-          kelas!inner(nama_kelas, id_kelas)
-        `)
-        .eq('id_guru', userSession.guru.id_guru)
-        .eq('tanggal_pelajaran', today)
-        .order('waktu_mulai');
-
-      if (error) {
-        console.error('Error loading jurnal:', error);
-        throw error;
-      }
-
-      console.log('Jurnal data loaded:', data);
-      setJurnalList(data || []);
-    } catch (error) {
-      console.error('Error loading jurnal:', error);
-      toast({
-        title: "Error",
-        description: "Gagal memuat jurnal pembelajaran",
-        variant: "destructive"
-      });
     }
   };
 
@@ -145,17 +104,14 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
     }
   };
 
-  const loadSiswaByJurnal = async () => {
+  const loadSiswaByKelas = async () => {
     try {
-      const jurnal = jurnalList.find(j => j.id_jurnal === selectedJurnal);
-      if (!jurnal) return;
-
-      console.log('Loading siswa for kelas:', jurnal.kelas.id_kelas);
+      console.log('Loading siswa for kelas:', selectedKelas);
 
       const { data, error } = await supabase
         .from('siswa')
         .select('id_siswa, nama_lengkap, nisn, foto_url')
-        .eq('id_kelas', jurnal.kelas.id_kelas)
+        .eq('id_kelas', selectedKelas)
         .order('nama_lengkap');
 
       if (error) {
@@ -173,9 +129,6 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
         catatan: ''
       }));
       setAbsensiData(initialAbsensi);
-
-      // Load existing absensi if any
-      loadExistingAbsensi(selectedJurnal);
     } catch (error) {
       console.error('Error loading siswa:', error);
       toast({
@@ -183,32 +136,6 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
         description: "Gagal memuat data siswa",
         variant: "destructive"
       });
-    }
-  };
-
-  const loadExistingAbsensi = async (jurnalId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('absensi')
-        .select('id_siswa, status, catatan')
-        .eq('id_jurnal', jurnalId);
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        setAbsensiData(prev => 
-          prev.map(item => {
-            const existing = data.find(abs => abs.id_siswa === item.id_siswa);
-            return existing ? { 
-              ...item, 
-              status: existing.status as 'Hadir' | 'Izin' | 'Sakit' | 'Alpha', 
-              catatan: existing.catatan || '' 
-            } : item;
-          })
-        );
-      }
-    } catch (error) {
-      console.error('Error loading existing absensi:', error);
     }
   };
 
@@ -221,10 +148,10 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
   };
 
   const saveAbsensi = async () => {
-    if (!selectedJurnal) {
+    if (!selectedKelas || !selectedMapel || !judulMateri || !materiDiajarkan || !waktuMulai || !waktuSelesai) {
       toast({
         title: "Error",
-        description: "Pilih jurnal pembelajaran terlebih dahulu",
+        description: "Semua field harus diisi",
         variant: "destructive"
       });
       return;
@@ -232,37 +159,62 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
 
     setLoading(true);
     try {
+      // First create jurnal
+      const { data: jurnalData, error: jurnalError } = await supabase
+        .from('jurnal_harian')
+        .insert({
+          id_guru: userSession.guru.id_guru,
+          id_mapel: selectedMapel,
+          id_kelas: selectedKelas,
+          tanggal_pelajaran: today,
+          waktu_mulai: waktuMulai,
+          waktu_selesai: waktuSelesai,
+          judul_materi: judulMateri,
+          materi_diajarkan: materiDiajarkan
+        })
+        .select()
+        .single();
+
+      if (jurnalError) throw jurnalError;
+
+      // Then save absensi
       const absensiToInsert = absensiData.map(item => ({
-        id_jurnal: selectedJurnal,
+        id_jurnal: jurnalData.id_jurnal,
         id_siswa: item.id_siswa,
         status: item.status,
         catatan: item.catatan
       }));
 
-      const { error } = await supabase
+      const { error: absensiError } = await supabase
         .from('absensi')
         .upsert(absensiToInsert);
 
-      if (error) throw error;
+      if (absensiError) throw absensiError;
 
       toast({
         title: "Berhasil",
-        description: "Data absensi berhasil disimpan"
+        description: "Jurnal dan absensi berhasil disimpan"
       });
+
+      // Reset form
+      setSelectedKelas('');
+      setSelectedMapel('');
+      setJudulMateri('');
+      setMateriDiajarkan('');
+      setWaktuMulai('');
+      setWaktuSelesai('');
+      setSiswaList([]);
+      setAbsensiData([]);
     } catch (error) {
       console.error('Error saving absensi:', error);
       toast({
         title: "Error",
-        description: "Gagal menyimpan data absensi",
+        description: "Gagal menyimpan data",
         variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleJurnalCreated = () => {
-    loadJurnalHarian();
   };
 
   return (
@@ -275,20 +227,89 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
         </Badge>
       </div>
 
-      <JurnalForm
-        kelasList={kelasList}
-        mapelList={mapelList}
-        guruId={userSession.guru.id_guru}
-        onJurnalCreated={handleJurnalCreated}
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Pembelajaran</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="kelas">Kelas</Label>
+              <Select value={selectedKelas} onValueChange={setSelectedKelas}>
+                <SelectTrigger id="kelas">
+                  <SelectValue placeholder="Pilih Kelas" />
+                </SelectTrigger>
+                <SelectContent>
+                  {kelasList.map((kelas) => (
+                    <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
+                      {kelas.nama_kelas}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-      <JurnalSelector
-        jurnalList={jurnalList}
-        selectedJurnal={selectedJurnal}
-        onJurnalChange={setSelectedJurnal}
-      />
+            <div>
+              <Label htmlFor="mapel">Mata Pelajaran</Label>
+              <Select value={selectedMapel} onValueChange={setSelectedMapel}>
+                <SelectTrigger id="mapel">
+                  <SelectValue placeholder="Pilih Mata Pelajaran" />
+                </SelectTrigger>
+                <SelectContent>
+                  {mapelList.map((mapel) => (
+                    <SelectItem key={mapel.id_mapel} value={mapel.id_mapel}>
+                      {mapel.nama_mapel}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-      {selectedJurnal && siswaList.length > 0 && (
+            <div>
+              <Label htmlFor="waktu-mulai">Waktu Mulai</Label>
+              <Input
+                id="waktu-mulai"
+                type="time"
+                value={waktuMulai}
+                onChange={(e) => setWaktuMulai(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="waktu-selesai">Waktu Selesai</Label>
+              <Input
+                id="waktu-selesai"
+                type="time"
+                value={waktuSelesai}
+                onChange={(e) => setWaktuSelesai(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="judul-materi">Judul Materi</Label>
+            <Input
+              id="judul-materi"
+              placeholder="Masukkan judul materi"
+              value={judulMateri}
+              onChange={(e) => setJudulMateri(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="materi-diajarkan">Materi yang Diajarkan</Label>
+            <Textarea
+              id="materi-diajarkan"
+              placeholder="Masukkan materi yang diajarkan"
+              value={materiDiajarkan}
+              onChange={(e) => setMateriDiajarkan(e.target.value)}
+              rows={4}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {selectedKelas && siswaList.length > 0 && (
         <AbsensiList
           siswaList={siswaList}
           absensiData={absensiData}
