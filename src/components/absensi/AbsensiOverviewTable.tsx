@@ -5,7 +5,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { User, Users } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { User, Users, MessageCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import ProfilSiswaPopup from '../ProfilSiswaPopup';
 
 interface RiwayatAbsensi {
@@ -57,7 +63,7 @@ interface AbsensiOverviewTableProps {
 
 interface StudentAttendance {
   siswa: RiwayatAbsensi['siswa'];
-  attendances: { [dateKey: string]: {status: string; catatan?: string; materi: string} };
+  attendances: { [dateKey: string]: {status: string; catatan?: string; materi: string; id_absensi: string} };
   summary: {
     hadir: number;
     izin: number;
@@ -77,6 +83,16 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
 }) => {
   const [selectedSiswa, setSelectedSiswa] = useState<RiwayatAbsensi['siswa'] | null>(null);
   const [isProfilOpen, setIsProfilOpen] = useState(false);
+  const [editingAbsensi, setEditingAbsensi] = useState<{
+    id_absensi: string;
+    status: string;
+    catatan?: string;
+    siswa_nama: string;
+    tanggal: string;
+    materi: string;
+  } | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   // Filter absensi by selected subject and class
   const relevantAbsensi = useMemo(() => {
@@ -106,7 +122,8 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
       grouped[siswaId].attendances[dateKey] = {
         status: absensi.status,
         catatan: absensi.catatan,
-        materi: absensi.jurnal_harian.judul_materi
+        materi: absensi.jurnal_harian.judul_materi,
+        id_absensi: absensi.id_absensi
       };
     });
 
@@ -125,17 +142,71 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
     return Object.values(grouped).sort((a, b) => a.siswa.nama_lengkap.localeCompare(b.siswa.nama_lengkap));
   }, [relevantAbsensi]);
 
-  // Get all unique dates for table headers
+  // Get all unique dates and their materials for table headers
   const dateList = useMemo(() => {
-    const dateSet = new Set<string>();
+    const dateMap = new Map<string, string>();
     
     relevantAbsensi.forEach(absensi => {
       const dateKey = new Date(absensi.jurnal_harian.tanggal_pelajaran).toLocaleDateString('id-ID');
-      dateSet.add(dateKey);
+      if (!dateMap.has(dateKey)) {
+        dateMap.set(dateKey, absensi.jurnal_harian.judul_materi);
+      }
     });
     
-    return Array.from(dateSet).sort();
+    return Array.from(dateMap.entries()).sort((a, b) => {
+      const dateA = new Date(a[0].split('/').reverse().join('-'));
+      const dateB = new Date(b[0].split('/').reverse().join('-'));
+      return dateA.getTime() - dateB.getTime();
+    });
   }, [relevantAbsensi]);
+
+  const handleAbsensiDoubleClick = (attendance: any, dateKey: string, siswa: any) => {
+    if (attendance && attendance.id_absensi) {
+      setEditingAbsensi({
+        id_absensi: attendance.id_absensi,
+        status: attendance.status,
+        catatan: attendance.catatan || '',
+        siswa_nama: siswa.nama_lengkap,
+        tanggal: dateKey,
+        materi: attendance.materi
+      });
+      setIsEditDialogOpen(true);
+    }
+  };
+
+  const handleSaveAbsensi = async () => {
+    if (!editingAbsensi) return;
+
+    try {
+      const { error } = await supabase
+        .from('absensi')
+        .update({
+          status: editingAbsensi.status,
+          catatan: editingAbsensi.catatan || null
+        })
+        .eq('id_absensi', editingAbsensi.id_absensi);
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Data absensi berhasil diperbarui",
+      });
+
+      setIsEditDialogOpen(false);
+      setEditingAbsensi(null);
+      
+      // Refresh data would need to be handled by parent component
+      window.location.reload(); // Simple refresh for now
+    } catch (error) {
+      console.error('Error updating absensi:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memperbarui data absensi",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleSiswaClick = (siswa: RiwayatAbsensi['siswa']) => {
     setSelectedSiswa(siswa);
@@ -168,7 +239,7 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
               {getSelectedInfo()}
             </p>
             <p className="text-xs text-gray-500">
-              Klik nama siswa atau ikon untuk melihat profil lengkap.
+              Klik nama siswa atau ikon untuk melihat profil lengkap. Double klik kehadiran untuk mengedit.
             </p>
           </div>
         </CardHeader>
@@ -182,9 +253,14 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
                   <TableRow>
                     <TableHead className="w-8"></TableHead>
                     <TableHead className="min-w-40">Nama Siswa</TableHead>
-                    {dateList.slice(0, 10).map((date) => (
-                      <TableHead key={date} className="text-center min-w-20">
-                        <span className="text-xs">{date}</span>
+                    {dateList.slice(0, 10).map(([date, materi]) => (
+                      <TableHead key={date} className="text-center min-w-24">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-medium text-blue-600 mb-1">
+                            {materi.length > 15 ? `${materi.substring(0, 15)}...` : materi}
+                          </span>
+                          <span className="text-xs">{date}</span>
+                        </div>
                       </TableHead>
                     ))}
                     <TableHead className="text-center min-w-16 bg-green-50">H</TableHead>
@@ -215,19 +291,26 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
                           <div className="text-sm font-medium">{studentData.siswa.nama_lengkap}</div>
                         </button>
                       </TableCell>
-                      {dateList.slice(0, 10).map((date) => (
+                      {dateList.slice(0, 10).map(([date]) => (
                         <TableCell key={date} className="text-center p-2">
                           {studentData.attendances[date] ? (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className="relative">
+                                <div 
+                                  className="relative cursor-pointer"
+                                  onDoubleClick={() => handleAbsensiDoubleClick(
+                                    studentData.attendances[date], 
+                                    date, 
+                                    studentData.siswa
+                                  )}
+                                >
                                   <Badge 
-                                    className={`text-xs cursor-pointer ${getStatusColor(studentData.attendances[date].status)}`}
+                                    className={`text-xs ${getStatusColor(studentData.attendances[date].status)}`}
                                   >
                                     {studentData.attendances[date].status.charAt(0)}
                                   </Badge>
                                   {studentData.attendances[date].catatan && (
-                                    <span className="absolute -top-1 -right-1 h-2 w-2 bg-blue-500 rounded-full"></span>
+                                    <MessageCircle className="absolute -top-1 -right-1 h-3 w-3 text-blue-500" />
                                   )}
                                 </div>
                               </TooltipTrigger>
@@ -238,6 +321,7 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
                                   {studentData.attendances[date].catatan && (
                                     <p>Catatan: {studentData.attendances[date].catatan}</p>
                                   )}
+                                  <p className="text-gray-400 mt-1">Double klik untuk edit</p>
                                 </div>
                               </TooltipContent>
                             </Tooltip>
@@ -285,6 +369,72 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Absensi Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Kehadiran</DialogTitle>
+          </DialogHeader>
+          {editingAbsensi && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Siswa</Label>
+                <p className="text-sm">{editingAbsensi.siswa_nama}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Tanggal</Label>
+                <p className="text-sm">{editingAbsensi.tanggal}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Materi</Label>
+                <p className="text-sm">{editingAbsensi.materi}</p>
+              </div>
+              <div>
+                <Label htmlFor="status">Status Kehadiran</Label>
+                <Select 
+                  value={editingAbsensi.status} 
+                  onValueChange={(value) => setEditingAbsensi({...editingAbsensi, status: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Hadir">Hadir</SelectItem>
+                    <SelectItem value="Izin">Izin</SelectItem>
+                    <SelectItem value="Sakit">Sakit</SelectItem>
+                    <SelectItem value="Alpha">Alpha</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="catatan">Catatan (Opsional)</Label>
+                <Textarea
+                  id="catatan"
+                  value={editingAbsensi.catatan}
+                  onChange={(e) => setEditingAbsensi({...editingAbsensi, catatan: e.target.value})}
+                  placeholder="Tambahkan catatan..."
+                  rows={3}
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsEditDialogOpen(false);
+                    setEditingAbsensi(null);
+                  }}
+                >
+                  Batal
+                </Button>
+                <Button onClick={handleSaveAbsensi}>
+                  Simpan
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <ProfilSiswaPopup
         siswa={selectedSiswa}
