@@ -5,6 +5,7 @@ import BulkNilaiHeadForm from './BulkNilaiHeadForm';
 import BulkNilaiTable from './BulkNilaiTable';
 import type { Siswa, MataPelajaran, Kelas } from '@/types/index';
 import { convertSiswaToFullSiswa } from "./convertSiswaToFullSiswa";
+import { useProfilSiswaPopup } from "./useProfilSiswaPopup";
 
 // Tipe Data Entry Nilai
 export interface BulkNilaiEntry {
@@ -38,10 +39,13 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
   const [judulTugas, setJudulTugas] = React.useState('');
   const [tanggalTugasDibuat, setTanggalTugasDibuat] = React.useState(new Date().toISOString().split('T')[0]);
 
-  // state for popup profil siswa
-  const [profilOpen, setProfilOpen] = React.useState(false);
-  // Ubah: type menjadi lengkap memakai hasil konversi
-  const [selectedSiswa, setSelectedSiswa] = React.useState<Siswa | null>(null);
+  // Gunakan hook profil siswa agar tidak duplikasi logic
+  const {
+    profilOpen,
+    selectedSiswa,
+    openProfil,
+    closeProfil
+  } = useProfilSiswaPopup();
 
   const handleKelasChange = (value: string) => {
     setSelectedKelas(value);
@@ -61,15 +65,9 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
     await onBulkSubmit(selectedMapel, selectedJenisNilai, judulTugas, tanggalTugasDibuat);
   };
 
-  const canShowTable = selectedMapel && selectedKelas && selectedJenisNilai && judulTugas && siswaList.length > 0;
-
-  // Perbaikan handle klik pada avatar/nama siswa agar data selalu lengkap ke popup
-  // dan pastikan field foto_url dsb. akan dikirim (convertSiswaToFullSiswa sudah menjamin field lengkap)
-  const handleSiswaClick = (siswa: Siswa) => {
-    const lengkap = convertSiswaToFullSiswa(siswa);
-    setSelectedSiswa(lengkap);
-    setProfilOpen(true);
-  };
+  // Pastikan siswaList sudah dikonversi lengkap
+  const fullSiswaList = siswaList.map(s => convertSiswaToFullSiswa(s));
+  const canShowTable = selectedMapel && selectedKelas && selectedJenisNilai && judulTugas && fullSiswaList.length > 0;
 
   return (
     <>
@@ -97,11 +95,11 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
           />
 
           <BulkNilaiTable
-            siswaList={siswaList.map(s => convertSiswaToFullSiswa(s))}
+            siswaList={fullSiswaList}
             bulkValues={bulkValues}
             onBulkValueChange={handleBulkValueChange}
             canShowTable={!!canShowTable}
-            onSiswaClick={handleSiswaClick}
+            onSiswaClick={openProfil}
             onSubmit={handleSubmit}
             judulTugas={judulTugas}
             selectedMapel={selectedMapel}
@@ -114,7 +112,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
             </div>
           )}
 
-          {selectedMapel && selectedKelas && selectedJenisNilai && judulTugas && siswaList.length === 0 && (
+          {selectedMapel && selectedKelas && selectedJenisNilai && judulTugas && fullSiswaList.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               Tidak ada siswa di kelas yang dipilih
             </div>
@@ -124,7 +122,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
       <ProfilSiswaPopup
         siswa={selectedSiswa}
         isOpen={profilOpen}
-        onClose={() => { setProfilOpen(false); setSelectedSiswa(null); }}
+        onClose={closeProfil}
       />
     </>
   );
