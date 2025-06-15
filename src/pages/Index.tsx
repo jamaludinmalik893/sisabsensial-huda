@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +11,10 @@ import NilaiPage from '@/components/NilaiPage';
 import JurnalPage from '@/components/JurnalPage';
 import ProfilSiswaPage from '@/components/ProfilSiswaPage';
 import WaliKelasPage from '@/components/WaliKelasPage';
+import AdminSiswaPage from '@/components/admin/AdminSiswaPage';
+import AdminGuruPage from '@/components/admin/AdminGuruPage';
+import AdminKelasPage from '@/components/admin/AdminKelasPage';
+import AdminMapelPage from '@/components/admin/AdminMapelPage';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 const Index = () => {
@@ -69,10 +74,7 @@ const Index = () => {
       // Admin pages
       case 'admin-siswa':
         return userSession.isAdmin ? (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Administrasi Siswa</h1>
-            <p className="text-gray-600">Halaman administrasi siswa akan segera dibuat...</p>
-          </div>
+          <AdminSiswaPage userSession={userSession} />
         ) : (
           <div className="p-6">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -82,10 +84,7 @@ const Index = () => {
         );
       case 'admin-guru':
         return userSession.isAdmin ? (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Administrasi Guru</h1>
-            <p className="text-gray-600">Halaman administrasi guru akan segera dibuat...</p>
-          </div>
+          <AdminGuruPage userSession={userSession} />
         ) : (
           <div className="p-6">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -95,10 +94,7 @@ const Index = () => {
         );
       case 'admin-kelas':
         return userSession.isAdmin ? (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Administrasi Kelas</h1>
-            <p className="text-gray-600">Halaman administrasi kelas akan segera dibuat...</p>
-          </div>
+          <AdminKelasPage userSession={userSession} />
         ) : (
           <div className="p-6">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -108,10 +104,7 @@ const Index = () => {
         );
       case 'admin-mapel':
         return userSession.isAdmin ? (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Administrasi Mata Pelajaran</h1>
-            <p className="text-gray-600">Halaman administrasi mata pelajaran akan segera dibuat...</p>
-          </div>
+          <AdminMapelPage userSession={userSession} />
         ) : (
           <div className="p-6">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
