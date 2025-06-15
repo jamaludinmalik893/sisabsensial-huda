@@ -5,6 +5,7 @@ import ProfilSiswaPopup from '../ProfilSiswaPopup';
 import BulkNilaiHeadForm from './BulkNilaiHeadForm';
 import BulkNilaiTable from './BulkNilaiTable';
 import type { Siswa, MataPelajaran, Kelas } from '@/types/index';
+import { convertSiswaToFullSiswa } from "./convertSiswaToFullSiswa";
 
 // Tipe Data Entry Nilai
 export interface BulkNilaiEntry {
@@ -93,6 +94,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
             onBulkValueChange={handleBulkValueChange}
             canShowTable={!!canShowTable}
             onSiswaClick={(siswa) => {
+              // Konversi agar semua field yg dibutuhkan pasti ada (ke tipe dari index)
               setSelectedSiswa(convertSiswaToFullSiswa(siswa));
               setProfilOpen(true);
             }}
