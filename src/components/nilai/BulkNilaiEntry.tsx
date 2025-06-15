@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProfilSiswaPopup from '../ProfilSiswaPopup';
@@ -5,8 +6,8 @@ import BulkNilaiHeadForm from './BulkNilaiHeadForm';
 import BulkNilaiTable from './BulkNilaiTable';
 import type { Siswa, MataPelajaran, Kelas } from '@/types/index';
 import { convertSiswaToFullSiswa } from "./convertSiswaToFullSiswa";
-import { useProfilSiswaPopup } from "./useProfilSiswaPopup";
-import { getFullSiswaForPopup } from "./utils/getFullSiswaForPopup";
+// Refaktor: Pakai hook adapter baru
+import { useOpenProfilSiswaWithConversion } from "./useOpenProfilSiswaWithConversion";
 
 // Tipe Data Entry Nilai
 export interface BulkNilaiEntry {
@@ -40,26 +41,19 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
   const [judulTugas, setJudulTugas] = React.useState('');
   const [tanggalTugasDibuat, setTanggalTugasDibuat] = React.useState(new Date().toISOString().split('T')[0]);
 
-  // Gunakan full pipeline (semua field) supaya StudentAvatarCell dan ProfilSiswaPopup dapat data lengkap
+  // Pipeline siswaList konversi ke 'full' (untuk tabel/avatar)
   const fullSiswaList = React.useMemo(
     () => siswaList.map(s => convertSiswaToFullSiswa(s)),
     [siswaList]
   );
 
-  // Gunakan useProfilSiswaPopup standard, tetapi openProfil DIWRAP dengan pipeline getFullSiswaForPopup
+  // GUNAKAN pipeline open profil re-usable (full) seperti di rekapitulasi
   const {
     profilOpen,
     selectedSiswa,
     openProfil,
     closeProfil
-  } = useProfilSiswaPopup();
-
-  // wrapper open profil supaya data konsisten dengan format di rekapitulasi
-  const handleOpenProfil = (siswa: any) => {
-    // siswa bisa partial, pastikan full pipeline
-    const full = getFullSiswaForPopup(siswa);
-    openProfil(full);
-  };
+  } = useOpenProfilSiswaWithConversion();
 
   const handleKelasChange = (value: string) => {
     setSelectedKelas(value);
@@ -106,13 +100,12 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
             setTanggalTugasDibuat={setTanggalTugasDibuat}
           />
 
-          {/* fullSiswaList pasti sudah data lengkap */}
           <BulkNilaiTable
             siswaList={fullSiswaList}
             bulkValues={bulkValues}
             onBulkValueChange={handleBulkValueChange}
             canShowTable={!!canShowTable}
-            onSiswaClick={handleOpenProfil}
+            onSiswaClick={openProfil}
             onSubmit={handleSubmit}
             judulTugas={judulTugas}
             selectedMapel={selectedMapel}
