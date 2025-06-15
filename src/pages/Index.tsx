@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +14,8 @@ import AdminSiswaPage from '@/components/admin/AdminSiswaPage';
 import AdminGuruPage from '@/components/admin/AdminGuruPage';
 import AdminKelasPage from '@/components/admin/AdminKelasPage';
 import AdminMapelPage from '@/components/admin/AdminMapelPage';
+import NilaiRekapitulasiPage from '@/components/NilaiRekapitulasiPage';
+import NilaiEntryPage from '@/components/NilaiEntryPage';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 const Index = () => {
@@ -71,6 +72,10 @@ const Index = () => {
         return <ProfilSiswaPage userSession={userSession} />;
       case 'wali-kelas':
         return <WaliKelasPage userSession={userSession} />;
+      case 'nilai-rekapitulasi':
+        return <NilaiRekapitulasiPage userSession={userSession} />;
+      case 'nilai-entry':
+        return <NilaiEntryPage userSession={userSession} />;
       // Admin pages
       case 'admin-siswa':
         return userSession.isAdmin ? (

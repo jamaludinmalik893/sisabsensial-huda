@@ -60,6 +60,17 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
       title: "Nilai",
       url: "nilai",
       icon: FileText,
+      // Kita tambahkan dua submenu
+      submenus: [
+        {
+          title: "Rekapitulasi Nilai",
+          url: "nilai-rekapitulasi",
+        },
+        {
+          title: "Entry Nilai",
+          url: "nilai-entry",
+        },
+      ],
     },
     {
       title: "Jurnal",
@@ -139,20 +150,45 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuUtama.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    onClick={() => onPageChange(item.url)}
-                    isActive={currentPage === item.url}
-                    className={`text-white hover:bg-primary-600 transition-colors ${
-                      currentPage === item.url ? 'bg-primary-700 font-semibold' : ''
-                    }`}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {menuUtama.map((item) =>
+                item.title === "Nilai" ? (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      onClick={() => onPageChange(item.url)}
+                      isActive={currentPage === item.url || currentPage.startsWith("nilai-")}
+                      className={`text-white hover:bg-primary-600 transition-colors ${currentPage === item.url || currentPage.startsWith("nilai-") ? 'bg-primary-700 font-semibold' : ''}`}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                    {/* Submenu */}
+                    <SidebarMenu>
+                      {item.submenus?.map((submenu) => (
+                        <SidebarMenuItem key={submenu.title}>
+                          <SidebarMenuButton
+                            onClick={() => onPageChange(submenu.url)}
+                            isActive={currentPage === submenu.url}
+                            className={`ml-7 text-primary-100 hover:bg-primary-800 transition-colors ${currentPage === submenu.url ? 'bg-primary-800 font-semibold' : ''}`}
+                          >
+                            <span>- {submenu.title}</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarMenuItem>
+                ) : (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      onClick={() => onPageChange(item.url)}
+                      isActive={currentPage === item.url}
+                      className={`text-white hover:bg-primary-600 transition-colors ${currentPage === item.url ? 'bg-primary-700 font-semibold' : ''}`}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
