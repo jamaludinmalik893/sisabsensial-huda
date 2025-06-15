@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -81,8 +80,7 @@ const BulkNilaiTable: React.FC<BulkNilaiTableProps> = ({
                     title="Lihat profil siswa"
                   >
                     <StudentAvatarCell siswa={{
-                      nama_lengkap: siswa.nama_lengkap,
-                      foto_url: siswa.foto_url
+                      ...siswa // pipeline sudah include foto_url & all field
                     }} />
                   </div>
                 </TableCell>

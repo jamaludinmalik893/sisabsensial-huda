@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProfilSiswaPopup from '../ProfilSiswaPopup';
@@ -39,7 +40,10 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
   const [judulTugas, setJudulTugas] = React.useState('');
   const [tanggalTugasDibuat, setTanggalTugasDibuat] = React.useState(new Date().toISOString().split('T')[0]);
 
-  // Gunakan hook profil siswa agar tidak duplikasi logic
+  // Pastikan pipeline konversi di sini (ALL pipeline siswaList di-convert lsg di state)
+  const fullSiswaList = React.useMemo(() => siswaList.map(s => convertSiswaToFullSiswa(s)), [siswaList]);
+
+  // Hook popup, student yang diterima/dikirim pipeline HARUS sudah 'full'
   const {
     profilOpen,
     selectedSiswa,
@@ -65,8 +69,6 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
     await onBulkSubmit(selectedMapel, selectedJenisNilai, judulTugas, tanggalTugasDibuat);
   };
 
-  // Pastikan siswaList sudah dikonversi lengkap
-  const fullSiswaList = siswaList.map(s => convertSiswaToFullSiswa(s));
   const canShowTable = selectedMapel && selectedKelas && selectedJenisNilai && judulTugas && fullSiswaList.length > 0;
 
   return (
@@ -94,6 +96,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
             setTanggalTugasDibuat={setTanggalTugasDibuat}
           />
 
+          {/* TABLE: fullSiswaList sudah dipastikan Siswa Full. Pass as is, dan onSiswaClick juga forward as is */}
           <BulkNilaiTable
             siswaList={fullSiswaList}
             bulkValues={bulkValues}
@@ -119,6 +122,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
           )}
         </CardContent>
       </Card>
+      {/* Popup profil siswa, pipeline full data */}
       <ProfilSiswaPopup
         siswa={selectedSiswa}
         isOpen={profilOpen}
@@ -129,3 +133,4 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
 };
 
 export default BulkNilaiEntry;
+
