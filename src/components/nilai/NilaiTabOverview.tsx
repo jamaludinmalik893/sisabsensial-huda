@@ -4,7 +4,7 @@ import NilaiOverviewTable from "./NilaiOverviewTable";
 import { useNilai } from "./NilaiContext";
 
 const NilaiTabOverview: React.FC = () => {
-  const { nilaiList, mapelList, kelasList, loading, updateNilai } = useNilai();
+  const { nilaiList, mapelList, kelasList, loading, updateNilai, deleteNilai } = useNilai();
 
   // DEBUG: log isi nilaiList yang di-fetch dari Supabase
   console.log("NilaiTabOverview nilaiList:", nilaiList);
@@ -20,9 +20,11 @@ const NilaiTabOverview: React.FC = () => {
         mapelList={mapelList}
         kelasList={kelasList}
         onUpdateNilai={updateNilai}
+        deleteNilai={deleteNilai}
       />
     </>
   );
 };
 
 export default NilaiTabOverview;
+
