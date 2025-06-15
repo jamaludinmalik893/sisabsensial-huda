@@ -192,20 +192,6 @@ const Dashboard: React.FC<DashboardProps> = ({ userSession }) => {
             </div>
           </div>
         </div>
-        <div className="bg-gradient-to-r from-emerald-100 via-green-50 to-white rounded-lg p-6 shadow overflow-hidden">
-          <div className="flex items-center mb-4 gap-3">
-            <img
-              src="/placeholder.svg"
-              alt="Guru Teraktif"
-              className="w-16 h-16 rounded-full border-2 border-green-400"
-            />
-            <div>
-              <p className="text-lg font-semibold text-gray-800">Guru Teraktif Bulan Ini</p>
-              <p className="text-green-700 font-bold">Sri Mulyati, S.Kom</p>
-              <p className="text-gray-600 text-sm">Jurnal dibuat: <span className="font-medium">28</span></p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Detail Kehadiran & Aktivitas */}
