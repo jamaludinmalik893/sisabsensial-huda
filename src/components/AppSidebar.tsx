@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Sidebar,
@@ -39,13 +40,19 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
   userSession,
   onLogout 
 }) => {
-  // Tambahkan state kontrol expand/collapse sub-menu Nilai
+  // Expand/collapse state for submenus
   const [nilaiOpen, setNilaiOpen] = useState(() => currentPage === "nilai" || currentPage.startsWith("nilai-"));
+  const [absensiOpen, setAbsensiOpen] = useState(() =>
+    currentPage === "absensi" || currentPage === "riwayat-absensi"
+  );
 
-  // Pastikan expand saat berada di salah satu submenu
+  // Expand/collapse logic based on currentPage
   React.useEffect(() => {
     if (currentPage === "nilai" || currentPage.startsWith("nilai-")) {
       setNilaiOpen(true);
+    }
+    if (currentPage === "absensi" || currentPage === "riwayat-absensi") {
+      setAbsensiOpen(true);
     }
   }, [currentPage]);
 
@@ -59,17 +66,21 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
       title: "Absensi",
       url: "absensi",
       icon: Calendar,
-    },
-    {
-      title: "Riwayat Absensi",
-      url: "riwayat-absensi",
-      icon: ClipboardList,
+      submenus: [
+        {
+          title: "Absensi Harian",
+          url: "absensi",
+        },
+        {
+          title: "Riwayat Absensi",
+          url: "riwayat-absensi",
+        },
+      ],
     },
     {
       title: "Nilai",
       url: "nilai",
       icon: FileText,
-      // Kita tambahkan dua submenu
       submenus: [
         {
           title: "Rekapitulasi Nilai",
@@ -164,9 +175,13 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       onClick={() => setNilaiOpen((prev) => !prev)}
-                      isActive={currentPage === item.url || currentPage.startsWith("nilai-")}
+                      isActive={
+                        currentPage === item.url ||
+                        currentPage.startsWith("nilai-")
+                      }
                       className={`flex items-center text-white hover:bg-primary-600 transition-colors ${
-                        currentPage === item.url || currentPage.startsWith("nilai-")
+                        currentPage === item.url ||
+                        currentPage.startsWith("nilai-")
                           ? 'bg-primary-700 font-semibold'
                           : ''
                       }`}
@@ -184,6 +199,48 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                     </SidebarMenuButton>
                     {/* Submenu tampil hanya jika nilaiOpen == true */}
                     {nilaiOpen && (
+                      <SidebarMenu>
+                        {item.submenus?.map((submenu) => (
+                          <SidebarMenuItem key={submenu.title}>
+                            <SidebarMenuButton
+                              onClick={() => onPageChange(submenu.url)}
+                              isActive={currentPage === submenu.url}
+                              className={`ml-7 text-primary-100 hover:bg-primary-800 transition-colors ${
+                                currentPage === submenu.url ? 'bg-primary-800 font-semibold' : ''
+                              }`}
+                            >
+                              <span>- {submenu.title}</span>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
+                    )}
+                  </SidebarMenuItem>
+                ) : item.title === "Absensi" ? (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      onClick={() => setAbsensiOpen((prev) => !prev)}
+                      isActive={
+                        currentPage === "absensi" || currentPage === "riwayat-absensi"
+                      }
+                      className={`flex items-center text-white hover:bg-primary-600 transition-colors ${
+                        currentPage === "absensi" || currentPage === "riwayat-absensi"
+                          ? 'bg-primary-700 font-semibold'
+                          : ''
+                      }`}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.title}</span>
+                      <svg
+                        className={`ml-auto h-4 w-4 transform duration-150 ${absensiOpen ? "rotate-90" : ""}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </SidebarMenuButton>
+                    {absensiOpen && (
                       <SidebarMenu>
                         {item.submenus?.map((submenu) => (
                           <SidebarMenuItem key={submenu.title}>
@@ -299,3 +356,4 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
 };
 
 export default AppSidebar;
+
