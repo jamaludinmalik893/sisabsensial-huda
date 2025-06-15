@@ -1,13 +1,9 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Save } from 'lucide-react';
 import ProfilSiswaPopup from '../ProfilSiswaPopup';
-import StudentAvatarCell from './StudentAvatarCell';
+import BulkNilaiHeadForm from './BulkNilaiHeadForm';
+import BulkNilaiTable from './BulkNilaiTable';
 
 interface MataPelajaran {
   id_mapel: string;
@@ -25,6 +21,16 @@ interface Siswa {
   nisn: string;
   foto_url?: string;
   jenis_kelamin?: string;
+  tanggal_lahir?: string;
+  tempat_lahir?: string;
+  alamat?: string;
+  nomor_telepon?: string;
+  nomor_telepon_siswa?: string;
+  nama_orang_tua?: string;
+  nomor_telepon_orang_tua?: string;
+  tahun_masuk?: number;
+  kelas?: any;
+  guru_wali?: any;
 }
 
 interface BulkNilaiEntry {
@@ -69,13 +75,8 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
     }
   };
 
-  const handleBulkValueChange = (siswaId: string, field: 'skor' | 'catatan', value: string) => {
-    const currentEntry = bulkValues[siswaId] || { id_siswa: siswaId, skor: 0, catatan: '' };
-    const updatedEntry = {
-      ...currentEntry,
-      [field]: field === 'skor' ? parseFloat(value) || 0 : value
-    };
-    onBulkValueChange(siswaId, updatedEntry);
+  const handleBulkValueChange = (siswaId: string, entry: BulkNilaiEntry) => {
+    onBulkValueChange(siswaId, entry);
   };
 
   const handleSubmit = async () => {
@@ -87,6 +88,28 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
 
   const canShowTable = selectedMapel && selectedKelas && selectedJenisNilai && judulTugas && siswaList.length > 0;
 
+  // Gabungkan properti detail untuk profil siswa, tambahkan default value agar selalu sesuai type yang dibutuhkan
+  const getSelectedSiswaFull = (siswa: Siswa | null): Siswa | null => {
+    if (!siswa) return null;
+    return {
+      id_siswa: siswa.id_siswa,
+      nisn: siswa.nisn,
+      nama_lengkap: siswa.nama_lengkap,
+      jenis_kelamin: siswa.jenis_kelamin || "",
+      tanggal_lahir: (siswa as any).tanggal_lahir || "",
+      tempat_lahir: (siswa as any).tempat_lahir || "",
+      alamat: (siswa as any).alamat || "",
+      nomor_telepon: (siswa as any).nomor_telepon || "",
+      nomor_telepon_siswa: (siswa as any).nomor_telepon_siswa || "",
+      nama_orang_tua: (siswa as any).nama_orang_tua || "",
+      nomor_telepon_orang_tua: (siswa as any).nomor_telepon_orang_tua || "",
+      tahun_masuk: (siswa as any).tahun_masuk || 0,
+      foto_url: siswa.foto_url,
+      kelas: (siswa as any).kelas || undefined,
+      guru_wali: (siswa as any).guru_wali || undefined
+    };
+  };
+
   return (
     <>
       <Card>
@@ -97,159 +120,35 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Mata Pelajaran *</label>
-              <Select value={selectedMapel} onValueChange={setSelectedMapel}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih mata pelajaran" />
-                </SelectTrigger>
-                <SelectContent>
-                  {mapelList.map((mapel) => (
-                    <SelectItem key={mapel.id_mapel} value={mapel.id_mapel}>
-                      {mapel.nama_mapel}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <BulkNilaiHeadForm
+            mapelList={mapelList}
+            kelasList={kelasList}
+            selectedMapel={selectedMapel}
+            setSelectedMapel={setSelectedMapel}
+            selectedKelas={selectedKelas}
+            handleKelasChange={handleKelasChange}
+            selectedJenisNilai={selectedJenisNilai}
+            setSelectedJenisNilai={setSelectedJenisNilai}
+            judulTugas={judulTugas}
+            setJudulTugas={setJudulTugas}
+            tanggalTugasDibuat={tanggalTugasDibuat}
+            setTanggalTugasDibuat={setTanggalTugasDibuat}
+          />
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Kelas *</label>
-              <Select value={selectedKelas} onValueChange={handleKelasChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih kelas" />
-                </SelectTrigger>
-                <SelectContent>
-                  {kelasList.map((kelas) => (
-                    <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
-                      {kelas.nama_kelas}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Jenis Nilai *</label>
-              <Select value={selectedJenisNilai} onValueChange={setSelectedJenisNilai}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih jenis nilai" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Tugas Harian">Tugas Harian</SelectItem>
-                  <SelectItem value="Quiz">Quiz</SelectItem>
-                  <SelectItem value="UTS">UTS</SelectItem>
-                  <SelectItem value="UAS">UAS</SelectItem>
-                  <SelectItem value="Praktikum">Praktikum</SelectItem>
-                  <SelectItem value="Proyek">Proyek</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Judul Tugas *</label>
-              <Input
-                value={judulTugas}
-                onChange={(e) => setJudulTugas(e.target.value)}
-                placeholder="Masukkan judul tugas"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Tanggal Tugas Dibuat</label>
-              <Input
-                type="date"
-                value={tanggalTugasDibuat}
-                onChange={(e) => setTanggalTugasDibuat(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {canShowTable && (
-            <>
-              <div className="border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50">
-                      <TableHead className="w-12">No</TableHead>
-                      <TableHead className="w-16 text-center">Foto</TableHead>
-                      <TableHead>Nama Siswa</TableHead>
-                      <TableHead className="w-24">Nilai (0-100)</TableHead>
-                      <TableHead className="w-48">Catatan</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {siswaList.map((siswa, index) => (
-                      <TableRow key={siswa.id_siswa}>
-                        <TableCell className="font-medium">{index + 1}</TableCell>
-                        <TableCell className="text-center">
-                          <div
-                            className="inline-block cursor-pointer"
-                            onClick={() => {
-                              setSelectedSiswa(siswa);
-                              setProfilOpen(true);
-                            }}
-                            title="Lihat profil siswa"
-                          >
-                            {/* ONLY pass expected props! */}
-                            <StudentAvatarCell siswa={{
-                              nama_lengkap: siswa.nama_lengkap,
-                              foto_url: siswa.foto_url
-                            }} />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <button
-                            type="button"
-                            className="text-left hover:text-blue-600 hover:underline transition-colors"
-                            onClick={() => {
-                              setSelectedSiswa(siswa);
-                              setProfilOpen(true);
-                            }}
-                          >
-                            {siswa.nama_lengkap}
-                          </button>
-                          <div className="text-xs text-gray-500 mt-0.5">{siswa.nisn}</div>
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={bulkValues[siswa.id_siswa]?.skor || ''}
-                            onChange={(e) => handleBulkValueChange(siswa.id_siswa, 'skor', e.target.value)}
-                            placeholder="0-100"
-                            className="w-full"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Textarea
-                            value={bulkValues[siswa.id_siswa]?.catatan || ''}
-                            onChange={(e) => handleBulkValueChange(siswa.id_siswa, 'catatan', e.target.value)}
-                            placeholder="Catatan (opsional)"
-                            className="w-full min-h-[40px] resize-none"
-                            rows={2}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <div className="flex justify-end">
-                <Button 
-                  onClick={handleSubmit} 
-                  className="flex items-center gap-2"
-                  disabled={!judulTugas || !selectedMapel || !selectedJenisNilai}
-                >
-                  <Save className="h-4 w-4" />
-                  Simpan Semua Nilai
-                </Button>
-              </div>
-            </>
-          )}
+          <BulkNilaiTable
+            siswaList={siswaList}
+            bulkValues={bulkValues}
+            onBulkValueChange={handleBulkValueChange}
+            canShowTable={canShowTable}
+            onSiswaClick={(siswa) => {
+              setSelectedSiswa(siswa);
+              setProfilOpen(true);
+            }}
+            onSubmit={handleSubmit}
+            judulTugas={judulTugas}
+            selectedMapel={selectedMapel}
+            selectedJenisNilai={selectedJenisNilai}
+          />
 
           {selectedMapel && selectedKelas && selectedJenisNilai && !judulTugas && (
             <div className="text-center py-8 text-gray-500">
@@ -265,23 +164,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
         </CardContent>
       </Card>
       <ProfilSiswaPopup
-        siswa={selectedSiswa ? {
-          id_siswa: selectedSiswa.id_siswa,
-          nisn: selectedSiswa.nisn,
-          nama_lengkap: selectedSiswa.nama_lengkap,
-          jenis_kelamin: selectedSiswa.jenis_kelamin || "",
-          tanggal_lahir: (selectedSiswa as any).tanggal_lahir || "",
-          tempat_lahir: (selectedSiswa as any).tempat_lahir || "",
-          alamat: (selectedSiswa as any).alamat || "",
-          nomor_telepon: (selectedSiswa as any).nomor_telepon || "",
-          nomor_telepon_siswa: (selectedSiswa as any).nomor_telepon_siswa || "",
-          nama_orang_tua: (selectedSiswa as any).nama_orang_tua || "",
-          nomor_telepon_orang_tua: (selectedSiswa as any).nomor_telepon_orang_tua || "",
-          tahun_masuk: (selectedSiswa as any).tahun_masuk || 0,
-          foto_url: selectedSiswa.foto_url,
-          kelas: (selectedSiswa as any).kelas || undefined,
-          guru_wali: (selectedSiswa as any).guru_wali || undefined,
-        } : null}
+        siswa={getSelectedSiswaFull(selectedSiswa)}
         isOpen={profilOpen}
         onClose={() => { setProfilOpen(false); setSelectedSiswa(null); }}
       />
