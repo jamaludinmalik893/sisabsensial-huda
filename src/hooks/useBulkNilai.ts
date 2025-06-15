@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
@@ -73,7 +74,7 @@ export const useBulkNilai = (userSession: UserSession) => {
           tanggal_tugas_dibuat: tanggalTugasDibuat,
           tanggal_nilai: new Date().toISOString().split('T')[0],
           catatan: catatan,
-          id_jurnal: null,
+          // id_jurnal sudah dihapus, tidak dikirim ke supabase
         };
       });
 
