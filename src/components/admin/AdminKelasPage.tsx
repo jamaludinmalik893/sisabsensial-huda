@@ -16,8 +16,12 @@ interface AdminKelasPageProps {
   userSession: UserSession;
 }
 
+interface KelasWithCount extends Kelas {
+  jumlah_siswa?: number;
+}
+
 const AdminKelasPage: React.FC<AdminKelasPageProps> = ({ userSession }) => {
-  const [kelasList, setKelasList] = useState<(Kelas & { jumlah_siswa?: number })[]>([]);
+  const [kelasList, setKelasList] = useState<KelasWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -47,10 +51,14 @@ const AdminKelasPage: React.FC<AdminKelasPageProps> = ({ userSession }) => {
 
       if (kelasError) throw kelasError;
 
-      // Transform data to include student count
-      const kelasWithCount = kelasData?.map(kelas => ({
-        ...kelas,
-        jumlah_siswa: kelas.siswa?.[0]?.count || 0
+      // Transform data to include student count properly
+      const kelasWithCount: KelasWithCount[] = kelasData?.map(kelas => ({
+        id_kelas: kelas.id_kelas,
+        nama_kelas: kelas.nama_kelas,
+        logo_url: kelas.logo_url,
+        created_at: kelas.created_at,
+        updated_at: kelas.updated_at,
+        jumlah_siswa: Array.isArray(kelas.siswa) && kelas.siswa.length > 0 ? kelas.siswa[0].count : 0
       })) || [];
 
       setKelasList(kelasWithCount);
@@ -110,7 +118,7 @@ const AdminKelasPage: React.FC<AdminKelasPageProps> = ({ userSession }) => {
     }
   };
 
-  const handleEdit = (kelas: Kelas) => {
+  const handleEdit = (kelas: KelasWithCount) => {
     setEditingKelas(kelas);
     setFormData({
       nama_kelas: kelas.nama_kelas,

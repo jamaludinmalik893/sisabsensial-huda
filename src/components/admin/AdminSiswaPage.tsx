@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,8 +16,13 @@ interface AdminSiswaPageProps {
   userSession: UserSession;
 }
 
+interface SiswaWithRelations extends Siswa {
+  kelas?: { nama_kelas: string };
+  guru_wali?: { nama_lengkap: string };
+}
+
 const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
-  const [siswaList, setSiswaList] = useState<Siswa[]>([]);
+  const [siswaList, setSiswaList] = useState<SiswaWithRelations[]>([]);
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [guruList, setGuruList] = useState<Guru[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,9 +82,23 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
 
       if (guruError) throw guruError;
 
-      setSiswaList(siswaData || []);
+      // Transform siswa data to match our types
+      const transformedSiswaData = siswaData?.map(siswa => ({
+        ...siswa,
+        jenis_kelamin: siswa.jenis_kelamin as 'Laki-laki' | 'Perempuan',
+        kelas: siswa.kelas,
+        guru_wali: siswa.guru_wali
+      })) || [];
+
+      // Transform guru data to match our types
+      const transformedGuruData = guruData?.map(guru => ({
+        ...guru,
+        status: guru.status as 'admin' | 'guru'
+      })) || [];
+
+      setSiswaList(transformedSiswaData);
       setKelasList(kelasData || []);
-      setGuruList(guruData || []);
+      setGuruList(transformedGuruData);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -137,7 +155,7 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
     }
   };
 
-  const handleEdit = (siswa: Siswa) => {
+  const handleEdit = (siswa: SiswaWithRelations) => {
     setEditingSiswa(siswa);
     setFormData({
       nisn: siswa.nisn,

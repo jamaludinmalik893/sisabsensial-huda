@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,8 +16,12 @@ interface AdminGuruPageProps {
   userSession: UserSession;
 }
 
+interface GuruWithKelas extends Guru {
+  kelas_wali?: { nama_kelas: string };
+}
+
 const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
-  const [guruList, setGuruList] = useState<Guru[]>([]);
+  const [guruList, setGuruList] = useState<GuruWithKelas[]>([]);
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [mataPelajaranList, setMataPelajaranList] = useState<MataPelajaran[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +76,14 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
 
       if (mapelError) throw mapelError;
 
-      setGuruList(guruData || []);
+      // Transform guru data to match our types
+      const transformedGuruData = guruData?.map(guru => ({
+        ...guru,
+        status: guru.status as 'admin' | 'guru',
+        kelas_wali: guru.kelas_wali
+      })) || [];
+
+      setGuruList(transformedGuruData);
       setKelasList(kelasData || []);
       setMataPelajaranList(mapelData || []);
     } catch (error) {
@@ -145,7 +155,7 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
     }
   };
 
-  const handleEdit = (guru: Guru) => {
+  const handleEdit = (guru: GuruWithKelas) => {
     setEditingGuru(guru);
     setFormData({
       nip: guru.nip,
