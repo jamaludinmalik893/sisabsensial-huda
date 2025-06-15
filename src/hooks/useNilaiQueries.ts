@@ -120,7 +120,7 @@ export function useNilaiQueries(userSession: UserSession) {
           id_kelas,
           nama_kelas
         ),
-        guru_wali:guru_wali (
+        guru_wali:guru (
           id_guru,
           nama_lengkap
         )
