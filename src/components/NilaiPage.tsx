@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { UserSession } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -31,10 +32,16 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
     updateNilai
   } = useNilaiData(userSession);
 
-  // Filter nilai based on selected filters
+  // Perbaikan: filter berdasarkan ID, bukan nama!
   const filteredNilai = nilaiList.filter(nilai => {
-    const matchMapel = selectedMapel === 'all' || nilai.mata_pelajaran.nama_mapel === mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel;
-    const matchKelas = selectedKelas === 'all' || (nilai.siswa.kelas && nilai.siswa.kelas.nama_kelas === kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas);
+    const matchMapel = selectedMapel === 'all' || 
+      nilai.mata_pelajaran?.id_mapel === selectedMapel ||
+      nilai.id_mapel === selectedMapel; // fallback jika id_mapel ada di objek utama
+
+    const matchKelas = selectedKelas === 'all' || 
+      nilai.siswa?.kelas?.id_kelas === selectedKelas || 
+      nilai.siswa?.id_kelas === selectedKelas; // fallback jika id_kelas ada di objek siswa
+
     const matchJenis = selectedJenisNilai === 'all' || nilai.jenis_nilai === selectedJenisNilai;
     return matchMapel && matchKelas && matchJenis;
   });
@@ -91,7 +98,7 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
             siswaList={siswaList}
             mapelList={mapelList}
             kelasList={kelasList}
-            bulkValues={convertedBulkValues}
+            bulkValues={valuesToBulkNilaiEntry(bulkValues)}
             onLoadSiswa={loadSiswaByKelas}
             onBulkValueChange={handleBulkEntryChange}
             onBulkSubmit={handleBulkSubmit}
