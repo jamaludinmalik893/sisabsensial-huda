@@ -174,8 +174,14 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
     }
   };
 
+  // --- UPDATE HERE: Filter jurnal untuk hanya jurnal dari mapel yang benar-benar diampu guru login ---
   const applyFilters = () => {
-    let filtered = [...jurnalList];
+    // Daftar id_mapel yang diampu oleh guru
+    const guruMapelIds = mapelList.map(mapel => mapel.id_mapel);
+    // Filter: hanya jurnal dari mapel yang benar-benar diampu (untuk antisipasi ada data jurnal salah mapel/id_guru).
+    let filtered = [...jurnalList].filter(jurnal =>
+      guruMapelIds.includes((jurnal as any).id_mapel)
+    );
 
     // Filter by kelas
     if (filters.kelas !== 'all') {
