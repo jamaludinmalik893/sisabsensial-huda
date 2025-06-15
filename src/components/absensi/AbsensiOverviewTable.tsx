@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -46,6 +45,9 @@ interface RiwayatAbsensi {
     id_jurnal: string;
     tanggal_pelajaran: string;
     judul_materi: string;
+    materi_diajarkan?: string;
+    waktu_mulai?: string;
+    waktu_selesai?: string;
     mata_pelajaran: {
       nama_mapel: string;
     };

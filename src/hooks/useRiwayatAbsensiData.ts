@@ -32,6 +32,9 @@ interface RiwayatAbsensi {
     id_jurnal: string;
     tanggal_pelajaran: string;
     judul_materi: string;
+    materi_diajarkan?: string;
+    waktu_mulai?: string;
+    waktu_selesai?: string;
     mata_pelajaran: {
       nama_mapel: string;
     };
@@ -141,6 +144,9 @@ export const useRiwayatAbsensiData = (userSession: UserSession) => {
             id_jurnal,
             tanggal_pelajaran,
             judul_materi,
+            materi_diajarkan,
+            waktu_mulai,
+            waktu_selesai,
             mata_pelajaran!inner(nama_mapel),
             kelas!inner(nama_kelas),
             id_guru
@@ -172,6 +178,6 @@ export const useRiwayatAbsensiData = (userSession: UserSession) => {
     loading,
     setSelectedMapel,
     setSelectedKelas,
-    refreshData // <--- new
+    refreshData
   };
 };
