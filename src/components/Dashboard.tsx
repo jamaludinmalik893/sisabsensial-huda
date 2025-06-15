@@ -176,21 +176,26 @@ const Dashboard: React.FC<DashboardProps> = ({ userSession }) => {
         <StatistikAbsensiChart />
       </div>
 
-      {/* Info Siswa & Guru Terbaik */}
+      {/* Info Siswa Terbaik & Motivasi */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gradient-to-r from-blue-100 via-blue-50 to-white rounded-lg p-6 shadow overflow-hidden">
-          <div className="flex items-center mb-4 gap-3">
-            <img
-              src="/placeholder.svg"
-              alt="Siswa Terbaik"
-              className="w-16 h-16 rounded-full border-2 border-blue-400"
-            />
-            <div>
-              <p className="text-lg font-semibold text-gray-800">Siswa Terbaik Bulan Ini</p>
-              <p className="text-blue-600 font-bold">Ahmad Rizki Pratama</p>
-              <p className="text-gray-600 text-sm">Nilai Rata-rata: <span className="font-medium">91</span></p>
-            </div>
+        {/* Siswa Terbaik */}
+        <div className="bg-gradient-to-r from-blue-100 via-blue-50 to-white rounded-lg p-6 shadow overflow-hidden flex items-center">
+          <img
+            src="/placeholder.svg"
+            alt="Siswa Terbaik"
+            className="w-16 h-16 rounded-full border-2 border-blue-400 mr-4"
+          />
+          <div>
+            <p className="text-lg font-semibold text-gray-800">Siswa Terbaik Bulan Ini</p>
+            <p className="text-blue-600 font-bold">Ahmad Rizki Pratama</p>
+            <p className="text-gray-600 text-sm">Nilai Rata-rata: <span className="font-medium">91</span></p>
           </div>
+        </div>
+        {/* Panel Motivasi/Filler */}
+        <div className="bg-gradient-to-r from-emerald-100 via-green-50 to-white rounded-lg p-6 shadow flex flex-col justify-center items-center text-center">
+          <p className="text-2xl md:text-3xl font-bold text-emerald-700 mb-2">🌟</p>
+          <p className="text-md font-semibold text-gray-800 mb-1">Motivasi Hari Ini</p>
+          <p className="text-gray-600 text-sm italic">"Pendidikan adalah senjata paling ampuh untuk mengubah dunia." <br /> <span className="text-xs text-right block mt-1">- Nelson Mandela</span></p>
         </div>
       </div>
 
