@@ -30,6 +30,8 @@ export const useNilaiQueries = (userSession: UserSession) => {
   };
 
   const loadNilai = async (): Promise<Nilai[]> => {
+    console.log('DEBUG loadNilai: userSession.guru.id_guru:', userSession.guru.id_guru);
+
     const { data, error } = await supabase
       .from('nilai')
       .select(`
@@ -67,6 +69,8 @@ export const useNilaiQueries = (userSession: UserSession) => {
       `)
       .eq('jurnal_harian.id_guru', userSession.guru.id_guru)
       .order('tanggal_nilai', { ascending: false });
+
+    console.log("DEBUG loadNilai: hasil Supabase query nilai:", { data, error });
 
     if (error) throw error;
     return data || [];
