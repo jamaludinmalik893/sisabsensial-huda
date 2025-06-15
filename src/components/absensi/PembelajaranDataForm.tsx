@@ -64,30 +64,32 @@ const PembelajaranDataForm: React.FC<PembelajaranDataFormProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Data Pembelajaran</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Form Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* DatePicker */}
-          <div>
-            <Label htmlFor="tanggal-pelajaran">Tanggal Pembelajaran</Label>
+        <div className="flex items-center justify-between">
+          <CardTitle>Data Pembelajaran</CardTitle>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="tanggal-pelajaran" className="text-sm font-medium whitespace-nowrap">
+              Tanggal Pembelajaran:
+            </Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-full md:w-[240px] mt-1 justify-start text-left font-normal",
+                    "w-[200px] justify-start text-left font-normal",
                     !selectedDate && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {selectedDate
-                    ? selectedDate.toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric" })
+                    ? selectedDate.toLocaleDateString("id-ID", { 
+                        day: "2-digit", 
+                        month: "short", 
+                        year: "numeric" 
+                      })
                     : <span>Pilih tanggal</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0" align="end">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
@@ -104,9 +106,13 @@ const PembelajaranDataForm: React.FC<PembelajaranDataFormProps> = ({
               </PopoverContent>
             </Popover>
           </div>
-
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Grid untuk input utama */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Kelas */}
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="kelas">Kelas</Label>
             <Select value={selectedKelas} onValueChange={onKelasChange}>
               <SelectTrigger id="kelas">
@@ -123,7 +129,7 @@ const PembelajaranDataForm: React.FC<PembelajaranDataFormProps> = ({
           </div>
 
           {/* Mapel */}
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="mapel">Mata Pelajaran</Label>
             <Select value={selectedMapel} onValueChange={onMapelChange}>
               <SelectTrigger id="mapel">
@@ -139,47 +145,54 @@ const PembelajaranDataForm: React.FC<PembelajaranDataFormProps> = ({
             </Select>
           </div>
 
-          {/* Waktu Mulai */}
-          <div>
-            <Label htmlFor="waktu-mulai">Waktu Mulai</Label>
-            <Input
-              id="waktu-mulai"
-              type="time"
-              value={waktuMulai}
-              onChange={(e) => onWaktuMulaiChange(e.target.value)}
-            />
-          </div>
-
-          {/* Waktu Selesai */}
-          <div>
-            <Label htmlFor="waktu-selesai">Waktu Selesai</Label>
-            <Input
-              id="waktu-selesai"
-              type="time"
-              value={waktuSelesai}
-              onChange={(e) => onWaktuSelesaiChange(e.target.value)}
-            />
+          {/* Waktu - dalam satu kolom dengan flex */}
+          <div className="space-y-2">
+            <Label>Waktu Pembelajaran</Label>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Input
+                  id="waktu-mulai"
+                  type="time"
+                  value={waktuMulai}
+                  onChange={(e) => onWaktuMulaiChange(e.target.value)}
+                  placeholder="Mulai"
+                />
+              </div>
+              <div className="flex items-center px-2 text-sm text-gray-500">s/d</div>
+              <div className="flex-1">
+                <Input
+                  id="waktu-selesai"
+                  type="time"
+                  value={waktuSelesai}
+                  onChange={(e) => onWaktuSelesaiChange(e.target.value)}
+                  placeholder="Selesai"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
-        <div>
+        {/* Judul Materi */}
+        <div className="space-y-2">
           <Label htmlFor="judul-materi">Judul Materi</Label>
           <Input
             id="judul-materi"
-            placeholder="Masukkan judul materi"
+            placeholder="Masukkan judul materi pembelajaran"
             value={judulMateri}
             onChange={(e) => onJudulMateriChange(e.target.value)}
           />
         </div>
 
-        <div>
+        {/* Materi yang Diajarkan */}
+        <div className="space-y-2">
           <Label htmlFor="materi-diajarkan">Materi yang Diajarkan</Label>
           <Textarea
             id="materi-diajarkan"
-            placeholder="Masukkan materi yang diajarkan"
+            placeholder="Deskripsikan materi yang diajarkan secara detail..."
             value={materiDiajarkan}
             onChange={(e) => onMateriDiajarkanChange(e.target.value)}
             rows={4}
+            className="resize-none"
           />
         </div>
       </CardContent>
@@ -188,4 +201,3 @@ const PembelajaranDataForm: React.FC<PembelajaranDataFormProps> = ({
 };
 
 export default PembelajaranDataForm;
-
