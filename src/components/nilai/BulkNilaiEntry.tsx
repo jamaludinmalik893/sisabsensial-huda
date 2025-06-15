@@ -1,39 +1,14 @@
 
+// DAFTAR IMPORTS
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProfilSiswaPopup from '../ProfilSiswaPopup';
 import BulkNilaiHeadForm from './BulkNilaiHeadForm';
 import BulkNilaiTable from './BulkNilaiTable';
+import type { Siswa, MataPelajaran, Kelas } from '@/types/index';
 
-interface MataPelajaran {
-  id_mapel: string;
-  nama_mapel: string;
-}
-
-interface Kelas {
-  id_kelas: string;
-  nama_kelas: string;
-}
-
-interface Siswa {
-  id_siswa: string;
-  nama_lengkap: string;
-  nisn: string;
-  foto_url?: string;
-  jenis_kelamin?: string;
-  tanggal_lahir?: string;
-  tempat_lahir?: string;
-  alamat?: string;
-  nomor_telepon?: string;
-  nomor_telepon_siswa?: string;
-  nama_orang_tua?: string;
-  nomor_telepon_orang_tua?: string;
-  tahun_masuk?: number;
-  kelas?: any;
-  guru_wali?: any;
-}
-
-interface BulkNilaiEntry {
+// Tipe Data Entry Nilai
+export interface BulkNilaiEntry {
   id_siswa: string;
   skor: number;
   catatan: string;
@@ -88,25 +63,30 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
 
   const canShowTable = selectedMapel && selectedKelas && selectedJenisNilai && judulTugas && siswaList.length > 0;
 
-  // Gabungkan properti detail untuk profil siswa, tambahkan default value agar selalu sesuai type yang dibutuhkan
+  // Konstruksi data sesuai tipe Siswa
   const getSelectedSiswaFull = (siswa: Siswa | null): Siswa | null => {
     if (!siswa) return null;
+    // Pastikan semua properti wajib ada
     return {
       id_siswa: siswa.id_siswa,
       nisn: siswa.nisn,
       nama_lengkap: siswa.nama_lengkap,
-      jenis_kelamin: siswa.jenis_kelamin || "",
-      tanggal_lahir: (siswa as any).tanggal_lahir || "",
-      tempat_lahir: (siswa as any).tempat_lahir || "",
-      alamat: (siswa as any).alamat || "",
-      nomor_telepon: (siswa as any).nomor_telepon || "",
-      nomor_telepon_siswa: (siswa as any).nomor_telepon_siswa || "",
-      nama_orang_tua: (siswa as any).nama_orang_tua || "",
-      nomor_telepon_orang_tua: (siswa as any).nomor_telepon_orang_tua || "",
-      tahun_masuk: (siswa as any).tahun_masuk || 0,
+      jenis_kelamin: siswa.jenis_kelamin ?? '',
+      tanggal_lahir: siswa.tanggal_lahir ?? '',
+      tempat_lahir: siswa.tempat_lahir ?? '',
+      alamat: siswa.alamat ?? '',
+      nomor_telepon: siswa.nomor_telepon ?? '',
+      nama_orang_tua: siswa.nama_orang_tua ?? '',
+      nomor_telepon_orang_tua: siswa.nomor_telepon_orang_tua ?? '',
+      id_kelas: siswa.id_kelas ?? '',
+      id_guru_wali: siswa.id_guru_wali ?? '',
+      tahun_masuk: siswa.tahun_masuk ?? 0,
       foto_url: siswa.foto_url,
-      kelas: (siswa as any).kelas || undefined,
-      guru_wali: (siswa as any).guru_wali || undefined
+      created_at: siswa.created_at,
+      updated_at: siswa.updated_at,
+      kelas: siswa.kelas,
+      guru_wali: siswa.guru_wali,
+      nomor_telepon_siswa: (siswa as any).nomor_telepon_siswa ?? '',
     };
   };
 
@@ -139,9 +119,10 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
             siswaList={siswaList}
             bulkValues={bulkValues}
             onBulkValueChange={handleBulkValueChange}
-            canShowTable={canShowTable}
+            canShowTable={!!canShowTable}
             onSiswaClick={(siswa) => {
-              setSelectedSiswa(siswa);
+              // isi semua properti sesuai type
+              setSelectedSiswa(getSelectedSiswaFull(siswa));
               setProfilOpen(true);
             }}
             onSubmit={handleSubmit}
@@ -164,7 +145,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
         </CardContent>
       </Card>
       <ProfilSiswaPopup
-        siswa={getSelectedSiswaFull(selectedSiswa)}
+        siswa={selectedSiswa ? getSelectedSiswaFull(selectedSiswa) : null}
         isOpen={profilOpen}
         onClose={() => { setProfilOpen(false); setSelectedSiswa(null); }}
       />
