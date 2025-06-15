@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
@@ -125,7 +126,14 @@ const WaliKelasPage: React.FC<WaliKelasPageProps> = ({ userSession }) => {
         .order('nama_lengkap');
 
       if (error) throw error;
-      setSiswaKelas(data || []);
+      
+      // Type assertion to ensure jenis_kelamin is properly typed
+      const typedData = (data || []).map(siswa => ({
+        ...siswa,
+        jenis_kelamin: siswa.jenis_kelamin as 'Laki-laki' | 'Perempuan'
+      }));
+      
+      setSiswaKelas(typedData);
     } catch (error) {
       console.error('Error loading siswa kelas:', error);
     }
