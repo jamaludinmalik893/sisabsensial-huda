@@ -54,11 +54,26 @@ const ProfilePage: React.FC = () => {
           .select("*")
           .eq("id_siswa", session.guru.id_guru)
           .single();
+
         if (error) throw error;
-        setProfile(data || {});
+
+        if (data) {
+          // Coerce jenis_kelamin to the allowed type only
+          const allowedJenisKelamin = ["Laki-laki", "Perempuan"];
+          const safeJenisKelamin = allowedJenisKelamin.includes(data.jenis_kelamin)
+            ? (data.jenis_kelamin as "Laki-laki" | "Perempuan")
+            : undefined;
+          setProfile({
+            ...data,
+            jenis_kelamin: safeJenisKelamin,
+          });
+        } else {
+          setProfile({});
+        }
       }
     } catch (err) {
       toast({ title: "Gagal", description: "Tidak dapat mengambil data profil.", variant: "destructive" });
+      setProfile({});
     } finally {
       setLoading(false);
     }
@@ -76,20 +91,21 @@ const ProfilePage: React.FC = () => {
             alamat: profile.alamat,
             nomor_telepon: profile.nomor_telepon,
             foto_url: profile.foto_url,
-            email: newEmail || profile.email
+            email: newEmail || profile.email,
           })
           .eq("id_guru", session.guru.id_guru);
         if (error) throw error;
       } else if (session?.guru && session.guru.id_guru) {
-        // Siswa update
+        // Siswa update, nomor_telepon_siswa is on siswa table, fallback to nomor_telepon if missing
         const { error } = await supabase
           .from("siswa")
           .update({
             nama_lengkap: profile.nama_lengkap,
             alamat: profile.alamat,
-            nomor_telepon: profile.nomor_telepon_siswa || profile.nomor_telepon, // fallback
+            nomor_telepon: profile.nomor_telepon,
+            nomor_telepon_siswa: (profile as Siswa).nomor_telepon_siswa ?? profile.nomor_telepon ?? "",
             foto_url: profile.foto_url,
-            email: newEmail || profile.email
+            email: newEmail || profile.email,
           })
           .eq("id_siswa", session.guru.id_guru); // id_siswa dari session
         if (error) throw error;
@@ -152,10 +168,17 @@ const ProfilePage: React.FC = () => {
             <div className="space-y-2">
               <label className="text-sm font-medium">Nomor Telepon</label>
               <Input
-                value={profile.nomor_telepon ?? profile.nomor_telepon_siswa ?? ""}
-                onChange={(e) =>
-                  setProfile((p) => ({ ...p, nomor_telepon: e.target.value, nomor_telepon_siswa: e.target.value }))
-                }
+                value={profile.nomor_telepon ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setProfile((prev) => ({
+                    ...prev,
+                    nomor_telepon: v,
+                    ...(session?.isGuru
+                      ? {}
+                      : { nomor_telepon_siswa: v }),
+                  }));
+                }}
                 disabled={saving}
               />
             </div>
@@ -189,3 +212,4 @@ const ProfilePage: React.FC = () => {
 };
 
 export default ProfilePage;
+
