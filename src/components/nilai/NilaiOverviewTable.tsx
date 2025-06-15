@@ -1,12 +1,13 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import StudentCell from './StudentCell';
-import NilaiEditCell from './NilaiEditCell';
 import NilaiDisplayCell from './NilaiDisplayCell';
 import ProfilSiswaPopup from '../ProfilSiswaPopup';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import EditNilaiDialog from './EditNilaiDialog';
 
 interface Nilai {
   id_nilai: string;
@@ -53,15 +54,8 @@ interface NilaiOverviewTableProps {
 
 interface StudentGrades {
   siswa: Nilai['siswa'];
-  grades: { [taskKey: string]: {skor: number; tanggal: string; catatan?: string; id_nilai: string} };
+  grades: { [taskKey: string]: {skor: number; tanggal: string; catatan?: string; id_nilai: string; judul_tugas: string} };
   average: number;
-}
-
-interface EditingCell {
-  studentId: string;
-  taskKey: string;
-  skor: string;
-  catatan: string;
 }
 
 const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
@@ -75,7 +69,17 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
 }) => {
   const [selectedSiswa, setSelectedSiswa] = useState<Nilai['siswa'] | null>(null);
   const [isProfilOpen, setIsProfilOpen] = useState(false);
-  const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
+
+  // State for editing popup
+  const [editDialog, setEditDialog] = useState<{
+    open: boolean;
+    nilaiId: string | null;
+    initialSkor: number | "";
+    initialCatatan: string;
+    siswaName: string;
+    judulTugas: string;
+    onSave?: () => void;
+  }>({ open: false, nilaiId: null, initialSkor: "", initialCatatan: "", siswaName: "", judulTugas: "" });
 
   // Filter nilai by selected subject and class
   const relevantNilai = useMemo(() => {
@@ -108,7 +112,8 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
           skor: nilai.skor,
           tanggal: nilai.tanggal_tugas_dibuat,
           catatan: nilai.catatan,
-          id_nilai: nilai.id_nilai
+          id_nilai: nilai.id_nilai,
+          judul_tugas: nilai.judul_tugas
         };
       }
     });
@@ -159,40 +164,23 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
     return `${mapelName} - ${kelasName}`;
   };
 
-  /**
-   * Updates: remove the edit icon, and start editing
-   * score/note by double-clicking the cell value.
-   */
-  const startEditing = (studentId: string, taskKey: string, grade: { skor: number; catatan?: string }) => {
-    setEditingCell({
-      studentId,
-      taskKey,
-      skor: grade.skor.toString(),
-      catatan: grade.catatan || ''
+  // Open dialog popup for editing grade/catatan
+  const openEditDialog = (nilaiId: string, skor: number, catatan: string, siswaName: string, judulTugas: string) => {
+    setEditDialog({
+      open: true,
+      nilaiId,
+      initialSkor: skor,
+      initialCatatan: catatan,
+      siswaName,
+      judulTugas,
     });
   };
 
-  const cancelEditing = () => setEditingCell(null);
-
-  const saveEdit = async () => {
-    if (!editingCell) return;
-    const studentData = studentGradesData.find(s => s.siswa.id_siswa === editingCell.studentId);
-    const grade = studentData?.grades[editingCell.taskKey];
-    if (!grade) return;
-    try {
-      await onUpdateNilai(
-        grade.id_nilai,
-        parseFloat(editingCell.skor),
-        editingCell.catatan
-      );
-      setEditingCell(null);
-    } catch (error) {
-      console.error('Error updating nilai:', error);
-    }
-  };
-
-  const isEditing = (studentId: string, taskKey: string) => {
-    return editingCell?.studentId === studentId && editingCell?.taskKey === taskKey;
+  // Simpan setelah edit dari dialog
+  const handleSaveEdit = async (skorBaru: number, catatanBaru: string) => {
+    if (!editDialog.nilaiId) return;
+    await onUpdateNilai(editDialog.nilaiId, skorBaru, catatanBaru);
+    setEditDialog({ ...editDialog, open: false });
   };
 
   return (
@@ -238,53 +226,46 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                 <TableBody>
                   {studentGradesData.map((studentData) => (
                     <TableRow key={studentData.siswa.id_siswa} className="hover:bg-gray-50 group">
-                      <TableCell className="p-2">
-                        {/* Student icon only cell 
-                            This is purposely left empty. 
-                            Profil handled in StudentCell below.
-                        */}
-                      </TableCell>
+                      <TableCell className="p-2"></TableCell>
                       <TableCell className="p-2">
                         <StudentCell
                           siswa={studentData.siswa}
                           onClickProfil={handleSiswaClick}
                         />
                       </TableCell>
-                      {taskList.map((task) => (
-                        <TableCell key={task.name} className="text-center p-2">
-                          {studentData.grades[task.name] !== undefined ? (
-                            isEditing(studentData.siswa.id_siswa, task.name) ? (
-                              <NilaiEditCell
-                                skor={editingCell?.skor || ''}
-                                catatan={editingCell?.catatan || ''}
-                                onChangeSkor={(val) =>
-                                  setEditingCell(prev => prev ? { ...prev, skor: val } : null)
-                                }
-                                onChangeCatatan={(val) =>
-                                  setEditingCell(prev => prev ? { ...prev, catatan: val } : null)
-                                }
-                                onSave={saveEdit}
-                                onCancel={cancelEditing}
-                              />
-                            ) : (
-                              <NilaiDisplayCell
-                                skor={studentData.grades[task.name].skor}
-                                catatan={studentData.grades[task.name].catatan}
-                                getScoreColor={getScoreColor}
+                      {taskList.map((task) => {
+                        const grade = studentData.grades[task.name];
+                        return (
+                          <TableCell key={task.name} className="text-center p-2">
+                            {grade !== undefined ? (
+                              <div
                                 onDoubleClick={() =>
-                                  startEditing(
-                                    studentData.siswa.id_siswa,
-                                    task.name,
-                                    studentData.grades[task.name]
+                                  openEditDialog(
+                                    grade.id_nilai,
+                                    grade.skor,
+                                    grade.catatan ?? "",
+                                    studentData.siswa.nama_lengkap,
+                                    grade.judul_tugas
                                   )
                                 }
-                              />
-                            )
-                          ) : (
-                            <span className="text-gray-400 text-xs">-</span>
-                          )}
-                        </TableCell>
-                      ))}
+                                className="inline-block cursor-pointer group relative"
+                                title="Double klik untuk edit nilai & catatan"
+                              >
+                                <Badge className={`text-xs ${getScoreColor(grade.skor)} relative`}>
+                                  {grade.skor}
+                                  {grade.catatan && (
+                                    <span className="absolute top-[-3px] right-[-3px]">
+                                      <span className="inline-block h-2 w-2 rounded-full bg-green-500 border-2 border-white shadow" />
+                                    </span>
+                                  )}
+                                </Badge>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 text-xs">-</span>
+                            )}
+                          </TableCell>
+                        );
+                      })}
                       <TableCell className="text-center p-2">
                         {studentData.average > 0 ? (
                           <Badge
@@ -318,6 +299,16 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
           setIsProfilOpen(false);
           setSelectedSiswa(null);
         }}
+      />
+      {/* Dialog untuk edit nilai/catatan */}
+      <EditNilaiDialog
+        open={editDialog.open}
+        onOpenChange={(open) => setEditDialog({ ...editDialog, open })}
+        initialSkor={editDialog.initialSkor}
+        initialCatatan={editDialog.initialCatatan}
+        onSave={handleSaveEdit}
+        namaSiswa={editDialog.siswaName}
+        judulTugas={editDialog.judulTugas}
       />
     </TooltipProvider>
   );
