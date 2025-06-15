@@ -1,21 +1,10 @@
+
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
 import LoginPage from '@/components/LoginPage';
 import AppSidebar from '@/components/AppSidebar';
-import Dashboard from '@/components/Dashboard';
-import AbsensiPage from '@/components/AbsensiPage';
-import RiwayatAbsensiPage from '@/components/RiwayatAbsensiPage';
-import NilaiPage from '@/components/NilaiPage';
-import JurnalPage from '@/components/JurnalPage';
-import ProfilSiswaPage from '@/components/ProfilSiswaPage';
-import WaliKelasPage from '@/components/WaliKelasPage';
-import AdminSiswaPage from '@/components/admin/AdminSiswaPage';
-import AdminGuruPage from '@/components/admin/AdminGuruPage';
-import AdminKelasPage from '@/components/admin/AdminKelasPage';
-import AdminMapelPage from '@/components/admin/AdminMapelPage';
-import NilaiRekapitulasiPage from '@/components/NilaiRekapitulasiPage';
-import NilaiEntryPage from '@/components/NilaiEntryPage';
+import MainContentRenderer from '@/components/MainContentRenderer';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 const Index = () => {
@@ -43,7 +32,6 @@ const Index = () => {
   const handleLogout = () => {
     logout();
     setCurrentPage('beranda');
-    
     toast({
       title: "Logout Berhasil",
       description: "Anda telah keluar dari sistem",
@@ -52,74 +40,6 @@ const Index = () => {
 
   const handlePageChange = (page: string) => {
     setCurrentPage(page);
-  };
-
-  const renderCurrentPage = () => {
-    if (!userSession) return null;
-
-    switch (currentPage) {
-      case 'beranda':
-        return <Dashboard userSession={userSession} />;
-      case 'absensi':
-        return <AbsensiPage userSession={userSession} />;
-      case 'riwayat-absensi':
-        return <RiwayatAbsensiPage userSession={userSession} />;
-      case 'nilai':
-        return <NilaiPage userSession={userSession} />;
-      case 'jurnal':
-        return <JurnalPage userSession={userSession} />;
-      case 'profil-siswa':
-        return <ProfilSiswaPage userSession={userSession} />;
-      case 'wali-kelas':
-        return <WaliKelasPage userSession={userSession} />;
-      case 'nilai-rekapitulasi':
-        return <NilaiRekapitulasiPage userSession={userSession} />;
-      case 'nilai-entry':
-        return <NilaiEntryPage userSession={userSession} />;
-      // Admin pages
-      case 'admin-siswa':
-        return userSession.isAdmin ? (
-          <AdminSiswaPage userSession={userSession} />
-        ) : (
-          <div className="p-6">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800">Akses ditolak. Hanya admin yang dapat mengakses halaman ini.</p>
-            </div>
-          </div>
-        );
-      case 'admin-guru':
-        return userSession.isAdmin ? (
-          <AdminGuruPage userSession={userSession} />
-        ) : (
-          <div className="p-6">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800">Akses ditolak. Hanya admin yang dapat mengakses halaman ini.</p>
-            </div>
-          </div>
-        );
-      case 'admin-kelas':
-        return userSession.isAdmin ? (
-          <AdminKelasPage userSession={userSession} />
-        ) : (
-          <div className="p-6">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800">Akses ditolak. Hanya admin yang dapat mengakses halaman ini.</p>
-            </div>
-          </div>
-        );
-      case 'admin-mapel':
-        return userSession.isAdmin ? (
-          <AdminMapelPage userSession={userSession} />
-        ) : (
-          <div className="p-6">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800">Akses ditolak. Hanya admin yang dapat mengakses halaman ini.</p>
-            </div>
-          </div>
-        );
-      default:
-        return <Dashboard userSession={userSession} />;
-    }
   };
 
   if (loading) {
@@ -169,7 +89,7 @@ const Index = () => {
           <div className="bg-white border-b border-gray-200 px-6 py-4 lg:hidden">
             <SidebarTrigger className="text-gray-600 hover:text-gray-900" />
           </div>
-          {renderCurrentPage()}
+          <MainContentRenderer currentPage={currentPage} userSession={userSession} />
         </main>
       </div>
     </SidebarProvider>
