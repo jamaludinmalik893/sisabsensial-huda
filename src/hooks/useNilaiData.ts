@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { UserSession } from '@/types';
-import { Nilai, Siswa, MataPelajaran, Kelas } from '@/types/nilai';
+import type { Nilai, MataPelajaran, Kelas } from '@/types/nilai';
+import type { Siswa as SiswaIndex } from '@/types/index';
 import { useToast } from '@/hooks/use-toast';
 import { useNilaiQueries } from './useNilaiQueries';
 import { useBulkNilai } from './useBulkNilai';
@@ -8,7 +10,8 @@ import { convertSiswaToFullSiswa } from "@/components/nilai/convertSiswaToFullSi
 
 export const useNilaiData = (userSession: UserSession) => {
   const [nilaiList, setNilaiList] = useState<Nilai[]>([]);
-  const [siswaList, setSiswaList] = useState<Siswa[]>([]);
+  // Always ensure siswaList is of the expected (full) type
+  const [siswaList, setSiswaList] = useState<SiswaIndex[]>([]);
   const [mapelList, setMapelList] = useState<MataPelajaran[]>([]);
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +35,7 @@ export const useNilaiData = (userSession: UserSession) => {
       setMapelList(mapelData);
       setKelasList(kelasData);
       setNilaiList(nilaiData);
+      // Don't touch siswaList here, it is always set via loadSiswaByKelas
     } catch (error) {
       console.error('Error loading initial data:', error);
     } finally {
@@ -42,12 +46,13 @@ export const useNilaiData = (userSession: UserSession) => {
   const loadSiswaByKelas = async (kelasId: string) => {
     try {
       const siswaDataRaw = await queries.loadSiswaByKelas(kelasId);
-      // Konversi: pastikan siswaList bentuknya sama dgn index.ts
-      const siswaData = siswaDataRaw.map(siswa => convertSiswaToFullSiswa(siswa));
+      // Always convert siswa to full type
+      const siswaData: SiswaIndex[] = siswaDataRaw.map(siswa => convertSiswaToFullSiswa(siswa));
       setSiswaList(siswaData);
       bulkNilai.initializeBulkValues(siswaData);
     } catch (error) {
       console.error('Error loading siswa:', error);
+      setSiswaList([]); // fallback to safe empty state
     }
   };
 
