@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -68,9 +67,9 @@ const ProfilSiswaPopup: React.FC<ProfilSiswaPopupProps> = ({ siswa, isOpen, onCl
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex flex-col items-center text-center space-y-4">
-            <Avatar className="h-24 w-24">
+            <Avatar className="h-48 w-48">
               <AvatarImage src={siswa.foto_url} alt={siswa.nama_lengkap} />
-              <AvatarFallback className="bg-blue-100 text-blue-600 text-lg">
+              <AvatarFallback className="bg-blue-100 text-blue-600 text-3xl">
                 {getInitials(siswa.nama_lengkap)}
               </AvatarFallback>
             </Avatar>
