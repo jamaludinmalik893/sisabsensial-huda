@@ -96,14 +96,22 @@ const ProfilePage: React.FC = () => {
           .eq("id_guru", session.guru.id_guru);
         if (error) throw error;
       } else if (session?.guru && session.guru.id_guru) {
-        // Siswa update, nomor_telepon_siswa is on siswa table, fallback to nomor_telepon if missing
+        // Siswa update: nomor_telepon_siswa sebagai fallback
+        const nomor_telepon_siswa =
+          "nomor_telepon_siswa" in profile
+            ? (profile as any).nomor_telepon_siswa
+            : undefined;
+
         const { error } = await supabase
           .from("siswa")
           .update({
             nama_lengkap: profile.nama_lengkap,
             alamat: profile.alamat,
             nomor_telepon: profile.nomor_telepon,
-            nomor_telepon_siswa: (profile as Siswa).nomor_telepon_siswa ?? profile.nomor_telepon ?? "",
+            // Only include nomor_telepon_siswa if it's present in the profile object
+            ...(typeof nomor_telepon_siswa !== "undefined"
+              ? { nomor_telepon_siswa: nomor_telepon_siswa ?? profile.nomor_telepon ?? "" }
+              : {}),
             foto_url: profile.foto_url,
             email: newEmail || profile.email,
           })
@@ -212,4 +220,3 @@ const ProfilePage: React.FC = () => {
 };
 
 export default ProfilePage;
-
