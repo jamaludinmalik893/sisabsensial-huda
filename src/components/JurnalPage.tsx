@@ -109,12 +109,28 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
       await Promise.all([
         loadJurnal(),
         loadKelas(),
-        loadMataPelajaran()
+        loadMataPelajaranByGuru(), // ganti function agar hanya mapel guru ini
       ]);
     } catch (error) {
       console.error('Error loading initial data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // hanya mapel yang diampu guru yang login
+  const loadMataPelajaranByGuru = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('guru_mata_pelajaran')
+        .select('mata_pelajaran(id_mapel, nama_mapel)')
+        .eq('id_guru', userSession.guru.id_guru);
+
+      if (error) throw error;
+      const mapelData = data?.map((item: any) => item.mata_pelajaran).flat() || [];
+      setMapelList(mapelData);
+    } catch (error) {
+      console.error('Error loading mapel guru:', error);
     }
   };
 
@@ -155,20 +171,6 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
       setKelasList(data || []);
     } catch (error) {
       console.error('Error loading kelas:', error);
-    }
-  };
-
-  const loadMataPelajaran = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('mata_pelajaran')
-        .select('id_mapel, nama_mapel')
-        .order('nama_mapel');
-
-      if (error) throw error;
-      setMapelList(data || []);
-    } catch (error) {
-      console.error('Error loading mata pelajaran:', error);
     }
   };
 
@@ -359,6 +361,9 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
     }
   };
 
+  // Jika BELUM di-filter, sembunyikan tabel dan tampilkan instruksi
+  const isFiltered = filters.kelas !== 'all' || filters.mapel !== 'all';
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -535,7 +540,11 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
           <CardTitle>Daftar Jurnal Pembelajaran ({filteredJurnalList.length} jurnal)</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {!isFiltered ? (
+            <div className="text-center py-8 text-gray-500 border rounded-lg bg-gray-50">
+              Silakan pilih <b>kelas</b> atau <b>mata pelajaran</b> terlebih dahulu untuk menampilkan data jurnal pembelajaran.
+            </div>
+          ) : loading ? (
             <div className="text-center py-8">Memuat data...</div>
           ) : (
             <Table>
@@ -591,9 +600,9 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
             </Table>
           )}
           
-          {!loading && filteredJurnalList.length === 0 && (
+          {!loading && isFiltered && filteredJurnalList.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              {jurnalList.length === 0 ? 'Belum ada jurnal pembelajaran' : 'Tidak ada jurnal yang sesuai dengan filter'}
+              Tidak ada jurnal yang sesuai dengan filter
             </div>
           )}
         </CardContent>
