@@ -10,8 +10,9 @@ import EditNilaiDialog from './EditNilaiDialog';
 import StudentAvatarCell from './StudentAvatarCell';
 import NilaiTableRow from "./NilaiTableRow";
 import DeleteNilaiDialog from "./DeleteNilaiDialog";
-import { Edit, Trash2 } from "lucide-react";
 import TaskHeaderActionsDialog from "./TaskHeaderActionsDialog";
+import NilaiFilters from "./NilaiFilters";
+import { Edit, Trash2 } from "lucide-react";
 
 interface Nilai {
   id_nilai: string;
@@ -66,13 +67,18 @@ interface StudentGrades {
 const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
   filteredNilai,
   loading,
-  selectedMapel,
-  selectedKelas,
+  selectedMapel: defaultSelectedMapel,
+  selectedKelas: defaultSelectedKelas,
   mapelList,
   kelasList,
   onUpdateNilai,
   deleteNilai
 }) => {
+  // FILTER STATES
+  const [selectedMapel, setSelectedMapel] = useState(defaultSelectedMapel || "all");
+  const [selectedKelas, setSelectedKelas] = useState(defaultSelectedKelas || "all");
+  const [selectedJenisNilai, setSelectedJenisNilai] = useState("all");
+
   // DEBUG: log apa yang diterima di filteredNilai (harusnya sama seperti nilaiList)
   console.log("NilaiOverviewTable filteredNilai:", filteredNilai);
 
@@ -108,14 +114,15 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
   // Store selected task for edit/delete action
   const [selectedTask, setSelectedTask] = useState<{ judulTugas: string; tanggal: string } | null>(null);
 
-  // Filter nilai by selected subject and class
+  // Filter nilai by selected subject, class, and jenis_nilai
   const relevantNilai = useMemo(() => {
     return filteredNilai.filter(nilai => {
       const matchMapel = selectedMapel === 'all' || nilai.mata_pelajaran.nama_mapel === mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel;
       const matchKelas = selectedKelas === 'all' || nilai.siswa.kelas?.nama_kelas === kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas;
-      return matchMapel && matchKelas;
+      const matchJenis = selectedJenisNilai === 'all' || nilai.jenis_nilai === selectedJenisNilai;
+      return matchMapel && matchKelas && matchJenis;
     });
-  }, [filteredNilai, selectedMapel, selectedKelas, mapelList, kelasList]);
+  }, [filteredNilai, selectedMapel, selectedKelas, selectedJenisNilai, mapelList, kelasList]);
 
   // Group nilai by student and task
   const studentGradesData = useMemo(() => {
@@ -271,14 +278,32 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
           <CardTitle>Rekapitulasi Nilai Siswa</CardTitle>
           <div className="flex flex-col gap-1">
             <p className="text-sm text-gray-600">
-              {getSelectedInfo()}
+              {(() => {
+                const mapelName = selectedMapel === "all" ? 'Semua Mata Pelajaran' : mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel;
+                const kelasName = selectedKelas === "all" ? 'Semua Kelas' : kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas;
+                return `${mapelName} - ${kelasName}`;
+              })()}
             </p>
             <p className="text-xs text-gray-500">
-              Klik <b>foto atau nama siswa</b> untuk melihat profil lengkap. <b>Double klik</b> pada nilai/tugas untuk mengubah nilai/catatan.
+              Klik <b>foto atau nama siswa</b> untuk melihat profil lengkap. <b>Double klik</b> pada nilai/tugas untuk mengubah nilai/catatan.<br />
+              <b>Double klik pada header kolom tugas</b> untuk edit judul/tanggal tugas atau menghapus seluruh tugas.
             </p>
           </div>
         </CardHeader>
         <CardContent>
+          {/* FILTER BAR */}
+          <div className="mb-4">
+            <NilaiFilters
+              selectedMapel={selectedMapel}
+              setSelectedMapel={setSelectedMapel}
+              selectedKelas={selectedKelas}
+              setSelectedKelas={setSelectedKelas}
+              selectedJenisNilai={selectedJenisNilai}
+              setSelectedJenisNilai={setSelectedJenisNilai}
+              mapelList={mapelList}
+              kelasList={kelasList}
+            />
+          </div>
           {loading ? (
             <div className="text-center py-8">Memuat data...</div>
           ) : (
@@ -289,39 +314,20 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                     {/* No Absen */}
                     <TableHead className="w-12 text-center">No Absen</TableHead>
                     <TableHead className="min-w-40">Nama Siswa</TableHead>
-                    {/* Tampilkan kolom untuk tiap tugas, dengan action edit & hapus */}
+                    {/* Kolom tugas, hanya double klik untuk edit/hapus */}
                     {taskList.map((task) => (
                       <TableHead
                         key={task.name + task.date}
-                        className="text-center min-w-32 group relative"
+                        className="text-center min-w-32 group relative cursor-pointer"
+                        onDoubleClick={() => openHeaderActionsDialog(task.name, task.date)}
+                        title="Double klik untuk edit judul/tanggal tugas atau hapus tugas"
                       >
-                        <div
-                          className="flex flex-col items-center justify-center cursor-pointer group"
-                          onDoubleClick={() => openHeaderActionsDialog(task.name, task.date)}
-                        >
+                        <div className="flex flex-col items-center justify-center">
                           <span className="text-xs font-medium">{task.name}</span>
                           <span className="text-xs text-gray-500">
                             {new Date(task.date).toLocaleDateString('id-ID', {
                               day: '2-digit', month: '2-digit'
                             })}
-                          </span>
-                          <span className="flex flex-row space-x-1 mt-1 opacity-60 group-hover:opacity-90">
-                            <Edit
-                              className="w-4 h-4 hover:text-blue-600"
-                              title="Edit judul & tanggal tugas"
-                              onClick={e => {
-                                e.stopPropagation();
-                                openHeaderActionsDialog(task.name, task.date);
-                              }}
-                            />
-                            <Trash2
-                              className="w-4 h-4 hover:text-red-600"
-                              title="Hapus seluruh tugas"
-                              onClick={e => {
-                                e.stopPropagation();
-                                openHeaderActionsDialog(task.name, task.date);
-                              }}
-                            />
                           </span>
                         </div>
                       </TableHead>
@@ -391,44 +397,12 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                           <span className="text-gray-400 text-xs">-</span>
                         )}
                       </TableCell>
-                      {/* Kolom Judul Tugas (double click for edit/delete) */}
-                      {Object.values(studentData.grades).map((grade, i) => (
-                        <React.Fragment key={i + "-extra"}>
-                          <TableCell
-                            className="text-center p-2 align-middle cursor-pointer"
-                            onDoubleClick={() =>
-                              openTaskActionsDialog(
-                                grade.id_nilai,
-                                studentData.siswa.nama_lengkap,
-                                grade.judul_tugas
-                              )
-                            }
-                            title="Double klik untuk edit/hapus nilai"
-                          >
-                            {grade.judul_tugas}
-                          </TableCell>
-                          <TableCell
-                            className="text-center p-2 align-middle cursor-pointer"
-                            onDoubleClick={() =>
-                              openTaskActionsDialog(
-                                grade.id_nilai,
-                                studentData.siswa.nama_lengkap,
-                                grade.judul_tugas
-                              )
-                            }
-                            title="Double klik untuk edit/hapus nilai"
-                          >
-                            {grade.tanggal ? new Date(grade.tanggal).toLocaleDateString('id-ID') : "-"}
-                          </TableCell>
-                        </React.Fragment>
-                      ))}
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
           )}
-
           {!loading && studentGradesData.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               Belum ada data nilai sesuai filter yang dipilih
@@ -444,7 +418,6 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
           setSelectedSiswa(null);
         }}
       />
-      {/* Dialog untuk edit nilai/catatan */}
       <EditNilaiDialog
         open={editDialog.open}
         onOpenChange={(open) => setEditDialog({ ...editDialog, open })}
@@ -461,8 +434,7 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
         namaSiswa={deleteDialog.siswaName}
         judulTugas={deleteDialog.judulTugas}
       />
-            {/* Tambahkan dialog action untuk header kolom tugas */}
-            <TaskHeaderActionsDialog
+      <TaskHeaderActionsDialog
         open={headerActionDialog.open}
         onOpenChange={open => setHeaderActionDialog({ ...headerActionDialog, open })}
         initialJudul={headerActionDialog.judulTugas}
