@@ -1,10 +1,10 @@
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Camera, Upload, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import WebcamCropper from './WebcamCropper';
 
 interface PhotoCaptureProps {
   onPhotoCapture: (photoUrl: string) => void;
@@ -43,16 +43,19 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhot
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
-  // Kamera
+  // Kamera: gunakan resolusi terbaik
   const startCamera = useCallback(async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 }
-      });
+      const constraints: MediaStreamConstraints = {
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          facingMode: 'user'
+        }
+      };
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
+      // Tidak perlu set srcObject, itu diatur oleh WebcamCropper
     } catch (error) {
       console.error('Error accessing camera:', error);
       toast({
@@ -186,7 +189,7 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhot
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {/* Mode awal: pilih metode */}
+            {/* Mode awal */}
             {mode === 'idle' && (
               <div className="flex flex-col gap-4">
                 <Button variant="default" size="lg" onClick={() => setMode('camera')} className="w-full flex items-center justify-center">
@@ -202,36 +205,13 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhot
 
             {/* Mode webcam */}
             {(mode === 'camera') && !capturedPhoto && (
-              <div className="flex flex-col items-center gap-6">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  className="w-full rounded-lg"
-                  style={{ minHeight: 280, background: '#0a0a0a' }}
-                />
-                <canvas ref={canvasRef} className="hidden" />
-                <Button
-                  onClick={capturePhoto}
-                  className="w-full flex items-center justify-center"
-                  size="lg"
-                  disabled={uploading}
-                >
-                  <Camera className="h-5 w-5 mr-2" />
-                  Ambil Foto
-                </Button>
-                <Button
-                  type="button"
-                  variant="link"
-                  className="mt-2"
-                  onClick={() => setMode('idle')}
-                  disabled={uploading}
-                >
-                  &larr; Kembali
-                </Button>
-              </div>
+              <WebcamCropper
+                stream={stream}
+                loading={uploading}
+                onCapture={(croppedDataUrl) => setCapturedPhoto(croppedDataUrl)}
+              />
             )}
-            {/* Setelah ambil foto webcam */}
+            {/* Setelah crop webcam */}
             {(capturedPhoto != null && mode === 'camera') && (
               <div className="space-y-3 flex flex-col items-center">
                 <img
