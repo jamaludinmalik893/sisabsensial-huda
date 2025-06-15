@@ -1,4 +1,3 @@
-// DAFTAR IMPORTS
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProfilSiswaPopup from '../ProfilSiswaPopup';
@@ -41,6 +40,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
 
   // state for popup profil siswa
   const [profilOpen, setProfilOpen] = React.useState(false);
+  // Ubah: type menjadi lengkap memakai hasil konversi
   const [selectedSiswa, setSelectedSiswa] = React.useState<Siswa | null>(null);
 
   const handleKelasChange = (value: string) => {
@@ -62,6 +62,14 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
   };
 
   const canShowTable = selectedMapel && selectedKelas && selectedJenisNilai && judulTugas && siswaList.length > 0;
+
+  // Perbaikan handle klik pada avatar/nama siswa agar data selalu lengkap ke popup
+  // dan pastikan field foto_url dsb. akan dikirim (convertSiswaToFullSiswa sudah menjamin field lengkap)
+  const handleSiswaClick = (siswa: Siswa) => {
+    const lengkap = convertSiswaToFullSiswa(siswa);
+    setSelectedSiswa(lengkap);
+    setProfilOpen(true);
+  };
 
   return (
     <>
@@ -89,15 +97,11 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
           />
 
           <BulkNilaiTable
-            siswaList={siswaList}
+            siswaList={siswaList.map(s => convertSiswaToFullSiswa(s))}
             bulkValues={bulkValues}
             onBulkValueChange={handleBulkValueChange}
             canShowTable={!!canShowTable}
-            onSiswaClick={(siswa) => {
-              // Konversi agar semua field yg dibutuhkan pasti ada (ke tipe dari index)
-              setSelectedSiswa(convertSiswaToFullSiswa(siswa));
-              setProfilOpen(true);
-            }}
+            onSiswaClick={handleSiswaClick}
             onSubmit={handleSubmit}
             judulTugas={judulTugas}
             selectedMapel={selectedMapel}
