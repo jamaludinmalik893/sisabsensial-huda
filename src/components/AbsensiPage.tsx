@@ -68,7 +68,7 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
     try {
       await Promise.all([
         loadKelas(),
-        loadMataPelajaran()
+        loadMataPelajaranByGuru()
       ]);
     } catch (error) {
       console.error('Error loading initial data:', error);
@@ -89,15 +89,22 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
     }
   };
 
-  const loadMataPelajaran = async () => {
+  const loadMataPelajaranByGuru = async () => {
     try {
       const { data, error } = await supabase
-        .from('mata_pelajaran')
-        .select('id_mapel, nama_mapel')
-        .order('nama_mapel');
+        .from('guru_mata_pelajaran')
+        .select(`
+          mata_pelajaran!inner(
+            id_mapel,
+            nama_mapel
+          )
+        `)
+        .eq('id_guru', userSession.guru.id_guru);
 
       if (error) throw error;
-      setMapelList(data || []);
+      
+      const mapelData = data?.map(item => item.mata_pelajaran).flat() || [];
+      setMapelList(mapelData);
     } catch (error) {
       console.error('Error loading mata pelajaran:', error);
     }

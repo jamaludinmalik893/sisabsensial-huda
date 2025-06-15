@@ -4,15 +4,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Filter, FileText, Search, Users } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { Filter } from 'lucide-react';
 import AbsensiOverviewTable from './absensi/AbsensiOverviewTable';
 
 interface RiwayatAbsensiPageProps {
   userSession: UserSession;
+}
+
+interface MataPelajaran {
+  id_mapel: string;
+  nama_mapel: string;
+}
+
+interface Kelas {
+  id_kelas: string;
+  nama_kelas: string;
 }
 
 interface RiwayatAbsensi {
@@ -53,38 +59,13 @@ interface RiwayatAbsensi {
   };
 }
 
-interface Siswa {
-  id_siswa: string;
-  nama_lengkap: string;
-  nisn: string;
-}
-
-interface FilterState {
-  kelas: string;
-  status: string;
-  mapel: string;
-  siswa: string;
-  tanggalMulai: string;
-  tanggalAkhir: string;
-  searchJudul: string;
-}
-
 const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) => {
+  const [selectedMapel, setSelectedMapel] = useState('all');
+  const [selectedKelas, setSelectedKelas] = useState('all');
+  const [mapelList, setMapelList] = useState<MataPelajaran[]>([]);
+  const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [riwayatAbsensi, setRiwayatAbsensi] = useState<RiwayatAbsensi[]>([]);
   const [loading, setLoading] = useState(true);
-  const [kelasList, setKelasList] = useState<any[]>([]);
-  const [mapelList, setMapelList] = useState<any[]>([]);
-  const [siswaList, setSiswaList] = useState<Siswa[]>([]);
-  
-  const [filters, setFilters] = useState<FilterState>({
-    kelas: 'all',
-    status: 'all',
-    mapel: 'all',
-    siswa: 'all',
-    tanggalMulai: '',
-    tanggalAkhir: '',
-    searchJudul: ''
-  });
 
   useEffect(() => {
     loadInitialData();
@@ -92,22 +73,41 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
 
   useEffect(() => {
     loadRiwayatAbsensi();
-  }, [filters]);
+  }, [selectedMapel, selectedKelas, userSession]);
 
   const loadInitialData = async () => {
     try {
       await Promise.all([
-        loadKelasList(),
-        loadMapelList(),
-        loadSiswaList()
+        loadMataPelajaranByGuru(),
+        loadKelas()
       ]);
-      loadRiwayatAbsensi();
     } catch (error) {
       console.error('Error loading initial data:', error);
     }
   };
 
-  const loadKelasList = async () => {
+  const loadMataPelajaranByGuru = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('guru_mata_pelajaran')
+        .select(`
+          mata_pelajaran!inner(
+            id_mapel,
+            nama_mapel
+          )
+        `)
+        .eq('id_guru', userSession.guru.id_guru);
+
+      if (error) throw error;
+      
+      const mapelData = data?.map(item => item.mata_pelajaran).flat() || [];
+      setMapelList(mapelData);
+    } catch (error) {
+      console.error('Error loading mata pelajaran:', error);
+    }
+  };
+
+  const loadKelas = async () => {
     try {
       const { data, error } = await supabase
         .from('kelas')
@@ -121,43 +121,10 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
     }
   };
 
-  const loadMapelList = async () => {
-    try {
-      // Hanya load mata pelajaran yang diampu oleh guru ini
-      const { data, error } = await supabase
-        .from('mata_pelajaran')
-        .select(`
-          id_mapel, 
-          nama_mapel,
-          guru_mata_pelajaran!inner(id_guru)
-        `)
-        .eq('guru_mata_pelajaran.id_guru', userSession.guru.id_guru)
-        .order('nama_mapel');
-
-      if (error) throw error;
-      setMapelList(data || []);
-    } catch (error) {
-      console.error('Error loading mata pelajaran:', error);
-    }
-  };
-
-  const loadSiswaList = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('siswa')
-        .select('id_siswa, nama_lengkap, nisn')
-        .order('nama_lengkap');
-
-      if (error) throw error;
-      setSiswaList(data || []);
-    } catch (error) {
-      console.error('Error loading siswa:', error);
-    }
-  };
-
   const loadRiwayatAbsensi = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      
       let query = supabase
         .from('absensi')
         .select(`
@@ -167,7 +134,7 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
           created_at,
           siswa!inner(
             id_siswa,
-            nama_lengkap, 
+            nama_lengkap,
             nisn,
             jenis_kelamin,
             tanggal_lahir,
@@ -185,49 +152,15 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
             id_jurnal,
             tanggal_pelajaran,
             judul_materi,
-            id_guru,
-            mata_pelajaran!inner(
-              nama_mapel, 
-              id_mapel,
-              guru_mata_pelajaran!inner(id_guru)
-            ),
-            kelas!inner(nama_kelas, id_kelas)
+            mata_pelajaran!inner(nama_mapel),
+            kelas!inner(nama_kelas),
+            id_guru
           )
         `)
-        .eq('jurnal_harian.mata_pelajaran.guru_mata_pelajaran.id_guru', userSession.guru.id_guru);
+        .eq('jurnal_harian.id_guru', userSession.guru.id_guru)
+        .order('jurnal_harian.tanggal_pelajaran', { ascending: false });
 
-      // Apply filters
-      if (filters.kelas !== 'all') {
-        query = query.eq('jurnal_harian.kelas.id_kelas', filters.kelas);
-      }
-
-      if (filters.status !== 'all') {
-        query = query.eq('status', filters.status);
-      }
-
-      if (filters.mapel !== 'all') {
-        query = query.eq('jurnal_harian.mata_pelajaran.id_mapel', filters.mapel);
-      }
-
-      if (filters.siswa !== 'all') {
-        query = query.eq('siswa.id_siswa', filters.siswa);
-      }
-
-      if (filters.tanggalMulai) {
-        query = query.gte('jurnal_harian.tanggal_pelajaran', filters.tanggalMulai);
-      }
-
-      if (filters.tanggalAkhir) {
-        query = query.lte('jurnal_harian.tanggal_pelajaran', filters.tanggalAkhir);
-      }
-
-      if (filters.searchJudul) {
-        query = query.ilike('jurnal_harian.judul_materi', `%${filters.searchJudul}%`);
-      }
-
-      const { data, error } = await query
-        .order('created_at', { ascending: false })
-        .limit(500);
+      const { data, error } = await query;
 
       if (error) throw error;
       setRiwayatAbsensi(data || []);
@@ -238,114 +171,25 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
     }
   };
 
-  const handleFilterChange = (key: keyof FilterState, value: string) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      kelas: 'all',
-      status: 'all',
-      mapel: 'all',
-      siswa: 'all',
-      tanggalMulai: '',
-      tanggalAkhir: '',
-      searchJudul: ''
-    });
-  };
-
-  const getStatusStats = () => {
-    const stats = {
-      total: riwayatAbsensi.length,
-      hadir: riwayatAbsensi.filter(r => r.status === 'Hadir').length,
-      izin: riwayatAbsensi.filter(r => r.status === 'Izin').length,
-      sakit: riwayatAbsensi.filter(r => r.status === 'Sakit').length,
-      alpha: riwayatAbsensi.filter(r => r.status === 'Alpha').length,
-    };
-    return stats;
-  };
-
-  const stats = getStatusStats();
-
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Riwayat Absensi</h1>
-        <Badge variant="outline" className="text-sm">
-          <FileText className="w-4 h-4 mr-1" />
-          {stats.total} Record
-        </Badge>
-      </div>
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <div className="text-sm text-gray-500">Total</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{stats.hadir}</div>
-            <div className="text-sm text-gray-500">Hadir</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-yellow-600">{stats.izin}</div>
-            <div className="text-sm text-gray-500">Izin</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{stats.sakit}</div>
-            <div className="text-sm text-gray-500">Sakit</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-red-600">{stats.alpha}</div>
-            <div className="text-sm text-gray-500">Alpha</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Enhanced Filters */}
+      <h1 className="text-2xl font-bold">Riwayat Absensi</h1>
+      
+      {/* Filter Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filter Data Absensi
+            Filter Data
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label className="text-sm font-medium mb-2 block">Kelas</Label>
-              <Select value={filters.kelas} onValueChange={(value) => handleFilterChange('kelas', value)}>
+              <label className="text-sm font-medium mb-2 block">Mata Pelajaran</label>
+              <Select value={selectedMapel} onValueChange={setSelectedMapel}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Semua Kelas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Kelas</SelectItem>
-                  {kelasList.map((kelas) => (
-                    <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
-                      {kelas.nama_kelas}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Mata Pelajaran</Label>
-              <Select value={filters.mapel} onValueChange={(value) => handleFilterChange('mapel', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Semua Mata Pelajaran" />
+                  <SelectValue placeholder="Pilih mata pelajaran" />
                 </SelectTrigger>
                 <SelectContent>
                   {mapelList.length > 1 && (
@@ -361,84 +205,31 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
             </div>
 
             <div>
-              <Label className="text-sm font-medium mb-2 block">Siswa</Label>
-              <Select value={filters.siswa} onValueChange={(value) => handleFilterChange('siswa', value)}>
+              <label className="text-sm font-medium mb-2 block">Kelas</label>
+              <Select value={selectedKelas} onValueChange={setSelectedKelas}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Semua Siswa" />
+                  <SelectValue placeholder="Pilih kelas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Siswa</SelectItem>
-                  {siswaList.map((siswa) => (
-                    <SelectItem key={siswa.id_siswa} value={siswa.id_siswa}>
-                      {siswa.nama_lengkap} - {siswa.nisn}
+                  <SelectItem value="all">Semua Kelas</SelectItem>
+                  {kelasList.map((kelas) => (
+                    <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
+                      {kelas.nama_kelas}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Status Kehadiran</Label>
-              <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Semua Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Status</SelectItem>
-                  <SelectItem value="Hadir">Hadir</SelectItem>
-                  <SelectItem value="Izin">Izin</SelectItem>
-                  <SelectItem value="Sakit">Sakit</SelectItem>
-                  <SelectItem value="Alpha">Alpha</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Tanggal Mulai</Label>
-              <Input
-                type="date"
-                value={filters.tanggalMulai}
-                onChange={(e) => handleFilterChange('tanggalMulai', e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Tanggal Akhir</Label>
-              <Input
-                type="date"
-                value={filters.tanggalAkhir}
-                onChange={(e) => handleFilterChange('tanggalAkhir', e.target.value)}
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <Label className="text-sm font-medium mb-2 block">Cari Judul Materi</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Masukkan judul materi..."
-                  value={filters.searchJudul}
-                  onChange={(e) => handleFilterChange('searchJudul', e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-end">
-              <Button variant="outline" onClick={clearFilters} className="w-full">
-                Reset Filter
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Rekapitulasi Absensi Table */}
+      {/* Rekapitulasi Table */}
       <AbsensiOverviewTable 
         riwayatAbsensi={riwayatAbsensi}
         loading={loading}
-        selectedMapel={filters.mapel}
-        selectedKelas={filters.kelas}
+        selectedMapel={selectedMapel}
+        selectedKelas={selectedKelas}
         mapelList={mapelList}
         kelasList={kelasList}
       />

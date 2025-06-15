@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
@@ -5,31 +6,16 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Nilai {
   id_nilai: string;
+  skor: number;
   jenis_nilai: string;
+  catatan?: string;
   judul_tugas: string;
   tanggal_tugas_dibuat: string;
-  skor: number;
   tanggal_nilai: string;
-  catatan?: string;
   siswa: {
     id_siswa: string;
     nama_lengkap: string;
     nisn: string;
-    jenis_kelamin: string;
-    tanggal_lahir: string;
-    tempat_lahir: string;
-    alamat: string;
-    nomor_telepon?: string;
-    nama_orang_tua: string;
-    nomor_telepon_orang_tua?: string;
-    tahun_masuk: number;
-    foto_url?: string;
-    kelas?: {
-      nama_kelas: string;
-    };
-    guru_wali?: {
-      nama_lengkap: string;
-    };
   };
   mata_pelajaran: {
     nama_mapel: string;
@@ -40,9 +26,6 @@ interface Siswa {
   id_siswa: string;
   nama_lengkap: string;
   nisn: string;
-  kelas?: {
-    nama_kelas: string;
-  };
 }
 
 interface MataPelajaran {
@@ -55,98 +38,49 @@ interface Kelas {
   nama_kelas: string;
 }
 
-interface BulkNilaiEntry {
-  id_siswa: string;
-  skor: string;
-  catatan: string;
-}
-
 export const useNilaiData = (userSession: UserSession) => {
   const [nilaiList, setNilaiList] = useState<Nilai[]>([]);
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
   const [mapelList, setMapelList] = useState<MataPelajaran[]>([]);
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [loading, setLoading] = useState(true);
-  const [bulkValues, setBulkValues] = useState<Record<string, BulkNilaiEntry>>({});
-  
+  const [bulkValues, setBulkValues] = useState<{ [key: string]: string }>({});
   const { toast } = useToast();
 
-  const loadNilai = async () => {
+  useEffect(() => {
+    loadInitialData();
+  }, [userSession]);
+
+  const loadInitialData = async () => {
     try {
-      let query = supabase
-        .from('nilai')
-        .select(`
-          id_nilai,
-          jenis_nilai,
-          judul_tugas,
-          tanggal_tugas_dibuat,
-          skor,
-          tanggal_nilai,
-          catatan,
-          siswa!inner(
-            id_siswa,
-            nama_lengkap, 
-            nisn,
-            jenis_kelamin,
-            tanggal_lahir,
-            tempat_lahir,
-            alamat,
-            nomor_telepon,
-            nama_orang_tua,
-            nomor_telepon_orang_tua,
-            tahun_masuk,
-            foto_url,
-            kelas(nama_kelas),
-            guru_wali:guru(nama_lengkap)
-          ),
-          mata_pelajaran!inner(nama_mapel)
-        `);
-
-      // Filter berdasarkan mata pelajaran yang diampu guru jika bukan admin
-      if (!userSession.isAdmin) {
-        const { data: guruMapel } = await supabase
-          .from('guru_mata_pelajaran')
-          .select('id_mapel')
-          .eq('id_guru', userSession.guru.id_guru);
-        
-        if (guruMapel && guruMapel.length > 0) {
-          const mapelIds = guruMapel.map(gm => gm.id_mapel);
-          query = query.in('id_mapel', mapelIds);
-        }
-      }
-
-      query = query.order('tanggal_nilai', { ascending: false });
-
-      const { data, error } = await query;
-      if (error) throw error;
-      setNilaiList(data || []);
+      await Promise.all([
+        loadMataPelajaranByGuru(),
+        loadKelas(),
+        loadNilai()
+      ]);
     } catch (error) {
-      console.error('Error loading nilai:', error);
+      console.error('Error loading initial data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const loadMataPelajaranGuru = async () => {
+  const loadMataPelajaranByGuru = async () => {
     try {
-      let query = supabase.from('mata_pelajaran').select('id_mapel, nama_mapel');
+      const { data, error } = await supabase
+        .from('guru_mata_pelajaran')
+        .select(`
+          mata_pelajaran!inner(
+            id_mapel,
+            nama_mapel
+          )
+        `)
+        .eq('id_guru', userSession.guru.id_guru);
 
-      // Filter berdasarkan mata pelajaran yang diampu guru jika bukan admin
-      if (!userSession.isAdmin) {
-        const { data: guruMapel } = await supabase
-          .from('guru_mata_pelajaran')
-          .select('id_mapel')
-          .eq('id_guru', userSession.guru.id_guru);
-        
-        if (guruMapel && guruMapel.length > 0) {
-          const mapelIds = guruMapel.map(gm => gm.id_mapel);
-          query = query.in('id_mapel', mapelIds);
-        }
-      }
-
-      query = query.order('nama_mapel');
-
-      const { data, error } = await query;
       if (error) throw error;
-      setMapelList(data || []);
+      
+      const mapelData = data?.map(item => item.mata_pelajaran).flat() || [];
+      setMapelList(mapelData);
     } catch (error) {
       console.error('Error loading mata pelajaran:', error);
     }
@@ -166,146 +100,137 @@ export const useNilaiData = (userSession: UserSession) => {
     }
   };
 
-  const loadSiswaByKelas = async (selectedKelas: string) => {
-    if (!selectedKelas) return;
+  const loadNilai = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('nilai')
+        .select(`
+          id_nilai,
+          skor,
+          jenis_nilai,
+          catatan,
+          judul_tugas,
+          tanggal_tugas_dibuat,
+          tanggal_nilai,
+          siswa!inner(
+            id_siswa,
+            nama_lengkap,
+            nisn
+          ),
+          mata_pelajaran!inner(nama_mapel),
+          jurnal_harian!inner(id_guru)
+        `)
+        .eq('jurnal_harian.id_guru', userSession.guru.id_guru)
+        .order('tanggal_nilai', { ascending: false });
 
+      if (error) throw error;
+      setNilaiList(data || []);
+    } catch (error) {
+      console.error('Error loading nilai:', error);
+    }
+  };
+
+  const loadSiswaByKelas = async (kelasId: string) => {
     try {
       const { data, error } = await supabase
         .from('siswa')
-        .select(`
-          id_siswa, 
-          nama_lengkap, 
-          nisn,
-          kelas(nama_kelas)
-        `)
-        .eq('id_kelas', selectedKelas)
+        .select('id_siswa, nama_lengkap, nisn')
+        .eq('id_kelas', kelasId)
         .order('nama_lengkap');
 
       if (error) throw error;
       setSiswaList(data || []);
       
       // Initialize bulk values
-      const initialBulkValues: Record<string, BulkNilaiEntry> = {};
+      const initialValues: { [key: string]: string } = {};
       data?.forEach(siswa => {
-        initialBulkValues[siswa.id_siswa] = {
-          id_siswa: siswa.id_siswa,
-          skor: '',
-          catatan: ''
-        };
+        initialValues[siswa.id_siswa] = '';
       });
-      setBulkValues(initialBulkValues);
+      setBulkValues(initialValues);
     } catch (error) {
       console.error('Error loading siswa:', error);
     }
   };
 
-  const updateNilai = async (nilaiId: string, newSkor: number, newCatatan: string) => {
-    try {
-      const { error } = await supabase
-        .from('nilai')
-        .update({
-          skor: newSkor,
-          catatan: newCatatan || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id_nilai', nilaiId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Berhasil",
-        description: "Nilai berhasil diperbarui"
-      });
-
-      // Reload data to reflect changes
-      await loadNilai();
-    } catch (error) {
-      console.error('Error updating nilai:', error);
-      toast({
-        title: "Error",
-        description: "Gagal memperbarui nilai",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-
-  const handleBulkValueChange = (siswaId: string, field: 'skor' | 'catatan', value: string) => {
+  const handleBulkValueChange = (siswaId: string, value: string) => {
     setBulkValues(prev => ({
       ...prev,
-      [siswaId]: {
-        ...prev[siswaId],
-        [field]: value
-      }
+      [siswaId]: value
     }));
   };
 
-  const handleBulkSubmit = async (selectedMapel: string, selectedJenisNilai: string, judulTugas: string, tanggalTugasDibuat: string) => {
-    if (selectedMapel === 'all' || selectedJenisNilai === 'all' || !selectedMapel || !selectedJenisNilai || !judulTugas) {
+  const handleBulkSubmit = async (
+    selectedMapel: string,
+    jenisNilai: string,
+    judulTugas: string,
+    tanggalTugasDibuat: string
+  ) => {
+    if (selectedMapel === 'all' || !jenisNilai || jenisNilai === 'all' || !judulTugas || !tanggalTugasDibuat) {
       toast({
         title: "Error",
-        description: "Pilih mata pelajaran, jenis nilai, dan masukkan judul tugas terlebih dahulu",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    // Filter siswa yang memiliki nilai
-    const validEntries = Object.values(bulkValues).filter(entry => 
-      entry.skor && parseFloat(entry.skor) >= 0 && parseFloat(entry.skor) <= 100
-    );
-
-    if (validEntries.length === 0) {
-      toast({
-        title: "Error",
-        description: "Masukkan minimal satu nilai yang valid (0-100)",
+        description: "Semua field harus diisi",
         variant: "destructive"
       });
       return false;
     }
 
     try {
-      // Get the first available jurnal (simplified for demo)
-      const { data: jurnalData } = await supabase
+      // Create a dummy jurnal entry for bulk insert
+      const { data: jurnalData, error: jurnalError } = await supabase
         .from('jurnal_harian')
-        .select('id_jurnal')
-        .limit(1)
+        .insert({
+          id_guru: userSession.guru.id_guru,
+          id_mapel: selectedMapel,
+          id_kelas: siswaList[0]?.id_siswa ? 
+            (await supabase.from('siswa').select('id_kelas').eq('id_siswa', siswaList[0].id_siswa).single()).data?.id_kelas 
+            : '',
+          tanggal_pelajaran: tanggalTugasDibuat,
+          waktu_mulai: '00:00',
+          waktu_selesai: '00:00',
+          judul_materi: judulTugas,
+          materi_diajarkan: `Entry nilai massal - ${judulTugas}`
+        })
+        .select()
         .single();
 
-      const nilaiData = validEntries.map(entry => ({
-        id_siswa: entry.id_siswa,
-        id_mapel: selectedMapel,
-        id_jurnal: jurnalData?.id_jurnal || '00000000-0000-0000-0000-000000000000',
-        jenis_nilai: selectedJenisNilai,
-        judul_tugas: judulTugas,
-        skor: parseFloat(entry.skor),
-        tanggal_nilai: new Date().toISOString().split('T')[0],
-        tanggal_tugas_dibuat: tanggalTugasDibuat,
-        catatan: entry.catatan || null
-      }));
+      if (jurnalError) throw jurnalError;
+
+      const nilaiToInsert = Object.entries(bulkValues)
+        .filter(([_, value]) => value.trim() !== '')
+        .map(([siswaId, value]) => ({
+          id_siswa: siswaId,
+          id_jurnal: jurnalData.id_jurnal,
+          id_mapel: selectedMapel,
+          skor: parseFloat(value),
+          jenis_nilai: jenisNilai,
+          judul_tugas: judulTugas,
+          tanggal_tugas_dibuat: tanggalTugasDibuat,
+          tanggal_nilai: new Date().toISOString().split('T')[0]
+        }));
+
+      if (nilaiToInsert.length === 0) {
+        toast({
+          title: "Error",
+          description: "Tidak ada nilai yang dimasukkan",
+          variant: "destructive"
+        });
+        return false;
+      }
 
       const { error } = await supabase
         .from('nilai')
-        .insert(nilaiData);
+        .insert(nilaiToInsert);
 
       if (error) throw error;
 
       toast({
         title: "Berhasil",
-        description: `${validEntries.length} nilai berhasil disimpan`
+        description: `${nilaiToInsert.length} nilai berhasil disimpan`
       });
 
-      // Reset form
-      const resetBulkValues: Record<string, BulkNilaiEntry> = {};
-      siswaList.forEach(siswa => {
-        resetBulkValues[siswa.id_siswa] = {
-          id_siswa: siswa.id_siswa,
-          skor: '',
-          catatan: ''
-        };
-      });
-      setBulkValues(resetBulkValues);
-      loadNilai();
+      // Reset bulk values
+      setBulkValues({});
+      await loadNilai();
       return true;
     } catch (error) {
       console.error('Error saving bulk nilai:', error);
@@ -318,24 +243,42 @@ export const useNilaiData = (userSession: UserSession) => {
     }
   };
 
-  const loadInitialData = async () => {
-    setLoading(true);
+  const updateNilai = async (nilaiId: string, newSkor: number, newCatatan?: string) => {
     try {
-      await Promise.all([
-        loadNilai(),
-        loadMataPelajaranGuru(),
-        loadKelas()
-      ]);
+      const { error } = await supabase
+        .from('nilai')
+        .update({ 
+          skor: newSkor,
+          catatan: newCatatan,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id_nilai', nilaiId);
+
+      if (error) throw error;
+
+      // Update local state
+      setNilaiList(prev => prev.map(nilai => 
+        nilai.id_nilai === nilaiId 
+          ? { ...nilai, skor: newSkor, catatan: newCatatan }
+          : nilai
+      ));
+
+      toast({
+        title: "Berhasil",
+        description: "Nilai berhasil diperbarui"
+      });
+
+      return true;
     } catch (error) {
-      console.error('Error loading initial data:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error updating nilai:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memperbarui nilai",
+        variant: "destructive"
+      });
+      return false;
     }
   };
-
-  useEffect(() => {
-    loadInitialData();
-  }, [userSession]);
 
   return {
     nilaiList,
