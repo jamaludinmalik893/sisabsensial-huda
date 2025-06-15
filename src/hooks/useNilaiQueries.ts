@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
 import { Nilai, Siswa, MataPelajaran, Kelas } from '@/types/nilai';
@@ -29,8 +30,24 @@ export const useNilaiQueries = (userSession: UserSession) => {
     return data || [];
   };
 
+  // Perbarui query loadNilai agar hanya bergantung pada tabel nilai
+  // dan filter berdasarkan mapel yang diajar guru login
   const loadNilai = async (): Promise<Nilai[]> => {
     console.log('DEBUG loadNilai: userSession.guru.id_guru:', userSession.guru.id_guru);
+
+    // Dapatkan semua id_mapel yang diampu guru (tanpa join jurnal)
+    const mapelGuruRes = await supabase
+      .from('guru_mata_pelajaran')
+      .select('id_mapel')
+      .eq('id_guru', userSession.guru.id_guru);
+
+    if (mapelGuruRes.error) throw mapelGuruRes.error;
+
+    const mapelIds = (mapelGuruRes.data || []).map((item:any) => item.id_mapel);
+    if (!mapelIds.length) {
+      console.log("DEBUG loadNilai: Guru ini tidak mengampu mapel apapun.");
+      return [];
+    }
 
     const { data, error } = await supabase
       .from('nilai')
@@ -64,10 +81,9 @@ export const useNilaiQueries = (userSession: UserSession) => {
         mata_pelajaran!inner(
           id_mapel,
           nama_mapel
-        ),
-        jurnal_harian!inner(id_guru)
+        )
       `)
-      .eq('jurnal_harian.id_guru', userSession.guru.id_guru)
+      .in('id_mapel', mapelIds)
       .order('tanggal_nilai', { ascending: false });
 
     console.log("DEBUG loadNilai: hasil Supabase query nilai:", { data, error });

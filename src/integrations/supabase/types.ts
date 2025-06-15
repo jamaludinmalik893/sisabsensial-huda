@@ -285,7 +285,6 @@ export type Database = {
         Row: {
           catatan: string | null
           created_at: string | null
-          id_jurnal: string | null
           id_mapel: string
           id_nilai: string
           id_siswa: string
@@ -299,7 +298,6 @@ export type Database = {
         Insert: {
           catatan?: string | null
           created_at?: string | null
-          id_jurnal?: string | null
           id_mapel: string
           id_nilai?: string
           id_siswa: string
@@ -313,7 +311,6 @@ export type Database = {
         Update: {
           catatan?: string | null
           created_at?: string | null
-          id_jurnal?: string | null
           id_mapel?: string
           id_nilai?: string
           id_siswa?: string
@@ -325,13 +322,6 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "nilai_id_jurnal_fkey"
-            columns: ["id_jurnal"]
-            isOneToOne: false
-            referencedRelation: "jurnal_harian"
-            referencedColumns: ["id_jurnal"]
-          },
           {
             foreignKeyName: "nilai_id_mapel_fkey"
             columns: ["id_mapel"]
