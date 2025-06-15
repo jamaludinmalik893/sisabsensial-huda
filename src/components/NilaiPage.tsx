@@ -93,7 +93,7 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
         
         <TabsContent value="bulk-entry" className="space-y-4">
           <BulkNilaiEntry
-            siswaList={siswaList}
+            siswaList={siswaList} {/* Sudah bentuk index.ts, dijamin valid dari hook */}
             mapelList={mapelList}
             kelasList={kelasList}
             bulkValues={convertedBulkValues}

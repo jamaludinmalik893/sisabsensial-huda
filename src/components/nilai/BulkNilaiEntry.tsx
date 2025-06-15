@@ -1,4 +1,3 @@
-
 // DAFTAR IMPORTS
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,33 +62,6 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
 
   const canShowTable = selectedMapel && selectedKelas && selectedJenisNilai && judulTugas && siswaList.length > 0;
 
-  // Konstruksi data sesuai tipe Siswa
-  const getSelectedSiswaFull = (siswa: Siswa | null): Siswa | null => {
-    if (!siswa) return null;
-    // Pastikan semua properti wajib ada
-    return {
-      id_siswa: siswa.id_siswa,
-      nisn: siswa.nisn,
-      nama_lengkap: siswa.nama_lengkap,
-      jenis_kelamin: siswa.jenis_kelamin ?? '',
-      tanggal_lahir: siswa.tanggal_lahir ?? '',
-      tempat_lahir: siswa.tempat_lahir ?? '',
-      alamat: siswa.alamat ?? '',
-      nomor_telepon: siswa.nomor_telepon ?? '',
-      nama_orang_tua: siswa.nama_orang_tua ?? '',
-      nomor_telepon_orang_tua: siswa.nomor_telepon_orang_tua ?? '',
-      id_kelas: siswa.id_kelas ?? '',
-      id_guru_wali: siswa.id_guru_wali ?? '',
-      tahun_masuk: siswa.tahun_masuk ?? 0,
-      foto_url: siswa.foto_url,
-      created_at: siswa.created_at,
-      updated_at: siswa.updated_at,
-      kelas: siswa.kelas,
-      guru_wali: siswa.guru_wali,
-      nomor_telepon_siswa: (siswa as any).nomor_telepon_siswa ?? '',
-    };
-  };
-
   return (
     <>
       <Card>
@@ -121,8 +93,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
             onBulkValueChange={handleBulkValueChange}
             canShowTable={!!canShowTable}
             onSiswaClick={(siswa) => {
-              // isi semua properti sesuai type
-              setSelectedSiswa(getSelectedSiswaFull(siswa));
+              setSelectedSiswa(convertSiswaToFullSiswa(siswa));
               setProfilOpen(true);
             }}
             onSubmit={handleSubmit}
@@ -145,7 +116,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
         </CardContent>
       </Card>
       <ProfilSiswaPopup
-        siswa={selectedSiswa ? getSelectedSiswaFull(selectedSiswa) : null}
+        siswa={selectedSiswa}
         isOpen={profilOpen}
         onClose={() => { setProfilOpen(false); setSelectedSiswa(null); }}
       />

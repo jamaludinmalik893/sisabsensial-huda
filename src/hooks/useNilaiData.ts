@@ -1,10 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { UserSession } from '@/types';
 import { Nilai, Siswa, MataPelajaran, Kelas } from '@/types/nilai';
 import { useToast } from '@/hooks/use-toast';
 import { useNilaiQueries } from './useNilaiQueries';
 import { useBulkNilai } from './useBulkNilai';
+import { convertSiswaToFullSiswa } from "@/components/nilai/convertSiswaToFullSiswa";
 
 export const useNilaiData = (userSession: UserSession) => {
   const [nilaiList, setNilaiList] = useState<Nilai[]>([]);
@@ -41,7 +41,9 @@ export const useNilaiData = (userSession: UserSession) => {
 
   const loadSiswaByKelas = async (kelasId: string) => {
     try {
-      const siswaData = await queries.loadSiswaByKelas(kelasId);
+      const siswaDataRaw = await queries.loadSiswaByKelas(kelasId);
+      // Konversi: pastikan siswaList bentuknya sama dgn index.ts
+      const siswaData = siswaDataRaw.map(siswa => convertSiswaToFullSiswa(siswa));
       setSiswaList(siswaData);
       bulkNilai.initializeBulkValues(siswaData);
     } catch (error) {
