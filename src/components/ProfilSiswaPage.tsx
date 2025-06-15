@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
@@ -252,11 +251,11 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Profil</TableHead>
-                  <TableHead>NISN</TableHead>
                   <TableHead>Kelas</TableHead>
                   <TableHead>Jenis Kelamin</TableHead>
                   <TableHead>Umur</TableHead>
                   <TableHead>No. Telepon Siswa</TableHead>
+                  <TableHead>Alamat</TableHead>
                   <TableHead>Tempat Lahir</TableHead>
                   <TableHead>Orang Tua</TableHead>
                   <TableHead>Wali Kelas</TableHead>
@@ -283,12 +282,9 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
                           >
                             {siswa.nama_lengkap}
                           </div>
-                          <div className="text-sm text-gray-500">{siswa.alamat}</div>
+                          <div className="text-sm text-gray-500">{siswa.nisn}</div>
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{siswa.nisn}</Badge>
                     </TableCell>
                     <TableCell>{siswa.kelas.nama_kelas}</TableCell>
                     <TableCell>
@@ -306,6 +302,9 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
                       ) : (
                         <span className="text-gray-400 text-sm">-</span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-xs truncate text-sm">{siswa.alamat}</div>
                     </TableCell>
                     <TableCell>{siswa.tempat_lahir}</TableCell>
                     <TableCell>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
@@ -7,7 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
-import { Users, GraduationCap, Calendar, TrendingUp, Award } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Users, GraduationCap, Calendar, TrendingUp, Award, Plus, Edit2, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import StudentForm from './admin/StudentForm';
 
 interface WaliKelasPageProps {
   userSession: UserSession;
@@ -17,10 +20,18 @@ interface SiswaKelas {
   id_siswa: string;
   nisn: string;
   nama_lengkap: string;
-  jenis_kelamin: string;
+  jenis_kelamin: 'Laki-laki' | 'Perempuan';
+  tanggal_lahir: string;
+  tempat_lahir: string;
+  alamat: string;
   nomor_telepon?: string;
+  nomor_telepon_siswa?: string;
   nama_orang_tua: string;
   nomor_telepon_orang_tua?: string;
+  id_kelas: string;
+  id_guru_wali: string;
+  tahun_masuk: number;
+  foto_url?: string;
 }
 
 interface StatistikAbsensi {
@@ -43,6 +54,26 @@ const WaliKelasPage: React.FC<WaliKelasPageProps> = ({ userSession }) => {
   const [statistikAbsensi, setStatistikAbsensi] = useState<Record<string, StatistikAbsensi>>({});
   const [nilaiRataRata, setNilaiRataRata] = useState<Record<string, NilaiRataRata>>({});
   const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingSiswa, setEditingSiswa] = useState<SiswaKelas | null>(null);
+  const { toast } = useToast();
+
+  const [formData, setFormData] = useState({
+    nisn: '',
+    nama_lengkap: '',
+    jenis_kelamin: '',
+    tanggal_lahir: '',
+    tempat_lahir: '',
+    alamat: '',
+    nomor_telepon: '',
+    nomor_telepon_siswa: '',
+    nama_orang_tua: '',
+    nomor_telepon_orang_tua: '',
+    id_kelas: userSession.kelasWali?.id_kelas || '',
+    id_guru_wali: userSession.guru.id_guru,
+    tahun_masuk: new Date().getFullYear(),
+    foto_url: ''
+  });
 
   useEffect(() => {
     if (userSession.isWaliKelas && userSession.kelasWali) {
@@ -78,9 +109,17 @@ const WaliKelasPage: React.FC<WaliKelasPageProps> = ({ userSession }) => {
           nisn,
           nama_lengkap,
           jenis_kelamin,
+          tanggal_lahir,
+          tempat_lahir,
+          alamat,
           nomor_telepon,
+          nomor_telepon_siswa,
           nama_orang_tua,
-          nomor_telepon_orang_tua
+          nomor_telepon_orang_tua,
+          id_kelas,
+          id_guru_wali,
+          tahun_masuk,
+          foto_url
         `)
         .eq('id_kelas', userSession.kelasWali.id_kelas)
         .order('nama_lengkap');
@@ -170,6 +209,118 @@ const WaliKelasPage: React.FC<WaliKelasPageProps> = ({ userSession }) => {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      if (editingSiswa) {
+        // Update siswa
+        const { error } = await supabase
+          .from('siswa')
+          .update(formData)
+          .eq('id_siswa', editingSiswa.id_siswa);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sukses",
+          description: "Data siswa berhasil diperbarui",
+        });
+      } else {
+        // Create new siswa
+        const { error } = await supabase
+          .from('siswa')
+          .insert(formData);
+
+        if (error) throw error;
+
+        toast({
+          title: "Sukses",
+          description: "Siswa baru berhasil ditambahkan",
+        });
+      }
+
+      setIsDialogOpen(false);
+      resetForm();
+      loadDataKelas();
+    } catch (error) {
+      console.error('Error saving siswa:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan data siswa",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleEdit = (siswa: SiswaKelas) => {
+    setEditingSiswa(siswa);
+    setFormData({
+      nisn: siswa.nisn,
+      nama_lengkap: siswa.nama_lengkap,
+      jenis_kelamin: siswa.jenis_kelamin,
+      tanggal_lahir: siswa.tanggal_lahir,
+      tempat_lahir: siswa.tempat_lahir,
+      alamat: siswa.alamat,
+      nomor_telepon: siswa.nomor_telepon || '',
+      nomor_telepon_siswa: siswa.nomor_telepon_siswa || '',
+      nama_orang_tua: siswa.nama_orang_tua,
+      nomor_telepon_orang_tua: siswa.nomor_telepon_orang_tua || '',
+      id_kelas: siswa.id_kelas,
+      id_guru_wali: siswa.id_guru_wali,
+      tahun_masuk: siswa.tahun_masuk,
+      foto_url: siswa.foto_url || ''
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (id_siswa: string) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus siswa ini?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('siswa')
+        .delete()
+        .eq('id_siswa', id_siswa);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sukses",
+        description: "Siswa berhasil dihapus",
+      });
+      
+      loadDataKelas();
+    } catch (error) {
+      console.error('Error deleting siswa:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus siswa",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      nisn: '',
+      nama_lengkap: '',
+      jenis_kelamin: '',
+      tanggal_lahir: '',
+      tempat_lahir: '',
+      alamat: '',
+      nomor_telepon: '',
+      nomor_telepon_siswa: '',
+      nama_orang_tua: '',
+      nomor_telepon_orang_tua: '',
+      id_kelas: userSession.kelasWali?.id_kelas || '',
+      id_guru_wali: userSession.guru.id_guru,
+      tahun_masuk: new Date().getFullYear(),
+      foto_url: ''
+    });
+    setEditingSiswa(null);
+  };
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
@@ -217,10 +368,37 @@ const WaliKelasPage: React.FC<WaliKelasPageProps> = ({ userSession }) => {
           <h1 className="text-2xl font-bold">Dashboard Wali Kelas</h1>
           <p className="text-gray-600">Kelas {userSession.kelasWali?.nama_kelas}</p>
         </div>
-        <Badge variant="outline" className="text-sm">
-          <Users className="w-4 h-4 mr-1" />
-          {stats.totalSiswa} Siswa
-        </Badge>
+        <div className="flex items-center gap-4">
+          <Badge variant="outline" className="text-sm">
+            <Users className="w-4 h-4 mr-1" />
+            {stats.totalSiswa} Siswa
+          </Badge>
+          
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm}>
+                <Plus className="h-4 w-4 mr-2" />
+                Tambah Siswa
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingSiswa ? 'Edit Siswa' : 'Tambah Siswa Baru'}
+                </DialogTitle>
+                <StudentForm
+                  formData={formData}
+                  setFormData={setFormData}
+                  onSubmit={handleSubmit}
+                  onCancel={() => setIsDialogOpen(false)}
+                  isEditing={!!editingSiswa}
+                  kelasList={userSession.kelasWali ? [userSession.kelasWali] : []}
+                  guruList={[userSession.guru]}
+                />
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Statistics Cards */}
@@ -284,6 +462,7 @@ const WaliKelasPage: React.FC<WaliKelasPageProps> = ({ userSession }) => {
                   <TableHead>Kehadiran</TableHead>
                   <TableHead>Rata-rata Nilai</TableHead>
                   <TableHead>Orang Tua</TableHead>
+                  <TableHead>Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -313,8 +492,8 @@ const WaliKelasPage: React.FC<WaliKelasPageProps> = ({ userSession }) => {
                           </Avatar>
                           <div>
                             <div className="font-medium">{siswa.nama_lengkap}</div>
-                            {siswa.nomor_telepon && (
-                              <div className="text-sm text-gray-500">{siswa.nomor_telepon}</div>
+                            {siswa.nomor_telepon_siswa && (
+                              <div className="text-sm text-gray-500">{siswa.nomor_telepon_siswa}</div>
                             )}
                           </div>
                         </div>
@@ -354,6 +533,24 @@ const WaliKelasPage: React.FC<WaliKelasPageProps> = ({ userSession }) => {
                           {siswa.nomor_telepon_orang_tua && (
                             <div className="text-sm text-gray-500">{siswa.nomor_telepon_orang_tua}</div>
                           )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEdit(siswa)}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDelete(siswa.id_siswa)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
