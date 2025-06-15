@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
 import { Nilai, Siswa, MataPelajaran, Kelas } from '@/types/nilai';
@@ -117,11 +116,21 @@ export const useNilaiQueries = (userSession: UserSession) => {
     return true;
   };
 
+  const deleteNilai = async (nilaiId: string): Promise<boolean> => {
+    const { error } = await supabase
+      .from('nilai')
+      .delete()
+      .eq('id_nilai', nilaiId);
+    if (error) throw error;
+    return true;
+  };
+
   return {
     loadMataPelajaranByGuru,
     loadKelas,
     loadNilai,
     loadSiswaByKelas,
-    updateNilai
+    updateNilai,
+    deleteNilai
   };
 };

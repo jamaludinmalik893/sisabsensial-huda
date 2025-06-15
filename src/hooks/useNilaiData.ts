@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { UserSession } from '@/types';
 import type { Nilai, MataPelajaran, Kelas } from '@/types/nilai';
@@ -93,6 +92,26 @@ export const useNilaiData = (userSession: UserSession) => {
     }
   };
 
+  const deleteNilai = async (nilaiId: string) => {
+    try {
+      await queries.deleteNilai(nilaiId);
+      setNilaiList(prev => prev.filter(nilai => nilai.id_nilai !== nilaiId));
+      toast({
+        title: "Berhasil",
+        description: "Nilai berhasil dihapus"
+      });
+      return true;
+    } catch (error) {
+      console.error('Error deleting nilai:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus nilai",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
   const handleBulkSubmit = async (
     selectedMapel: string,
     jenisNilai: string,
@@ -125,6 +144,7 @@ export const useNilaiData = (userSession: UserSession) => {
     handleBulkValueChange: bulkNilai.handleBulkValueChange,
     handleBulkSubmit,
     loadNilai,
-    updateNilai
+    updateNilai,
+    deleteNilai
   };
 };

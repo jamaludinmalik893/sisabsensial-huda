@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import EditNilaiDialog from './EditNilaiDialog';
 import StudentAvatarCell from './StudentAvatarCell';
 import NilaiTableRow from "./NilaiTableRow";
+import DeleteNilaiDialog from "./DeleteNilaiDialog";
 
 interface Nilai {
   id_nilai: string;
@@ -51,6 +52,7 @@ interface NilaiOverviewTableProps {
   mapelList: Array<{id_mapel: string; nama_mapel: string}>;
   kelasList: Array<{id_kelas: string; nama_kelas: string}>;
   onUpdateNilai: (nilaiId: string, newSkor: number, newCatatan: string) => Promise<void>;
+  deleteNilai: (nilaiId: string) => Promise<void>;
 }
 
 interface StudentGrades {
@@ -66,7 +68,8 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
   selectedKelas,
   mapelList,
   kelasList,
-  onUpdateNilai
+  onUpdateNilai,
+  deleteNilai
 }) => {
   // DEBUG: log apa yang diterima di filteredNilai (harusnya sama seperti nilaiList)
   console.log("NilaiOverviewTable filteredNilai:", filteredNilai);
@@ -84,6 +87,14 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
     judulTugas: string;
     onSave?: () => void;
   }>({ open: false, nilaiId: null, initialSkor: "", initialCatatan: "", siswaName: "", judulTugas: "" });
+
+  // State untuk delete dialog
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    nilaiId: string | null;
+    siswaName: string;
+    judulTugas: string;
+  }>({ open: false, nilaiId: null, siswaName: "", judulTugas: "" });
 
   // Filter nilai by selected subject and class
   const relevantNilai = useMemo(() => {
@@ -185,6 +196,24 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
     if (!editDialog.nilaiId) return;
     await onUpdateNilai(editDialog.nilaiId, skorBaru, catatanBaru);
     setEditDialog({ ...editDialog, open: false });
+  };
+
+  // open action menu for edit/hapus
+  const openTaskActionsDialog = (
+    nilaiId: string,
+    siswaName: string,
+    judulTugas: string
+  ) => {
+    setDeleteDialog({ open: true, nilaiId, siswaName, judulTugas });
+  };
+
+  // Handler klik hapus pada dialog
+  const handleDeleteNilai = async () => {
+    if (!deleteDialog.nilaiId) return;
+    if (typeof deleteNilai === "function") {
+      await deleteNilai(deleteDialog.nilaiId);
+    }
+    setDeleteDialog({ ...deleteDialog, open: false });
   };
 
   return (
@@ -291,6 +320,37 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                           <span className="text-gray-400 text-xs">-</span>
                         )}
                       </TableCell>
+                      {/* Kolom Judul Tugas (double click for edit/delete) */}
+                      {Object.values(studentData.grades).map((grade, i) => (
+                        <React.Fragment key={i + "-extra"}>
+                          <TableCell
+                            className="text-center p-2 align-middle cursor-pointer"
+                            onDoubleClick={() =>
+                              openTaskActionsDialog(
+                                grade.id_nilai,
+                                studentData.siswa.nama_lengkap,
+                                grade.judul_tugas
+                              )
+                            }
+                            title="Double klik untuk edit/hapus nilai"
+                          >
+                            {grade.judul_tugas}
+                          </TableCell>
+                          <TableCell
+                            className="text-center p-2 align-middle cursor-pointer"
+                            onDoubleClick={() =>
+                              openTaskActionsDialog(
+                                grade.id_nilai,
+                                studentData.siswa.nama_lengkap,
+                                grade.judul_tugas
+                              )
+                            }
+                            title="Double klik untuk edit/hapus nilai"
+                          >
+                            {grade.tanggal ? new Date(grade.tanggal).toLocaleDateString('id-ID') : "-"}
+                          </TableCell>
+                        </React.Fragment>
+                      ))}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -322,6 +382,13 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
         onSave={handleSaveEdit}
         namaSiswa={editDialog.siswaName}
         judulTugas={editDialog.judulTugas}
+      />
+      <DeleteNilaiDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
+        onConfirm={handleDeleteNilai}
+        namaSiswa={deleteDialog.siswaName}
+        judulTugas={deleteDialog.judulTugas}
       />
     </TooltipProvider>
   );
