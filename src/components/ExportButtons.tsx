@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Download, FileText } from "lucide-react";
@@ -14,8 +15,8 @@ interface ExportButtonsProps {
 
 /**
  * ExportButtons
- * Tambahan: custom columns pada export, jika props.columns disediakan.
- * Versi terbaru: Print PDF sertakan info mapel dan kelas di atas tabel.
+ * Untuk format rekap tugas: No, Nama, semua tugas, rata-rata.
+ * Versi terbaru: kolom header sesuai props.columns (termasuk new line).
  */
 const ExportButtons: React.FC<ExportButtonsProps> = ({
   data,
@@ -29,6 +30,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
     if (!data.length) return;
     let exportRows = data;
     if (columns) {
+      // urutkan kolom sesuai columns yg diberikan
       exportRows = data.map((row) => {
         const ordered: any = {};
         columns.forEach((c) => {
@@ -43,7 +45,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
     XLSX.writeFile(wb, fileName + ".xlsx");
   };
 
-  // Export to PDF (tabel rekap)
+  // Export to PDF (rekap per tugas)
   const exportToPDF = () => {
     if (!data.length) return;
     const doc = new jsPDF({ orientation: "landscape" });
@@ -66,37 +68,43 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
     }
     if (mapelName || kelasName) positionY += 3;
 
-    // PDF table header
+    // Header format
     const headers = columns ?? Object.keys(data[0]);
     const rows = (data as any[]).map((row) => headers.map((h) => String(row[h] ?? "")));
 
-    // Draw header
+    // Draw header (wrap jika ada \n)
     doc.setFontSize(10);
     let currentX = marginLeft;
     headers.forEach((header) => {
-      doc.text(header, currentX, positionY);
-      currentX += 28;
+      const lines = header.split("\n");
+      lines.forEach((line, idx) => {
+        doc.text(line, currentX, positionY + idx * 4);
+      });
+      currentX += 36;
     });
 
     // Draw rows data
-    let rowY = positionY + 7;
+    let rowY = positionY + 10;
     rows.forEach((row) => {
       let rowX = marginLeft;
       row.forEach((col) => {
-        doc.text(col, rowX, rowY);
-        rowX += 28;
+        doc.text(String(col), rowX, rowY);
+        rowX += 36;
       });
       rowY += 7;
-      // max y: new page jika lebih dari 190  
+      // max y: new page jika lebih dari 190
       if (rowY > 190) {
         doc.addPage();
         rowY = 20;
         let headerX = marginLeft;
         headers.forEach((header) => {
-          doc.text(header, headerX, rowY);
-          headerX += 28;
+          const lines = header.split("\n");
+          lines.forEach((line, idx) => {
+            doc.text(line, headerX, rowY + idx * 4);
+          });
+          headerX += 36;
         });
-        rowY += 7;
+        rowY += 10;
       }
     });
 
@@ -104,7 +112,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
   };
 
   return (
-    <div className="flex gap-2 mb-4">
+    <div className="flex gap-2 justify-end">
       <Button onClick={exportToExcel} size="sm" variant="outline">
         <Download className="mr-1 h-4 w-4" />
         Excel
