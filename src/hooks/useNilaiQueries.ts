@@ -1,0 +1,91 @@
+
+import { supabase } from '@/integrations/supabase/client';
+import { UserSession } from '@/types';
+import { Nilai, Siswa, MataPelajaran, Kelas } from '@/types/nilai';
+
+export const useNilaiQueries = (userSession: UserSession) => {
+  const loadMataPelajaranByGuru = async (): Promise<MataPelajaran[]> => {
+    const { data, error } = await supabase
+      .from('guru_mata_pelajaran')
+      .select(`
+        mata_pelajaran!inner(
+          id_mapel,
+          nama_mapel
+        )
+      `)
+      .eq('id_guru', userSession.guru.id_guru);
+
+    if (error) throw error;
+    
+    return data?.map(item => item.mata_pelajaran).flat() || [];
+  };
+
+  const loadKelas = async (): Promise<Kelas[]> => {
+    const { data, error } = await supabase
+      .from('kelas')
+      .select('id_kelas, nama_kelas')
+      .order('nama_kelas');
+
+    if (error) throw error;
+    return data || [];
+  };
+
+  const loadNilai = async (): Promise<Nilai[]> => {
+    const { data, error } = await supabase
+      .from('nilai')
+      .select(`
+        id_nilai,
+        skor,
+        jenis_nilai,
+        catatan,
+        judul_tugas,
+        tanggal_tugas_dibuat,
+        tanggal_nilai,
+        siswa!inner(
+          id_siswa,
+          nama_lengkap,
+          nisn
+        ),
+        mata_pelajaran!inner(nama_mapel),
+        jurnal_harian!inner(id_guru)
+      `)
+      .eq('jurnal_harian.id_guru', userSession.guru.id_guru)
+      .order('tanggal_nilai', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  };
+
+  const loadSiswaByKelas = async (kelasId: string): Promise<Siswa[]> => {
+    const { data, error } = await supabase
+      .from('siswa')
+      .select('id_siswa, nama_lengkap, nisn')
+      .eq('id_kelas', kelasId)
+      .order('nama_lengkap');
+
+    if (error) throw error;
+    return data || [];
+  };
+
+  const updateNilai = async (nilaiId: string, newSkor: number, newCatatan?: string): Promise<boolean> => {
+    const { error } = await supabase
+      .from('nilai')
+      .update({ 
+        skor: newSkor,
+        catatan: newCatatan,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id_nilai', nilaiId);
+
+    if (error) throw error;
+    return true;
+  };
+
+  return {
+    loadMataPelajaranByGuru,
+    loadKelas,
+    loadNilai,
+    loadSiswaByKelas,
+    updateNilai
+  };
+};
