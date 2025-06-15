@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -51,10 +52,11 @@ const AbsensiTableHeader: React.FC<AbsensiTableHeaderProps> = ({
         <TableHead className="text-center min-w-16 bg-yellow-50">I</TableHead>
         <TableHead className="text-center min-w-16 bg-blue-50">S</TableHead>
         <TableHead className="text-center min-w-16 bg-red-50">A</TableHead>
-        <TableHead className="text-center min-w-20 font-semibold">Total</TableHead>
+        <TableHead className="text-center min-w-20 font-semibold">Prosentase Hadir</TableHead>
       </TableRow>
     </TableHeader>
   );
 };
 
 export default AbsensiTableHeader;
+

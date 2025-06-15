@@ -71,6 +71,7 @@ interface StudentAttendance {
     sakit: number;
     alpha: number;
     total: number;
+    percent: number;
   };
 }
 
@@ -130,7 +131,7 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
         grouped[siswaId] = {
           siswa: absensi.siswa,
           attendances: {},
-          summary: { hadir: 0, izin: 0, sakit: 0, alpha: 0, total: 0 }
+          summary: { hadir: 0, izin: 0, sakit: 0, alpha: 0, total: 0, percent: 0 }
         };
       }
 
@@ -145,12 +146,16 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
     // Calculate summaries
     Object.values(grouped).forEach(studentData => {
       const attendances = Object.values(studentData.attendances);
+      const hadir = attendances.filter(a => a.status === 'Hadir').length;
+      const total = attendances.length;
+      const percent = total > 0 ? (hadir / total * 100) : 0;
       studentData.summary = {
-        hadir: attendances.filter(a => a.status === 'Hadir').length,
+        hadir,
         izin: attendances.filter(a => a.status === 'Izin').length,
         sakit: attendances.filter(a => a.status === 'Sakit').length,
         alpha: attendances.filter(a => a.status === 'Alpha').length,
-        total: attendances.length
+        total,
+        percent,
       };
     });
 

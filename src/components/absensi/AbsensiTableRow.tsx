@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ interface StudentAttendance {
     sakit: number;
     alpha: number;
     total: number;
+    percent?: number;
   };
 }
 
@@ -139,7 +141,9 @@ const AbsensiTableRow: React.FC<AbsensiTableRowProps> = ({
       </TableCell>
       <TableCell className="text-center p-2">
         <Badge variant="outline" className="text-xs font-semibold">
-          {studentData.summary.total}
+          {studentData.summary.total > 0
+            ? `${studentData.summary.percent?.toFixed(1)}%`
+            : "-"}
         </Badge>
       </TableCell>
     </TableRow>
@@ -147,3 +151,4 @@ const AbsensiTableRow: React.FC<AbsensiTableRowProps> = ({
 };
 
 export default AbsensiTableRow;
+
