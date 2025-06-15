@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -40,6 +39,16 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
   userSession,
   onLogout 
 }) => {
+  // Tambahkan state kontrol expand/collapse sub-menu Nilai
+  const [nilaiOpen, setNilaiOpen] = useState(() => currentPage === "nilai" || currentPage.startsWith("nilai-"));
+
+  // Pastikan expand saat berada di salah satu submenu
+  React.useEffect(() => {
+    if (currentPage === "nilai" || currentPage.startsWith("nilai-")) {
+      setNilaiOpen(true);
+    }
+  }, [currentPage]);
+
   const menuUtama = [
     {
       title: "Beranda",
@@ -154,27 +163,43 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                 item.title === "Nilai" ? (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
-                      onClick={() => onPageChange(item.url)}
+                      onClick={() => setNilaiOpen((prev) => !prev)}
                       isActive={currentPage === item.url || currentPage.startsWith("nilai-")}
-                      className={`text-white hover:bg-primary-600 transition-colors ${currentPage === item.url || currentPage.startsWith("nilai-") ? 'bg-primary-700 font-semibold' : ''}`}
+                      className={`flex items-center text-white hover:bg-primary-600 transition-colors ${
+                        currentPage === item.url || currentPage.startsWith("nilai-")
+                          ? 'bg-primary-700 font-semibold'
+                          : ''
+                      }`}
                     >
                       <item.icon className="h-5 w-5" />
                       <span>{item.title}</span>
+                      <svg
+                        className={`ml-auto h-4 w-4 transform duration-150 ${nilaiOpen ? "rotate-90" : ""}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </SidebarMenuButton>
-                    {/* Submenu */}
-                    <SidebarMenu>
-                      {item.submenus?.map((submenu) => (
-                        <SidebarMenuItem key={submenu.title}>
-                          <SidebarMenuButton
-                            onClick={() => onPageChange(submenu.url)}
-                            isActive={currentPage === submenu.url}
-                            className={`ml-7 text-primary-100 hover:bg-primary-800 transition-colors ${currentPage === submenu.url ? 'bg-primary-800 font-semibold' : ''}`}
-                          >
-                            <span>- {submenu.title}</span>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
+                    {/* Submenu tampil hanya jika nilaiOpen == true */}
+                    {nilaiOpen && (
+                      <SidebarMenu>
+                        {item.submenus?.map((submenu) => (
+                          <SidebarMenuItem key={submenu.title}>
+                            <SidebarMenuButton
+                              onClick={() => onPageChange(submenu.url)}
+                              isActive={currentPage === submenu.url}
+                              className={`ml-7 text-primary-100 hover:bg-primary-800 transition-colors ${
+                                currentPage === submenu.url ? 'bg-primary-800 font-semibold' : ''
+                              }`}
+                            >
+                              <span>- {submenu.title}</span>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
+                    )}
                   </SidebarMenuItem>
                 ) : (
                   <SidebarMenuItem key={item.title}>
