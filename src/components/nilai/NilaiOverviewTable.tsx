@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { User } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { User, Edit, Save, X } from 'lucide-react';
 import ProfilSiswaPopup from '../ProfilSiswaPopup';
 
 interface Nilai {
@@ -47,12 +49,20 @@ interface NilaiOverviewTableProps {
   selectedKelas: string;
   mapelList: Array<{id_mapel: string; nama_mapel: string}>;
   kelasList: Array<{id_kelas: string; nama_kelas: string}>;
+  onUpdateNilai: (nilaiId: string, newSkor: number, newCatatan: string) => Promise<void>;
 }
 
 interface StudentGrades {
   siswa: Nilai['siswa'];
-  grades: { [taskKey: string]: {skor: number; tanggal: string} };
+  grades: { [taskKey: string]: {skor: number; tanggal: string; catatan?: string; id_nilai: string} };
   average: number;
+}
+
+interface EditingCell {
+  studentId: string;
+  taskKey: string;
+  skor: string;
+  catatan: string;
 }
 
 const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({ 
@@ -61,10 +71,12 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
   selectedMapel, 
   selectedKelas,
   mapelList,
-  kelasList 
+  kelasList,
+  onUpdateNilai
 }) => {
   const [selectedSiswa, setSelectedSiswa] = useState<Nilai['siswa'] | null>(null);
   const [isProfilOpen, setIsProfilOpen] = useState(false);
+  const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
 
   // Filter nilai by selected subject and class
   const relevantNilai = useMemo(() => {
@@ -95,7 +107,9 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
       if (!grouped[siswaId].grades[taskKey] || new Date(nilai.tanggal_nilai) > new Date(grouped[siswaId].grades[taskKey].tanggal)) {
         grouped[siswaId].grades[taskKey] = {
           skor: nilai.skor,
-          tanggal: nilai.tanggal_tugas_dibuat
+          tanggal: nilai.tanggal_tugas_dibuat,
+          catatan: nilai.catatan,
+          id_nilai: nilai.id_nilai
         };
       }
     });
@@ -146,8 +160,45 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
     return `${mapelName} - ${kelasName}`;
   };
 
+  const startEditing = (studentId: string, taskKey: string, grade: {skor: number; catatan?: string}) => {
+    setEditingCell({
+      studentId,
+      taskKey,
+      skor: grade.skor.toString(),
+      catatan: grade.catatan || ''
+    });
+  };
+
+  const cancelEditing = () => {
+    setEditingCell(null);
+  };
+
+  const saveEdit = async () => {
+    if (!editingCell) return;
+
+    const studentData = studentGradesData.find(s => s.siswa.id_siswa === editingCell.studentId);
+    const grade = studentData?.grades[editingCell.taskKey];
+    
+    if (!grade) return;
+
+    try {
+      await onUpdateNilai(
+        grade.id_nilai,
+        parseFloat(editingCell.skor),
+        editingCell.catatan
+      );
+      setEditingCell(null);
+    } catch (error) {
+      console.error('Error updating nilai:', error);
+    }
+  };
+
+  const isEditing = (studentId: string, taskKey: string) => {
+    return editingCell?.studentId === studentId && editingCell?.taskKey === taskKey;
+  };
+
   return (
-    <>
+    <TooltipProvider>
       <Card>
         <CardHeader>
           <CardTitle>Rekapitulasi Nilai Siswa</CardTitle>
@@ -156,7 +207,7 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
               {getSelectedInfo()}
             </p>
             <p className="text-xs text-gray-500">
-              Klik nama siswa atau ikon untuk melihat profil lengkap
+              Klik nama siswa atau ikon untuk melihat profil lengkap. Klik ikon edit untuk mengubah nilai.
             </p>
           </div>
         </CardHeader>
@@ -210,9 +261,74 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                       {taskList.map((task) => (
                         <TableCell key={task.name} className="text-center p-2">
                           {studentData.grades[task.name] !== undefined ? (
-                            <Badge className={`text-xs ${getScoreColor(studentData.grades[task.name].skor)}`}>
-                              {studentData.grades[task.name].skor}
-                            </Badge>
+                            <div className="flex items-center justify-center gap-1">
+                              {isEditing(studentData.siswa.id_siswa, task.name) ? (
+                                <div className="flex flex-col gap-1">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={editingCell?.skor || ''}
+                                    onChange={(e) => setEditingCell(prev => prev ? {...prev, skor: e.target.value} : null)}
+                                    className="w-16 h-6 text-xs text-center"
+                                  />
+                                  <Input
+                                    value={editingCell?.catatan || ''}
+                                    onChange={(e) => setEditingCell(prev => prev ? {...prev, catatan: e.target.value} : null)}
+                                    placeholder="Catatan"
+                                    className="w-20 h-6 text-xs"
+                                  />
+                                  <div className="flex gap-1">
+                                    <Button
+                                      size="sm"
+                                      onClick={saveEdit}
+                                      className="h-5 w-5 p-0"
+                                    >
+                                      <Save className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={cancelEditing}
+                                      className="h-5 w-5 p-0"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge 
+                                        className={`text-xs relative ${getScoreColor(studentData.grades[task.name].skor)}`}
+                                      >
+                                        {studentData.grades[task.name].skor}
+                                        {studentData.grades[task.name].catatan && (
+                                          <span className="absolute -top-1 -right-1 h-2 w-2 bg-blue-500 rounded-full"></span>
+                                        )}
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <div className="text-xs">
+                                        <p>Nilai: {studentData.grades[task.name].skor}</p>
+                                        {studentData.grades[task.name].catatan && (
+                                          <p>Catatan: {studentData.grades[task.name].catatan}</p>
+                                        )}
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => startEditing(studentData.siswa.id_siswa, task.name, studentData.grades[task.name])}
+                                    className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 hover:opacity-100"
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <span className="text-gray-400 text-xs">-</span>
                           )}
@@ -253,7 +369,7 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
           setSelectedSiswa(null);
         }}
       />
-    </>
+    </TooltipProvider>
   );
 };
 

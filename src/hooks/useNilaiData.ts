@@ -199,6 +199,37 @@ export const useNilaiData = (userSession: UserSession) => {
     }
   };
 
+  const updateNilai = async (nilaiId: string, newSkor: number, newCatatan: string) => {
+    try {
+      const { error } = await supabase
+        .from('nilai')
+        .update({
+          skor: newSkor,
+          catatan: newCatatan || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id_nilai', nilaiId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Nilai berhasil diperbarui"
+      });
+
+      // Reload data to reflect changes
+      await loadNilai();
+    } catch (error) {
+      console.error('Error updating nilai:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memperbarui nilai",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   const handleBulkValueChange = (siswaId: string, field: 'skor' | 'catatan', value: string) => {
     setBulkValues(prev => ({
       ...prev,
@@ -316,6 +347,7 @@ export const useNilaiData = (userSession: UserSession) => {
     loadSiswaByKelas,
     handleBulkValueChange,
     handleBulkSubmit,
-    loadNilai
+    loadNilai,
+    updateNilai
   };
 };

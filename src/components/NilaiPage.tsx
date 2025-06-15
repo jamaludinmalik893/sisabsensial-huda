@@ -32,7 +32,8 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
     loadSiswaByKelas,
     handleBulkValueChange,
     handleBulkSubmit,
-    loadNilai
+    loadNilai,
+    updateNilai
   } = useNilaiData(userSession);
 
   useEffect(() => {
@@ -116,6 +117,7 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
             selectedKelas={selectedKelas}
             mapelList={mapelList}
             kelasList={kelasList}
+            onUpdateNilai={updateNilai}
           />
         </TabsContent>
         
