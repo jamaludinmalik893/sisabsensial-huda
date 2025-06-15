@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { UserSession, Guru, Siswa } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -82,17 +83,18 @@ const ProfilePage: React.FC = () => {
     setSaving(true);
     try {
       if (session?.isGuru) {
-        // Guru update
+        // Guru update; DO NOT include password in this update
+        const guruUpdate = {
+          nama_lengkap: profile.nama_lengkap,
+          alamat: profile.alamat,
+          nomor_telepon: profile.nomor_telepon,
+          foto_url: profile.foto_url,
+          email: newEmail || profile.email,
+          // password is NOT included here!
+        };
         const { error } = await supabase
           .from("guru")
-          .update({
-            nama_lengkap: profile.nama_lengkap,
-            alamat: profile.alamat,
-            nomor_telepon: profile.nomor_telepon,
-            foto_url: profile.foto_url,
-            email: newEmail || profile.email,
-            // password is NOT included here!
-          })
+          .update(guruUpdate)
           .eq("id_guru", session.guru.id_guru);
         if (error) throw error;
       } else if (session?.guru && session.guru.id_guru) {
@@ -102,8 +104,8 @@ const ProfilePage: React.FC = () => {
             ? (profile as any).nomor_telepon_siswa
             : undefined;
 
-        // --- FIX: Do not include password in this update object! ---
-        const updateObject: any = {
+        // Make sure NOT to include password in the updateObject!
+        const updateObject: Partial<Siswa> & { nomor_telepon_siswa?: string } = {
           nama_lengkap: profile.nama_lengkap,
           alamat: profile.alamat,
           nomor_telepon: profile.nomor_telepon,
@@ -112,15 +114,17 @@ const ProfilePage: React.FC = () => {
             : {}),
           foto_url: profile.foto_url,
           email: newEmail || profile.email,
+          // password is NOT included here!
         };
 
         const { error } = await supabase
           .from("siswa")
           .update(updateObject) // No password here!
-          .eq("id_siswa", session.guru.id_guru); // id_siswa dari session
+          .eq("id_siswa", session.guru.id_guru);
         if (error) throw error;
       }
-      // Ganti password jika ada input (done as a SEPARATE query)
+
+      // Separate password update if needed
       if (newPassword && newPassword.length >= 6) {
         if (session?.isGuru) {
           await supabase
@@ -227,3 +231,4 @@ const ProfilePage: React.FC = () => {
 };
 
 export default ProfilePage;
+
