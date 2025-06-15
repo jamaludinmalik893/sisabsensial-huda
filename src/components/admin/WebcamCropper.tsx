@@ -13,6 +13,8 @@ const WebcamCropper: React.FC<WebcamCropperProps> = ({
   stream, onCapture, loading
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const [videoDims, setVideoDims] = useState({ width: 640, height: 480 });
   const [crop, setCrop] = useState({
     x: 100, y: 60, width: 240, height: 240,
@@ -20,6 +22,13 @@ const WebcamCropper: React.FC<WebcamCropperProps> = ({
     relX: 0, relY: 0,
     resizing: false,
     resizeDir: "" as "br"|"tl"|"",
+    // koord mouse relatif crop
+    mouseStartX: 0,
+    mouseStartY: 0,
+    cropStartX: 0,
+    cropStartY: 0,
+    cropStartW: 0,
+    cropStartH: 0,
   });
 
   // After video loaded, sync dimension
@@ -52,49 +61,101 @@ const WebcamCropper: React.FC<WebcamCropperProps> = ({
     }
   }, [stream]);
 
-  // Drag crop
+  // --- New: handle crop movement/resize with proporsional container ---
+  const getOffsetInContainer = (clientX: number, clientY: number) => {
+    const container = containerRef.current;
+    if (!container) return { x: 0, y: 0 };
+    const rect = container.getBoundingClientRect();
+    return {
+      x: ((clientX - rect.left) / rect.width) * videoDims.width,
+      y: ((clientY - rect.top) / rect.height) * videoDims.height
+    };
+  };
+
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Kotak utama (geser)
     e.preventDefault();
+    e.stopPropagation();
+    const point = getOffsetInContainer(e.clientX, e.clientY);
     setCrop(c => ({
       ...c,
       dragging: true,
-      relX: e.clientX - c.x,
-      relY: e.clientY - c.y
+      relX: point.x - c.x,
+      relY: point.y - c.y,
+      mouseStartX: point.x,
+      mouseStartY: point.y,
+      cropStartX: c.x,
+      cropStartY: c.y,
+      cropStartW: c.width,
+      cropStartH: c.height,
     }));
   };
-  const handleMouseUp = () => setCrop(c => ({ ...c, dragging: false, resizing: false, resizeDir: "" }));
-  const handleMouseMove = (e: MouseEvent) => {
-    setCrop(c => {
-      if (c.dragging) {
-        let nx = e.clientX - c.relX;
-        let ny = e.clientY - c.relY;
-        nx = Math.max(0, Math.min(nx, videoDims.width - c.width));
-        ny = Math.max(0, Math.min(ny, videoDims.height - c.height));
-        return { ...c, x: nx, y: ny };
-      }
-      if (c.resizing && c.resizeDir === 'br') {
-        let nw = Math.max(MIN_SIZE, Math.min(e.clientX - c.x, videoDims.width - c.x));
-        let nh = Math.max(MIN_SIZE, Math.min(e.clientY - c.y, videoDims.height - c.y));
-        let side = Math.min(nw, nh, videoDims.width - c.x, videoDims.height - c.y);
-        return { ...c, width: side, height: side };
-      }
-      if (c.resizing && c.resizeDir === 'tl') {
-        return c;
-      }
-      return c;
-    });
-  };
+
   const handleResizeDown = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
-    setCrop(c => ({ ...c, resizing: true, resizeDir: "br" }));
+    const point = getOffsetInContainer(e.clientX, e.clientY);
+    setCrop(c => ({
+      ...c,
+      resizing: true,
+      resizeDir: "br",
+      mouseStartX: point.x,
+      mouseStartY: point.y,
+      cropStartW: c.width,
+      cropStartH: c.height,
+      cropStartX: c.x,
+      cropStartY: c.y,
+    }));
   };
+
   useEffect(() => {
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
+    function onMouseMove(e: MouseEvent) {
+      // Pastikan container selalu ada
+      if (!containerRef.current) return;
+      const point = getOffsetInContainer(e.clientX, e.clientY);
+      setCrop(c => {
+        // Resize sudut kanan bawah
+        if (c.resizing && c.resizeDir === 'br') {
+          let delta = Math.min(point.x - c.cropStartX, point.y - c.cropStartY);
+          let newSize = Math.max(MIN_SIZE, Math.min(delta, videoDims.width - c.cropStartX, videoDims.height - c.cropStartY));
+          return {
+            ...c,
+            width: newSize,
+            height: newSize,
+          };
+        }
+        // Drag kotak crop
+        if (c.dragging) {
+          let nx = point.x - c.relX;
+          let ny = point.y - c.relY;
+          nx = Math.max(0, Math.min(nx, videoDims.width - c.width));
+          ny = Math.max(0, Math.min(ny, videoDims.height - c.height));
+          return {
+            ...c,
+            x: nx,
+            y: ny,
+          };
+        }
+        return c;
+      });
+    }
+
+    function onMouseUp() {
+      setCrop(c => ({
+        ...c,
+        dragging: false,
+        resizing: false,
+        resizeDir: ""
+      }));
+    }
+
+    // Attach to window for consistent drag/resize
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
     };
+    // eslint-disable-next-line
   }, [videoDims]);
 
   // Capture area
@@ -118,10 +179,12 @@ const WebcamCropper: React.FC<WebcamCropperProps> = ({
 
   return (
     <div
-      className="relative w-full max-w-lg mx-auto flex flex-col items-center"
+      ref={containerRef}
+      className="relative w-full max-w-lg mx-auto flex flex-col items-center touch-none select-none"
       style={{
         aspectRatio: `${videoDims.width} / ${videoDims.height}`,
         background: "#222",
+        userSelect: "none"
       }}
     >
       <video
@@ -142,7 +205,7 @@ const WebcamCropper: React.FC<WebcamCropperProps> = ({
       {/* Crop overlay */}
       {stream && (
         <div
-          className="absolute border-4 border-yellow-400 bg-yellow-200/10"
+          className="absolute border-4 border-yellow-400 bg-yellow-200/10 transition-none"
           role="presentation"
           style={{
             left: `${(crop.x / videoDims.width) * 100}%`,
@@ -153,6 +216,7 @@ const WebcamCropper: React.FC<WebcamCropperProps> = ({
             borderRadius: 10,
             boxShadow: '0 0 0 200vw rgba(0,0,0,0.4) inset',
             transition: 'none',
+            userSelect: "none"
           }}
           onMouseDown={handleMouseDown}
         >
