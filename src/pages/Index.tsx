@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { useToast } from '@/hooks/use-toast';
@@ -14,10 +13,12 @@ const Index = () => {
 
   const handleLogin = async (email: string, password: string): Promise<boolean> => {
     const success = await login(email, password);
-    if (success && userSession) {
+    if (success) {
       toast({
         title: "Login Berhasil",
-        description: `Selamat datang, ${userSession.guru.nama_lengkap}!`,
+        description: userSession
+          ? `Selamat datang, ${userSession.guru.nama_lengkap}!`
+          : "Selamat datang!",
       });
     } else {
       toast({
