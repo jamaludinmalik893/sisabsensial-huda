@@ -33,11 +33,10 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
 
   // Filter with correct property access based on type definitions
   const filteredNilai = nilaiList.filter(nilai => {
-    // Filter mapel: use id_mapel if exists, fallback to nilai.mata_pelajaran.id_mapel
+    // Filter mapel by matching nama_mapel (since id_mapel not available on nilai)
     const matchMapel =
       selectedMapel === 'all' ||
-      (nilai.id_mapel && nilai.id_mapel === selectedMapel) ||
-      (nilai.mata_pelajaran && 'id_mapel' in nilai.mata_pelajaran && nilai.mata_pelajaran.id_mapel === selectedMapel);
+      (nilai.mata_pelajaran && nilai.mata_pelajaran.nama_mapel === (mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel ?? ''));
 
     // Filter kelas: compare using nama_kelas, since id_kelas missing in siswa
     let matchKelas = selectedKelas === 'all';
