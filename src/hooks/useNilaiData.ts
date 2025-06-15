@@ -10,8 +10,24 @@ interface Nilai {
   tanggal_nilai: string;
   catatan?: string;
   siswa: {
+    id_siswa: string;
     nama_lengkap: string;
     nisn: string;
+    jenis_kelamin: string;
+    tanggal_lahir: string;
+    tempat_lahir: string;
+    alamat: string;
+    nomor_telepon?: string;
+    nama_orang_tua: string;
+    nomor_telepon_orang_tua?: string;
+    tahun_masuk: number;
+    foto_url?: string;
+    kelas?: {
+      nama_kelas: string;
+    };
+    guru_wali?: {
+      nama_lengkap: string;
+    };
   };
   mata_pelajaran: {
     nama_mapel: string;
@@ -63,7 +79,22 @@ export const useNilaiData = (userSession: UserSession) => {
           skor,
           tanggal_nilai,
           catatan,
-          siswa!inner(nama_lengkap, nisn),
+          siswa!inner(
+            id_siswa,
+            nama_lengkap, 
+            nisn,
+            jenis_kelamin,
+            tanggal_lahir,
+            tempat_lahir,
+            alamat,
+            nomor_telepon,
+            nama_orang_tua,
+            nomor_telepon_orang_tua,
+            tahun_masuk,
+            foto_url,
+            kelas(nama_kelas),
+            guru_wali:guru(nama_lengkap)
+          ),
           mata_pelajaran!inner(nama_mapel)
         `);
 
