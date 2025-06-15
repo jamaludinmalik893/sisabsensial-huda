@@ -102,19 +102,21 @@ const ProfilePage: React.FC = () => {
             ? (profile as any).nomor_telepon_siswa
             : undefined;
 
+        // --- FIX: Do not include password in this update object! ---
+        const updateObject: any = {
+          nama_lengkap: profile.nama_lengkap,
+          alamat: profile.alamat,
+          nomor_telepon: profile.nomor_telepon,
+          ...(typeof nomor_telepon_siswa !== "undefined"
+            ? { nomor_telepon_siswa: nomor_telepon_siswa ?? profile.nomor_telepon ?? "" }
+            : {}),
+          foto_url: profile.foto_url,
+          email: newEmail || profile.email,
+        };
+
         const { error } = await supabase
           .from("siswa")
-          .update({
-            nama_lengkap: profile.nama_lengkap,
-            alamat: profile.alamat,
-            nomor_telepon: profile.nomor_telepon,
-            ...(typeof nomor_telepon_siswa !== "undefined"
-              ? { nomor_telepon_siswa: nomor_telepon_siswa ?? profile.nomor_telepon ?? "" }
-              : {}),
-            foto_url: profile.foto_url,
-            email: newEmail || profile.email,
-            // password is NOT included here!
-          })
+          .update(updateObject) // No password here!
           .eq("id_siswa", session.guru.id_guru); // id_siswa dari session
         if (error) throw error;
       }
