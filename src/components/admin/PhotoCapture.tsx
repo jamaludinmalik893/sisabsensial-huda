@@ -82,22 +82,6 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhot
         fileToUpload = file;
       }
 
-      // Ensure bucket exists, create if not
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const bucketExists = buckets?.some(bucket => bucket.name === 'student-photos');
-      
-      if (!bucketExists) {
-        const { error: bucketError } = await supabase.storage.createBucket('student-photos', {
-          public: true,
-          allowedMimeTypes: ['image/*'],
-          fileSizeLimit: 5242880 // 5MB
-        });
-        if (bucketError) {
-          console.error('Error creating bucket:', bucketError);
-          throw bucketError;
-        }
-      }
-
       const fileExt = fileToUpload.name.split('.').pop();
       const filePath = `student-${Date.now()}.${fileExt}`;
 
