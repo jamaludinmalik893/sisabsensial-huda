@@ -206,10 +206,10 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {/* Pindahkan TableHead "No Absen" ke paling kiri */}
+                    {/* No Absen */}
                     <TableHead className="w-12 text-center">No Absen</TableHead>
                     <TableHead className="min-w-40">Nama Siswa</TableHead>
-                    <TableHead className="min-w-24 text-center">Rekapitulasi<br /><span className="font-light">(Rata-rata)</span></TableHead>
+                    {/* Move all task columns before Rata-rata */}
                     {taskList.map((task) => (
                       <TableHead key={task.name} className="text-center min-w-24">
                         <div className="flex flex-col">
@@ -223,22 +223,72 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                         </div>
                       </TableHead>
                     ))}
+                    {/* Move Rata-rata to far right */}
+                    <TableHead className="min-w-24 text-center">
+                      Rekapitulasi<br /><span className="font-light">(Rata-rata)</span>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {studentGradesData.map((studentData, idx) => (
-                    <NilaiTableRow
-                      key={studentData.siswa.id_siswa}
-                      studentData={studentData}
-                      idx={idx}
-                      taskList={taskList}
-                      openEditDialog={openEditDialog}
-                      getScoreColor={getScoreColor}
-                      handleSiswaClick={(siswa) => {
-                        setSelectedSiswa(siswa);
-                        setIsProfilOpen(true);
-                      }}
-                    />
+                    <TableRow key={studentData.siswa.id_siswa} className="hover:bg-gray-50 group">
+                      {/* No Absen */}
+                      <TableCell className="p-2 text-center align-middle">{idx + 1}</TableCell>
+                      {/* Nama Siswa */}
+                      <TableCell className="p-2 align-middle">
+                        <StudentCell
+                          siswa={studentData.siswa}
+                          onClickProfil={handleSiswaClick}
+                        />
+                      </TableCell>
+                      {/* Task/score columns */}
+                      {taskList.map((task) => {
+                        const grade = studentData.grades[task.name];
+                        return (
+                          <TableCell key={task.name} className="text-center p-2 align-middle">
+                            {grade !== undefined ? (
+                              <div
+                                onDoubleClick={() =>
+                                  openEditDialog(
+                                    grade.id_nilai,
+                                    grade.skor,
+                                    grade.catatan ?? "",
+                                    studentData.siswa.nama_lengkap,
+                                    grade.judul_tugas
+                                  )
+                                }
+                                className="inline-block cursor-pointer group relative"
+                                title="Double klik untuk edit nilai & catatan"
+                              >
+                                <Badge className={`text-xs ${getScoreColor(grade.skor)} relative`}>
+                                  {grade.skor}
+                                  {grade.catatan && (
+                                    <span className="absolute top-[-3px] right-[-3px]">
+                                      <span className="inline-block h-2 w-2 rounded-full bg-green-500 border-2 border-white shadow" />
+                                    </span>
+                                  )}
+                                </Badge>
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 text-xs">-</span>
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                      {/* Rekapitulasi (average) at the far right */}
+                      <TableCell className="p-2 text-center align-middle">
+                        {studentData.average > 0 ? (
+                          <Badge
+                            variant="outline"
+                            className={`text-xs font-semibold ${getScoreColor(studentData.average)}`}
+                          >
+                            {studentData.average}
+                          </Badge>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
                   ))}
                 </TableBody>
               </Table>
