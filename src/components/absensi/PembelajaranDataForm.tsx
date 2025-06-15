@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface Kelas {
@@ -57,7 +58,7 @@ const PembelajaranDataForm: React.FC<PembelajaranDataFormProps> = ({
   tanggalPelajaran,
   onTanggalPelajaranChange,
 }) => {
-  // Konversi yyyy-mm-dd ke Date (untuk ditampilkan di Calendar)
+  // Konversi yyyy-mm-dd ke Date (untuk DatePicker)
   const selectedDate = tanggalPelajaran ? new Date(tanggalPelajaran) : undefined;
 
   return (
@@ -66,44 +67,45 @@ const PembelajaranDataForm: React.FC<PembelajaranDataFormProps> = ({
         <CardTitle>Data Pembelajaran</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Form Tanggal */}
-        <div>
-          <Label htmlFor="tanggal-pelajaran">Tanggal Pembelajaran</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className={cn(
-                  "w-full md:w-[240px] mt-1 justify-start rounded-md border px-3 py-2 text-left text-sm font-normal bg-background hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary",
-                  !selectedDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4 inline" />
-                {selectedDate
-                  ? selectedDate.toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric" })
-                  : <span>Pilih tanggal</span>}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => {
-                  if (date) {
-                    // Ubah format ke yyyy-mm-dd
-                    const formatted = date.toISOString().split("T")[0];
-                    onTanggalPelajaranChange(formatted);
-                  }
-                }}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-
         {/* Form Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* DatePicker */}
+          <div>
+            <Label htmlFor="tanggal-pelajaran">Tanggal Pembelajaran</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full md:w-[240px] mt-1 justify-start text-left font-normal",
+                    !selectedDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate
+                    ? selectedDate.toLocaleDateString("id-ID", { year: "numeric", month: "long", day: "numeric" })
+                    : <span>Pilih tanggal</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      // Ubah ke format yyyy-mm-dd
+                      const formatted = date.toISOString().split("T")[0];
+                      onTanggalPelajaranChange(formatted);
+                    }
+                  }}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Kelas */}
           <div>
             <Label htmlFor="kelas">Kelas</Label>
             <Select value={selectedKelas} onValueChange={onKelasChange}>
@@ -120,6 +122,7 @@ const PembelajaranDataForm: React.FC<PembelajaranDataFormProps> = ({
             </Select>
           </div>
 
+          {/* Mapel */}
           <div>
             <Label htmlFor="mapel">Mata Pelajaran</Label>
             <Select value={selectedMapel} onValueChange={onMapelChange}>
@@ -136,6 +139,7 @@ const PembelajaranDataForm: React.FC<PembelajaranDataFormProps> = ({
             </Select>
           </div>
 
+          {/* Waktu Mulai */}
           <div>
             <Label htmlFor="waktu-mulai">Waktu Mulai</Label>
             <Input
@@ -146,6 +150,7 @@ const PembelajaranDataForm: React.FC<PembelajaranDataFormProps> = ({
             />
           </div>
 
+          {/* Waktu Selesai */}
           <div>
             <Label htmlFor="waktu-selesai">Waktu Selesai</Label>
             <Input
