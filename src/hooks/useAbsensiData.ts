@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
@@ -41,7 +40,10 @@ export const useAbsensiData = (userSession: UserSession) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const today = new Date().toISOString().split('T')[0];
+  // TAMBAHKAN: State tanggal pelajaran (default hari ini, bisa diubah user)
+  const [tanggalPelajaran, setTanggalPelajaran] = useState<string>(new Date().toISOString().split('T')[0]);
+
+  const today = tanggalPelajaran; // Ganti penggunaan today dengan tanggalPelajaran
 
   useEffect(() => {
     loadInitialData();
@@ -162,14 +164,14 @@ export const useAbsensiData = (userSession: UserSession) => {
 
     setLoading(true);
     try {
-      // First create jurnal
+      // CREATE JURNAL DENGAN TANGGAL YANG DIPILIH
       const { data: jurnalData, error: jurnalError } = await supabase
         .from('jurnal_harian')
         .insert({
           id_guru: userSession.guru.id_guru,
           id_mapel: selectedMapel,
           id_kelas: selectedKelas,
-          tanggal_pelajaran: today,
+          tanggal_pelajaran: tanggalPelajaran,
           waktu_mulai: waktuMulai,
           waktu_selesai: waktuSelesai,
           judul_materi: judulMateri,
@@ -222,6 +224,7 @@ export const useAbsensiData = (userSession: UserSession) => {
     setWaktuSelesai('');
     setSiswaList([]);
     setAbsensiData([]);
+    setTanggalPelajaran(new Date().toISOString().split('T')[0]); // reset tanggal ke hari ini
   };
 
   return {
@@ -236,7 +239,9 @@ export const useAbsensiData = (userSession: UserSession) => {
     kelasList,
     mapelList,
     loading,
-    today,
+    today: tanggalPelajaran,      // ganti penggunaan today
+    tanggalPelajaran,             // tambahkan prop tanggalPelajaran
+    setTanggalPelajaran,          // expose setter
     setSelectedKelas,
     setSelectedMapel,
     setJudulMateri,

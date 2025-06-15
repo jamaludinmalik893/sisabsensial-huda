@@ -25,6 +25,8 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
     mapelList,
     loading,
     today,
+    tanggalPelajaran,
+    setTanggalPelajaran,
     setSelectedKelas,
     setSelectedMapel,
     setJudulMateri,
@@ -61,6 +63,9 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
         onMateriDiajarkanChange={setMateriDiajarkan}
         onWaktuMulaiChange={setWaktuMulai}
         onWaktuSelesaiChange={setWaktuSelesai}
+        // Tambahkan prop untuk tanggal
+        tanggalPelajaran={tanggalPelajaran}
+        onTanggalPelajaranChange={setTanggalPelajaran}
       />
 
       {selectedKelas && siswaList.length > 0 && (
