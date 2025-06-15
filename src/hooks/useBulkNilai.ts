@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
@@ -60,25 +59,28 @@ export const useBulkNilai = (userSession: UserSession) => {
     }
 
     try {
-      // filter & mapping skor & catatan valid
-      const nilaiToInsert = Object.entries(bulkValues)
-        .filter(([_, value]) => String(value.skor).trim() !== '')
-        .map(([siswaId, value]) => ({
-          id_siswa: siswaId,
+      const nilaiToInsert = siswaList.map((siswa) => {
+        const value = bulkValues[siswa.id_siswa];
+        let skorRaw = (value && value.skor !== undefined) ? value.skor : '';
+        let skor = (!skorRaw || isNaN(Number(skorRaw))) ? 0 : parseFloat(skorRaw);
+        let catatan = value?.catatan ?? '';
+        return {
+          id_siswa: siswa.id_siswa,
           id_mapel: selectedMapel,
-          skor: parseFloat(value.skor),
+          skor: skor,
           jenis_nilai: jenisNilai,
           judul_tugas: judulTugas,
           tanggal_tugas_dibuat: tanggalTugasDibuat,
           tanggal_nilai: new Date().toISOString().split('T')[0],
-          catatan: value.catatan,
+          catatan: catatan,
           id_jurnal: null,
-        }));
+        };
+      });
 
       if (nilaiToInsert.length === 0) {
         toast({
           title: "Error",
-          description: "Tidak ada nilai yang dimasukkan",
+          description: "Tidak ada siswa yang diproses",
           variant: "destructive"
         });
         return false;
@@ -115,5 +117,3 @@ export const useBulkNilai = (userSession: UserSession) => {
     initializeBulkValues
   };
 };
-
-// ... end of file ...
