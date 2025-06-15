@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -12,37 +13,46 @@ interface PhotoCaptureProps {
 
 const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhotoUrl }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isCamera, setIsCamera] = useState(false);
+  const [mode, setMode] = useState<'idle' | 'camera' | 'upload'>('idle');
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // --- Tambahan: auto start camera ketika dialog dibuka
+  // Reset state setiap dialog dibuka/ditutup
   useEffect(() => {
     if (isOpen) {
-      startCamera();
+      setMode('idle');
+      setCapturedPhoto(null);
+      setUploadPreview(null);
     } else {
       stopCamera();
-      setCapturedPhoto(null);
-      setIsCamera(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
+  // Hentikan kamera ketika mode berubah (bukan kamera)
+  useEffect(() => {
+    if (mode !== 'camera') stopCamera();
+    // jika mode camera, nyalakan
+    if (mode === 'camera') startCamera();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  // Kamera
   const startCamera = useCallback(async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: 640, height: 480 } 
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480 }
       });
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
       }
-      setIsCamera(true);
     } catch (error) {
       console.error('Error accessing camera:', error);
       toast({
@@ -50,7 +60,7 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhot
         description: "Tidak dapat mengakses kamera",
         variant: "destructive"
       });
-      setIsCamera(false);
+      setMode('idle');
     }
   }, [toast]);
 
@@ -59,7 +69,9 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhot
       stream.getTracks().forEach(track => track.stop());
       setStream(null);
     }
-    setIsCamera(false);
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
   }, [stream]);
 
   const capturePhoto = useCallback(() => {
@@ -78,12 +90,31 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhot
     }
   }, []);
 
-  const uploadPhoto = useCallback(async (file: string, fileName: string) => {
+  // Upload dari image/file input
+  const onFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Cek preview
+    const reader = new FileReader();
+    reader.onload = function (evt) {
+      if (evt.target?.result) setUploadPreview(evt.target.result as string);
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  // Upload ke supabase
+  const uploadPhoto = useCallback(async (file: string | File, fileName: string) => {
     setUploading(true);
     try {
-      // Convert base64 to blob
-      const response = await fetch(file);
-      const blob = await response.blob();
+      let blob: Blob;
+      if (typeof file === 'string') {
+        // base64 (webcam)
+        const response = await fetch(file);
+        blob = await response.blob();
+      } else {
+        // file asli
+        blob = file;
+      }
       const fileToUpload = new File([blob], fileName, { type: 'image/jpeg' });
 
       const fileExt = fileToUpload.name.split('.').pop();
@@ -119,21 +150,24 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhot
       });
     } finally {
       setUploading(false);
+      setCapturedPhoto(null);
+      setUploadPreview(null);
+      setMode('idle');
     }
   }, [onPhotoCapture, stopCamera, toast]);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
-    // stopCamera and cleanup dijalankan otomatis via useEffect
+    // camera akan berhenti via efek mode/isOpen
   }, []);
 
   return (
     <>
       <div className="flex items-center gap-2">
         {currentPhotoUrl && (
-          <img 
-            src={currentPhotoUrl} 
-            alt="Current photo" 
+          <img
+            src={currentPhotoUrl}
+            alt="Current photo"
             className="w-16 h-16 rounded-full object-cover border"
           />
         )}
@@ -151,9 +185,23 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhot
               Pilih cara untuk menambahkan foto siswa
             </DialogDescription>
           </DialogHeader>
-          
           <div className="space-y-4">
-            {(isCamera && !capturedPhoto) && (
+            {/* Mode awal: pilih metode */}
+            {mode === 'idle' && (
+              <div className="flex flex-col gap-4">
+                <Button variant="default" size="lg" onClick={() => setMode('camera')} className="w-full flex items-center justify-center">
+                  <Camera className="h-5 w-5 mr-2" />
+                  Ambil Foto Via Webcam
+                </Button>
+                <Button variant="outline" size="lg" onClick={() => setMode('upload')} className="w-full flex items-center justify-center">
+                  <Upload className="h-5 w-5 mr-2" />
+                  Upload File Foto
+                </Button>
+              </div>
+            )}
+
+            {/* Mode webcam */}
+            {(mode === 'camera') && !capturedPhoto && (
               <div className="flex flex-col items-center gap-6">
                 <video
                   ref={videoRef}
@@ -163,8 +211,8 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhot
                   style={{ minHeight: 280, background: '#0a0a0a' }}
                 />
                 <canvas ref={canvasRef} className="hidden" />
-                <Button 
-                  onClick={capturePhoto} 
+                <Button
+                  onClick={capturePhoto}
                   className="w-full flex items-center justify-center"
                   size="lg"
                   disabled={uploading}
@@ -172,36 +220,106 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhot
                   <Camera className="h-5 w-5 mr-2" />
                   Ambil Foto
                 </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="mt-2"
+                  onClick={() => setMode('idle')}
+                  disabled={uploading}
+                >
+                  &larr; Kembali
+                </Button>
               </div>
             )}
-            {(capturedPhoto != null) && (
+            {/* Setelah ambil foto webcam */}
+            {(capturedPhoto != null && mode === 'camera') && (
               <div className="space-y-3 flex flex-col items-center">
-                <img 
-                  src={capturedPhoto} 
+                <img
+                  src={capturedPhoto}
                   alt="Captured"
                   className="w-full rounded-lg"
                 />
                 <div className="flex gap-3 w-full">
-                  <Button 
+                  <Button
                     onClick={() => uploadPhoto(capturedPhoto, `photo-${Date.now()}.jpg`)}
                     className="flex-1"
                     disabled={uploading}
                   >
                     {uploading ? 'Mengupload...' : 'Gunakan Foto'}
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={() => setCapturedPhoto(null)}
                     disabled={uploading}
                   >
                     Ambil Ulang
                   </Button>
                 </div>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="mt-2"
+                  onClick={() => { setMode('idle'); setCapturedPhoto(null); }}
+                  disabled={uploading}
+                >
+                  &larr; Kembali
+                </Button>
               </div>
             )}
-            {/* Jika terjadi error kamera gagal, akan muncul pilihan fallback di sini. */}
-            {(!isCamera && !capturedPhoto) && (
-              <div className="text-center text-red-600">Tidak dapat mengakses kamera, pastikan izin sudah diberikan.</div>
+            {/* Mode upload file */}
+            {(mode === 'upload') && (
+              <div className="flex flex-col items-center gap-6">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={onFileChange}
+                  disabled={uploading}
+                />
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex items-center justify-center"
+                  disabled={uploading}
+                >
+                  <Upload className="h-5 w-5 mr-2" />
+                  Pilih File Foto
+                </Button>
+                {uploadPreview && (
+                  <div className="w-full flex flex-col items-center gap-3">
+                    <img src={uploadPreview} alt="Preview upload" className="w-full rounded-lg" />
+                    <Button
+                      onClick={() => {
+                        if (fileInputRef.current?.files?.[0])
+                          uploadPhoto(fileInputRef.current.files[0], `upload-${Date.now()}.jpg`)
+                      }}
+                      className="w-full"
+                      disabled={uploading}
+                    >
+                      {uploading ? "Mengupload..." : "Gunakan Foto"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setUploadPreview(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      disabled={uploading}
+                    >
+                      Pilih Ulang
+                    </Button>
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="link"
+                  className="mt-2"
+                  onClick={() => setMode('idle')}
+                  disabled={uploading}
+                >
+                  &larr; Kembali
+                </Button>
+              </div>
             )}
           </div>
         </DialogContent>
