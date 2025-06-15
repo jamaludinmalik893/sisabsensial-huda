@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { User, Plus, Edit2, Trash2, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Guru, Kelas, MataPelajaran, UserSession, GuruRole } from '@/types';
+import { Guru, Kelas, MataPelajaran, UserSession, SimpleGuruRole } from '@/types';
 
 interface AdminGuruPageProps {
   userSession: UserSession;
@@ -20,7 +20,7 @@ interface AdminGuruPageProps {
 
 interface GuruWithRoles extends Guru {
   kelas_wali?: { nama_kelas: string };
-  guru_roles?: GuruRole[];
+  guru_roles?: SimpleGuruRole[];
   roles?: ('admin' | 'guru' | 'wali_kelas')[];
 }
 
@@ -81,12 +81,12 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
 
       if (mapelError) throw mapelError;
 
-      // Transform guru data to include roles array
-      const transformedGuruData = guruData?.map(guru => ({
+      // Transform guru data to include roles array with proper typing
+      const transformedGuruData: GuruWithRoles[] = guruData?.map(guru => ({
         ...guru,
-        status: guru.status as 'admin' | 'guru',
         kelas_wali: guru.kelas_wali,
-        roles: guru.guru_roles?.map((gr: any) => gr.role) || []
+        guru_roles: guru.guru_roles as SimpleGuruRole[],
+        roles: guru.guru_roles?.map((gr: SimpleGuruRole) => gr.role) || []
       })) || [];
 
       setGuruList(transformedGuruData);

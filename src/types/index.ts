@@ -8,7 +8,7 @@ export interface Guru {
   nomor_telepon?: string;
   alamat?: string;
   wali_kelas?: string;
-  status: 'admin' | 'guru'; // Keep for backward compatibility
+  status: string; // Changed from union type to string to match database
   foto_url?: string;
   created_at?: string;
   updated_at?: string;
@@ -21,6 +21,11 @@ export interface GuruRole {
   id_guru: string;
   role: 'admin' | 'guru' | 'wali_kelas';
   created_at: string;
+}
+
+// Simple role interface for query results
+export interface SimpleGuruRole {
+  role: 'admin' | 'guru' | 'wali_kelas';
 }
 
 export interface Siswa {

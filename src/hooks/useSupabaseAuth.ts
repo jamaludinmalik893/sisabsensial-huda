@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { UserSession, Guru } from '@/types';
+import { UserSession, Guru, SimpleGuruRole } from '@/types';
 
 export const useSupabaseAuth = () => {
   const [userSession, setUserSession] = useState<UserSession | null>(null);
@@ -33,14 +33,14 @@ export const useSupabaseAuth = () => {
           .single();
 
         if (!error && guru) {
-          // Extract roles from guru_roles
-          const roles = guru.guru_roles?.map((gr: any) => gr.role) || [];
+          // Extract roles from guru_roles with proper typing
+          const roles = guru.guru_roles?.map((gr: SimpleGuruRole) => gr.role) || [];
           
           const userSession: UserSession = {
             guru: {
               ...guru,
               roles: roles
-            },
+            } as Guru,
             isAdmin: roles.includes('admin'),
             isGuru: roles.includes('guru'),
             isWaliKelas: roles.includes('wali_kelas'),
@@ -91,14 +91,14 @@ export const useSupabaseAuth = () => {
         return false;
       }
 
-      // Extract roles from guru_roles
-      const roles = guru.guru_roles?.map((gr: any) => gr.role) || [];
+      // Extract roles from guru_roles with proper typing
+      const roles = guru.guru_roles?.map((gr: SimpleGuruRole) => gr.role) || [];
 
       const userSession: UserSession = {
         guru: {
           ...guru,
           roles: roles
-        },
+        } as Guru,
         isAdmin: roles.includes('admin'),
         isGuru: roles.includes('guru'),
         isWaliKelas: roles.includes('wali_kelas'),
