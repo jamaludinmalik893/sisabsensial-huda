@@ -44,7 +44,18 @@ export const useNilaiQueries = (userSession: UserSession) => {
         siswa!inner(
           id_siswa,
           nama_lengkap,
-          nisn
+          nisn,
+          jenis_kelamin,
+          tanggal_lahir,
+          tempat_lahir,
+          alamat,
+          nomor_telepon,
+          nama_orang_tua,
+          nomor_telepon_orang_tua,
+          tahun_masuk,
+          foto_url,
+          kelas(nama_kelas),
+          guru_wali:guru(nama_lengkap)
         ),
         mata_pelajaran!inner(nama_mapel),
         jurnal_harian!inner(id_guru)
