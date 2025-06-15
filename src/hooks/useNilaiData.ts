@@ -6,6 +6,8 @@ import { useToast } from '@/hooks/use-toast';
 interface Nilai {
   id_nilai: string;
   jenis_nilai: string;
+  judul_tugas: string;
+  tanggal_tugas_dibuat: string;
   skor: number;
   tanggal_nilai: string;
   catatan?: string;
@@ -76,6 +78,8 @@ export const useNilaiData = (userSession: UserSession) => {
         .select(`
           id_nilai,
           jenis_nilai,
+          judul_tugas,
+          tanggal_tugas_dibuat,
           skor,
           tanggal_nilai,
           catatan,
@@ -205,14 +209,14 @@ export const useNilaiData = (userSession: UserSession) => {
     }));
   };
 
-  const handleBulkSubmit = async (selectedMapel: string, selectedJenisNilai: string) => {
-    if (selectedMapel === 'all' || selectedJenisNilai === 'all' || !selectedMapel || !selectedJenisNilai) {
+  const handleBulkSubmit = async (selectedMapel: string, selectedJenisNilai: string, judulTugas: string, tanggalTugasDibuat: string) => {
+    if (selectedMapel === 'all' || selectedJenisNilai === 'all' || !selectedMapel || !selectedJenisNilai || !judulTugas) {
       toast({
         title: "Error",
-        description: "Pilih mata pelajaran dan jenis nilai terlebih dahulu",
+        description: "Pilih mata pelajaran, jenis nilai, dan masukkan judul tugas terlebih dahulu",
         variant: "destructive"
       });
-      return;
+      return false;
     }
 
     // Filter siswa yang memiliki nilai
@@ -226,7 +230,7 @@ export const useNilaiData = (userSession: UserSession) => {
         description: "Masukkan minimal satu nilai yang valid (0-100)",
         variant: "destructive"
       });
-      return;
+      return false;
     }
 
     try {
@@ -242,8 +246,10 @@ export const useNilaiData = (userSession: UserSession) => {
         id_mapel: selectedMapel,
         id_jurnal: jurnalData?.id_jurnal || '00000000-0000-0000-0000-000000000000',
         jenis_nilai: selectedJenisNilai,
+        judul_tugas: judulTugas,
         skor: parseFloat(entry.skor),
         tanggal_nilai: new Date().toISOString().split('T')[0],
+        tanggal_tugas_dibuat: tanggalTugasDibuat,
         catatan: entry.catatan || null
       }));
 

@@ -58,16 +58,19 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
   handleBulkValueChange,
   handleBulkSubmit
 }) => {
+  const [judulTugas, setJudulTugas] = React.useState('');
+  const [tanggalTugasDibuat, setTanggalTugasDibuat] = React.useState(new Date().toISOString().split('T')[0]);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Entry Nilai Massal - Mode Excel</CardTitle>
         <p className="text-sm text-gray-600">
-          Pilih mata pelajaran, kelas, dan jenis nilai, kemudian masukkan nilai untuk setiap siswa
+          Pilih mata pelajaran, kelas, masukkan judul tugas, dan nilai untuk setiap siswa
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
           <div>
             <label className="text-sm font-medium mb-2 block">Mata Pelajaran *</label>
             <Select value={selectedMapel} onValueChange={setSelectedMapel}>
@@ -116,16 +119,33 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
               </SelectContent>
             </Select>
           </div>
+
+          <div>
+            <label className="text-sm font-medium mb-2 block">Judul Tugas *</label>
+            <Input
+              value={judulTugas}
+              onChange={(e) => setJudulTugas(e.target.value)}
+              placeholder="Masukkan judul tugas"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium mb-2 block">Tanggal Tugas Dibuat</label>
+            <Input
+              type="date"
+              value={tanggalTugasDibuat}
+              onChange={(e) => setTanggalTugasDibuat(e.target.value)}
+            />
+          </div>
         </div>
 
-        {selectedMapel !== 'all' && selectedKelas !== 'all' && selectedJenisNilai !== 'all' && siswaList.length > 0 && (
+        {selectedMapel !== 'all' && selectedKelas !== 'all' && selectedJenisNilai !== 'all' && judulTugas && siswaList.length > 0 && (
           <>
             <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
                     <TableHead className="w-12">No</TableHead>
-                    <TableHead>NISN</TableHead>
                     <TableHead>Nama Siswa</TableHead>
                     <TableHead className="w-24">Nilai (0-100)</TableHead>
                     <TableHead className="w-48">Catatan</TableHead>
@@ -135,7 +155,6 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
                   {siswaList.map((siswa, index) => (
                     <TableRow key={siswa.id_siswa}>
                       <TableCell className="font-medium">{index + 1}</TableCell>
-                      <TableCell>{siswa.nisn}</TableCell>
                       <TableCell>{siswa.nama_lengkap}</TableCell>
                       <TableCell>
                         <Input
@@ -163,7 +182,11 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
             </div>
 
             <div className="flex justify-end">
-              <Button onClick={handleBulkSubmit} className="flex items-center gap-2">
+              <Button 
+                onClick={() => handleBulkSubmit(judulTugas, tanggalTugasDibuat)} 
+                className="flex items-center gap-2"
+                disabled={!judulTugas}
+              >
                 <Save className="h-4 w-4" />
                 Simpan Semua Nilai
               </Button>
@@ -171,7 +194,13 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
           </>
         )}
 
-        {selectedMapel !== 'all' && selectedKelas !== 'all' && selectedJenisNilai !== 'all' && siswaList.length === 0 && (
+        {selectedMapel !== 'all' && selectedKelas !== 'all' && selectedJenisNilai !== 'all' && !judulTugas && (
+          <div className="text-center py-8 text-gray-500">
+            Masukkan judul tugas untuk melanjutkan
+          </div>
+        )}
+
+        {selectedMapel !== 'all' && selectedKelas !== 'all' && selectedJenisNilai !== 'all' && judulTugas && siswaList.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             Tidak ada siswa di kelas yang dipilih
           </div>

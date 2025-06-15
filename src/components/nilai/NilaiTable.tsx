@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 interface Nilai {
   id_nilai: string;
   jenis_nilai: string;
+  judul_tugas: string;
+  tanggal_tugas_dibuat: string;
   skor: number;
   tanggal_nilai: string;
   catatan?: string;
@@ -48,6 +50,8 @@ const NilaiTable: React.FC<NilaiTableProps> = ({ filteredNilai, loading }) => {
                 <TableHead>Siswa</TableHead>
                 <TableHead>Mata Pelajaran</TableHead>
                 <TableHead>Jenis</TableHead>
+                <TableHead>Judul Tugas</TableHead>
+                <TableHead>Tgl Dibuat</TableHead>
                 <TableHead>Skor</TableHead>
                 <TableHead>Catatan</TableHead>
               </TableRow>
@@ -67,6 +71,10 @@ const NilaiTable: React.FC<NilaiTableProps> = ({ filteredNilai, loading }) => {
                   <TableCell>{nilai.mata_pelajaran.nama_mapel}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{nilai.jenis_nilai}</Badge>
+                  </TableCell>
+                  <TableCell className="max-w-xs">{nilai.judul_tugas}</TableCell>
+                  <TableCell>
+                    {new Date(nilai.tanggal_tugas_dibuat).toLocaleDateString('id-ID')}
                   </TableCell>
                   <TableCell>
                     <Badge className={getScoreColor(nilai.skor)}>

@@ -290,8 +290,10 @@ export type Database = {
           id_nilai: string
           id_siswa: string
           jenis_nilai: string
+          judul_tugas: string
           skor: number
           tanggal_nilai: string
+          tanggal_tugas_dibuat: string | null
           updated_at: string | null
         }
         Insert: {
@@ -302,8 +304,10 @@ export type Database = {
           id_nilai?: string
           id_siswa: string
           jenis_nilai: string
+          judul_tugas: string
           skor: number
           tanggal_nilai: string
+          tanggal_tugas_dibuat?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -314,8 +318,10 @@ export type Database = {
           id_nilai?: string
           id_siswa?: string
           jenis_nilai?: string
+          judul_tugas?: string
           skor?: number
           tanggal_nilai?: string
+          tanggal_tugas_dibuat?: string | null
           updated_at?: string | null
         }
         Relationships: [

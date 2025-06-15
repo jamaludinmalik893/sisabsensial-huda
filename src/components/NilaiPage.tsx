@@ -47,8 +47,8 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
     return true;
   });
 
-  const handleBulkSubmitWrapper = async () => {
-    const success = await handleBulkSubmit(selectedMapel, selectedJenisNilai);
+  const handleBulkSubmitWrapper = async (judulTugas: string, tanggalTugasDibuat: string) => {
+    const success = await handleBulkSubmit(selectedMapel, selectedJenisNilai, judulTugas, tanggalTugasDibuat);
     if (success) {
       setBulkEntryMode(false);
     }
@@ -109,7 +109,14 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
         </TabsList>
         
         <TabsContent value="overview" className="mt-6">
-          <NilaiOverviewTable filteredNilai={filteredNilai} loading={loading} />
+          <NilaiOverviewTable 
+            filteredNilai={filteredNilai} 
+            loading={loading}
+            selectedMapel={selectedMapel}
+            selectedKelas={selectedKelas}
+            mapelList={mapelList}
+            kelasList={kelasList}
+          />
         </TabsContent>
         
         <TabsContent value="detailed" className="mt-6">
