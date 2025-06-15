@@ -91,7 +91,7 @@ const ProfilePage: React.FC = () => {
             nomor_telepon: profile.nomor_telepon,
             foto_url: profile.foto_url,
             email: newEmail || profile.email,
-            // password is NOT included here
+            // password is NOT included here!
           })
           .eq("id_guru", session.guru.id_guru);
         if (error) throw error;
@@ -113,7 +113,7 @@ const ProfilePage: React.FC = () => {
               : {}),
             foto_url: profile.foto_url,
             email: newEmail || profile.email,
-            // password is NOT included here
+            // password is NOT included here!
           })
           .eq("id_siswa", session.guru.id_guru); // id_siswa dari session
         if (error) throw error;
