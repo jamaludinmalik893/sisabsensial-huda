@@ -8,8 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, GraduationCap, Trophy } from 'lucide-react';
+import { GraduationCap, Trophy, Filter, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface NilaiPageProps {
@@ -35,6 +34,9 @@ interface Siswa {
   id_siswa: string;
   nama_lengkap: string;
   nisn: string;
+  kelas?: {
+    nama_kelas: string;
+  };
 }
 
 interface MataPelajaran {
@@ -42,32 +44,50 @@ interface MataPelajaran {
   nama_mapel: string;
 }
 
+interface Kelas {
+  id_kelas: string;
+  nama_kelas: string;
+}
+
+interface BulkNilaiEntry {
+  id_siswa: string;
+  skor: string;
+  catatan: string;
+}
+
 const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
   const [nilaiList, setNilaiList] = useState<Nilai[]>([]);
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
   const [mapelList, setMapelList] = useState<MataPelajaran[]>([]);
+  const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    id_siswa: '',
-    id_mapel: '',
-    jenis_nilai: '',
-    skor: '',
-    catatan: ''
-  });
+  const [bulkEntryMode, setBulkEntryMode] = useState(false);
+  const [bulkValues, setBulkValues] = useState<Record<string, BulkNilaiEntry>>({});
+  
+  // Filter states
+  const [selectedMapel, setSelectedMapel] = useState('');
+  const [selectedKelas, setSelectedKelas] = useState('');
+  const [selectedJenisNilai, setSelectedJenisNilai] = useState('');
+  
   const { toast } = useToast();
 
   useEffect(() => {
     loadInitialData();
   }, [userSession]);
 
+  useEffect(() => {
+    if (selectedMapel && selectedKelas) {
+      loadSiswaByKelas();
+    }
+  }, [selectedKelas]);
+
   const loadInitialData = async () => {
     setLoading(true);
     try {
       await Promise.all([
         loadNilai(),
-        loadSiswa(),
-        loadMataPelajaran()
+        loadMataPelajaranGuru(),
+        loadKelas()
       ]);
     } catch (error) {
       console.error('Error loading initial data:', error);
@@ -78,7 +98,7 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
 
   const loadNilai = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('nilai')
         .select(`
           id_nilai,
@@ -88,9 +108,24 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
           catatan,
           siswa!inner(nama_lengkap, nisn),
           mata_pelajaran!inner(nama_mapel)
-        `)
-        .order('tanggal_nilai', { ascending: false });
+        `);
 
+      // Filter berdasarkan mata pelajaran yang diampu guru jika bukan admin
+      if (!userSession.isAdmin) {
+        const { data: guruMapel } = await supabase
+          .from('guru_mata_pelajaran')
+          .select('id_mapel')
+          .eq('id_guru', userSession.guru.id_guru);
+        
+        if (guruMapel && guruMapel.length > 0) {
+          const mapelIds = guruMapel.map(gm => gm.id_mapel);
+          query = query.in('id_mapel', mapelIds);
+        }
+      }
+
+      query = query.order('tanggal_nilai', { ascending: false });
+
+      const { data, error } = await query;
       if (error) throw error;
       setNilaiList(data || []);
     } catch (error) {
@@ -98,27 +133,26 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
     }
   };
 
-  const loadSiswa = async () => {
+  const loadMataPelajaranGuru = async () => {
     try {
-      const { data, error } = await supabase
-        .from('siswa')
-        .select('id_siswa, nama_lengkap, nisn')
-        .order('nama_lengkap');
+      let query = supabase.from('mata_pelajaran').select('id_mapel, nama_mapel');
 
-      if (error) throw error;
-      setSiswaList(data || []);
-    } catch (error) {
-      console.error('Error loading siswa:', error);
-    }
-  };
+      // Filter berdasarkan mata pelajaran yang diampu guru jika bukan admin
+      if (!userSession.isAdmin) {
+        const { data: guruMapel } = await supabase
+          .from('guru_mata_pelajaran')
+          .select('id_mapel')
+          .eq('id_guru', userSession.guru.id_guru);
+        
+        if (guruMapel && guruMapel.length > 0) {
+          const mapelIds = guruMapel.map(gm => gm.id_mapel);
+          query = query.in('id_mapel', mapelIds);
+        }
+      }
 
-  const loadMataPelajaran = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('mata_pelajaran')
-        .select('id_mapel, nama_mapel')
-        .order('nama_mapel');
+      query = query.order('nama_mapel');
 
+      const { data, error } = await query;
       if (error) throw error;
       setMapelList(data || []);
     } catch (error) {
@@ -126,13 +160,82 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.id_siswa || !formData.id_mapel || !formData.jenis_nilai || !formData.skor) {
+  const loadKelas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('kelas')
+        .select('id_kelas, nama_kelas')
+        .order('nama_kelas');
+
+      if (error) throw error;
+      setKelasList(data || []);
+    } catch (error) {
+      console.error('Error loading kelas:', error);
+    }
+  };
+
+  const loadSiswaByKelas = async () => {
+    if (!selectedKelas) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('siswa')
+        .select(`
+          id_siswa, 
+          nama_lengkap, 
+          nisn,
+          kelas(nama_kelas)
+        `)
+        .eq('id_kelas', selectedKelas)
+        .order('nama_lengkap');
+
+      if (error) throw error;
+      setSiswaList(data || []);
+      
+      // Initialize bulk values
+      const initialBulkValues: Record<string, BulkNilaiEntry> = {};
+      data?.forEach(siswa => {
+        initialBulkValues[siswa.id_siswa] = {
+          id_siswa: siswa.id_siswa,
+          skor: '',
+          catatan: ''
+        };
+      });
+      setBulkValues(initialBulkValues);
+    } catch (error) {
+      console.error('Error loading siswa:', error);
+    }
+  };
+
+  const handleBulkValueChange = (siswaId: string, field: 'skor' | 'catatan', value: string) => {
+    setBulkValues(prev => ({
+      ...prev,
+      [siswaId]: {
+        ...prev[siswaId],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleBulkSubmit = async () => {
+    if (!selectedMapel || !selectedJenisNilai) {
       toast({
         title: "Error",
-        description: "Mohon lengkapi semua field yang wajib diisi",
+        description: "Pilih mata pelajaran dan jenis nilai terlebih dahulu",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Filter siswa yang memiliki nilai
+    const validEntries = Object.values(bulkValues).filter(entry => 
+      entry.skor && parseFloat(entry.skor) >= 0 && parseFloat(entry.skor) <= 100
+    );
+
+    if (validEntries.length === 0) {
+      toast({
+        title: "Error",
+        description: "Masukkan minimal satu nilai yang valid (0-100)",
         variant: "destructive"
       });
       return;
@@ -146,36 +249,41 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
         .limit(1)
         .single();
 
+      const nilaiData = validEntries.map(entry => ({
+        id_siswa: entry.id_siswa,
+        id_mapel: selectedMapel,
+        id_jurnal: jurnalData?.id_jurnal || '00000000-0000-0000-0000-000000000000',
+        jenis_nilai: selectedJenisNilai,
+        skor: parseFloat(entry.skor),
+        tanggal_nilai: new Date().toISOString().split('T')[0],
+        catatan: entry.catatan || null
+      }));
+
       const { error } = await supabase
         .from('nilai')
-        .insert({
-          id_siswa: formData.id_siswa,
-          id_mapel: formData.id_mapel,
-          id_jurnal: jurnalData?.id_jurnal || '00000000-0000-0000-0000-000000000000',
-          jenis_nilai: formData.jenis_nilai,
-          skor: parseFloat(formData.skor),
-          tanggal_nilai: new Date().toISOString().split('T')[0],
-          catatan: formData.catatan || null
-        });
+        .insert(nilaiData);
 
       if (error) throw error;
 
       toast({
         title: "Berhasil",
-        description: "Nilai berhasil ditambahkan"
+        description: `${validEntries.length} nilai berhasil disimpan`
       });
 
-      setIsDialogOpen(false);
-      setFormData({
-        id_siswa: '',
-        id_mapel: '',
-        jenis_nilai: '',
-        skor: '',
-        catatan: ''
+      // Reset form
+      setBulkEntryMode(false);
+      const resetBulkValues: Record<string, BulkNilaiEntry> = {};
+      siswaList.forEach(siswa => {
+        resetBulkValues[siswa.id_siswa] = {
+          id_siswa: siswa.id_siswa,
+          skor: '',
+          catatan: ''
+        };
       });
+      setBulkValues(resetBulkValues);
       loadNilai();
     } catch (error) {
-      console.error('Error saving nilai:', error);
+      console.error('Error saving bulk nilai:', error);
       toast({
         title: "Error",
         description: "Gagal menyimpan nilai",
@@ -197,41 +305,105 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
     return (total / nilaiList.length).toFixed(1);
   };
 
+  const filteredNilai = nilaiList.filter(nilai => {
+    if (selectedMapel && nilai.mata_pelajaran.nama_mapel !== mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel) return false;
+    if (selectedJenisNilai && nilai.jenis_nilai !== selectedJenisNilai) return false;
+    return true;
+  });
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Manajemen Nilai</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Tambah Nilai
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Tambah Nilai Baru</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Siswa *</label>
-                <Select value={formData.id_siswa} onValueChange={(value) => setFormData({...formData, id_siswa: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pilih siswa" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {siswaList.map((siswa) => (
-                      <SelectItem key={siswa.id_siswa} value={siswa.id_siswa}>
-                        {siswa.nama_lengkap} ({siswa.nisn})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        <div className="flex gap-2">
+          <Button 
+            variant={bulkEntryMode ? "destructive" : "default"}
+            onClick={() => setBulkEntryMode(!bulkEntryMode)}
+          >
+            {bulkEntryMode ? "Batal Entry Massal" : "Entry Nilai Massal"}
+          </Button>
+        </div>
+      </div>
 
+      {/* Filter Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filter Data
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Mata Pelajaran</label>
+              <Select value={selectedMapel} onValueChange={setSelectedMapel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih mata pelajaran" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Semua Mata Pelajaran</SelectItem>
+                  {mapelList.map((mapel) => (
+                    <SelectItem key={mapel.id_mapel} value={mapel.id_mapel}>
+                      {mapel.nama_mapel}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Kelas</label>
+              <Select value={selectedKelas} onValueChange={setSelectedKelas}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih kelas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Semua Kelas</SelectItem>
+                  {kelasList.map((kelas) => (
+                    <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
+                      {kelas.nama_kelas}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Jenis Nilai</label>
+              <Select value={selectedJenisNilai} onValueChange={setSelectedJenisNilai}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih jenis nilai" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Semua Jenis</SelectItem>
+                  <SelectItem value="Tugas Harian">Tugas Harian</SelectItem>
+                  <SelectItem value="Quiz">Quiz</SelectItem>
+                  <SelectItem value="UTS">UTS</SelectItem>
+                  <SelectItem value="UAS">UAS</SelectItem>
+                  <SelectItem value="Praktikum">Praktikum</SelectItem>
+                  <SelectItem value="Proyek">Proyek</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bulk Entry Mode */}
+      {bulkEntryMode && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Entry Nilai Massal - Mode Excel</CardTitle>
+            <p className="text-sm text-gray-600">
+              Pilih mata pelajaran, kelas, dan jenis nilai, kemudian masukkan nilai untuk setiap siswa
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Mata Pelajaran *</label>
-                <Select value={formData.id_mapel} onValueChange={(value) => setFormData({...formData, id_mapel: value})}>
+                <Select value={selectedMapel} onValueChange={setSelectedMapel}>
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih mata pelajaran" />
                   </SelectTrigger>
@@ -246,8 +418,24 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
               </div>
 
               <div>
+                <label className="text-sm font-medium mb-2 block">Kelas *</label>
+                <Select value={selectedKelas} onValueChange={setSelectedKelas}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih kelas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {kelasList.map((kelas) => (
+                      <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
+                        {kelas.nama_kelas}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <label className="text-sm font-medium mb-2 block">Jenis Nilai *</label>
-                <Select value={formData.jenis_nilai} onValueChange={(value) => setFormData({...formData, jenis_nilai: value})}>
+                <Select value={selectedJenisNilai} onValueChange={setSelectedJenisNilai}>
                   <SelectTrigger>
                     <SelectValue placeholder="Pilih jenis nilai" />
                   </SelectTrigger>
@@ -261,40 +449,69 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">Skor (0-100) *</label>
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.skor}
-                  onChange={(e) => setFormData({...formData, skor: e.target.value})}
-                  placeholder="Masukkan skor"
-                />
-              </div>
+            {selectedMapel && selectedKelas && selectedJenisNilai && siswaList.length > 0 && (
+              <>
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50">
+                        <TableHead className="w-12">No</TableHead>
+                        <TableHead>NISN</TableHead>
+                        <TableHead>Nama Siswa</TableHead>
+                        <TableHead className="w-24">Nilai (0-100)</TableHead>
+                        <TableHead className="w-48">Catatan</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {siswaList.map((siswa, index) => (
+                        <TableRow key={siswa.id_siswa}>
+                          <TableCell className="font-medium">{index + 1}</TableCell>
+                          <TableCell>{siswa.nisn}</TableCell>
+                          <TableCell>{siswa.nama_lengkap}</TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={bulkValues[siswa.id_siswa]?.skor || ''}
+                              onChange={(e) => handleBulkValueChange(siswa.id_siswa, 'skor', e.target.value)}
+                              placeholder="0-100"
+                              className="w-full"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              value={bulkValues[siswa.id_siswa]?.catatan || ''}
+                              onChange={(e) => handleBulkValueChange(siswa.id_siswa, 'catatan', e.target.value)}
+                              placeholder="Catatan (opsional)"
+                              className="w-full"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">Catatan</label>
-                <Input
-                  value={formData.catatan}
-                  onChange={(e) => setFormData({...formData, catatan: e.target.value})}
-                  placeholder="Catatan tambahan (opsional)"
-                />
-              </div>
+                <div className="flex justify-end">
+                  <Button onClick={handleBulkSubmit} className="flex items-center gap-2">
+                    <Save className="h-4 w-4" />
+                    Simpan Semua Nilai
+                  </Button>
+                </div>
+              </>
+            )}
 
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Batal
-                </Button>
-                <Button type="submit">
-                  Simpan
-                </Button>
+            {selectedMapel && selectedKelas && selectedJenisNilai && siswaList.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                Tidak ada siswa di kelas yang dipilih
               </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -305,7 +522,7 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
                 <GraduationCap className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold">{nilaiList.length}</div>
+                <div className="text-2xl font-bold">{filteredNilai.length}</div>
                 <div className="text-sm text-gray-500">Total Nilai</div>
               </div>
             </div>
@@ -334,7 +551,7 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
               </div>
               <div>
                 <div className="text-2xl font-bold">
-                  {nilaiList.filter(n => n.skor >= 75).length}
+                  {filteredNilai.filter(n => n.skor >= 75).length}
                 </div>
                 <div className="text-sm text-gray-500">Nilai ≥ 75</div>
               </div>
@@ -364,7 +581,7 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {nilaiList.map((nilai) => (
+                {filteredNilai.map((nilai) => (
                   <TableRow key={nilai.id_nilai}>
                     <TableCell>
                       {new Date(nilai.tanggal_nilai).toLocaleDateString('id-ID')}
@@ -393,9 +610,9 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
             </Table>
           )}
           
-          {!loading && nilaiList.length === 0 && (
+          {!loading && filteredNilai.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              Belum ada data nilai
+              Belum ada data nilai sesuai filter
             </div>
           )}
         </CardContent>
