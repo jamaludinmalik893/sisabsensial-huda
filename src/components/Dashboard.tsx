@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +17,8 @@ import { StatistikDashboard, UserSession } from '@/types';
 import StatistikNilaiChart from "./dashboard/StatistikNilaiChart";
 import StatistikAbsensiChart from "./dashboard/StatistikAbsensiChart";
 import { supabase } from '@/integrations/supabase/client';
+import { useStatistikAbsensiHarian } from "@/hooks/useStatistikAbsensiHarian";
+import { useAktivitasTerbaru } from "@/hooks/useAktivitasTerbaru";
 
 interface DashboardProps {
   userSession: UserSession;
@@ -103,6 +104,10 @@ const Dashboard: React.FC<DashboardProps> = ({ userSession }) => {
 
   const totalKehadiran = Object.values(statistik.kehadiran_hari_ini).reduce((a, b) => a + b, 0);
   const persentaseKehadiran = totalKehadiran > 0 ? (statistik.kehadiran_hari_ini.hadir / totalKehadiran) * 100 : 0;
+
+  // Tambahkan hook data real absensi harian dan aktivitas
+  const { data: absensiHarianData, loading: loadingAbsensiHarian } = useStatistikAbsensiHarian();
+  const { data: aktivitasTerbaruReal, loading: loadingAktivitas } = useAktivitasTerbaru(userSession);
 
   const aktivitasTerbaru = [
     {
@@ -235,7 +240,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userSession }) => {
       {/* Statistik Grafik */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <StatistikNilaiChart />
-        <StatistikAbsensiChart />
+        <StatistikAbsensiChart data={absensiHarianData} loading={loadingAbsensiHarian} />
       </div>
 
       {/* Info Siswa Terbaik & Motivasi */}
@@ -330,18 +335,24 @@ const Dashboard: React.FC<DashboardProps> = ({ userSession }) => {
             </div>
 
             <div className="space-y-4">
-              {aktivitasTerbaru.map((aktivitas) => (
-                <div key={aktivitas.id} className="flex items-start space-x-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="bg-green-100 p-2 rounded-full">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
+              {loadingAktivitas ? (
+                <div>Loading...</div>
+              ) : aktivitasTerbaruReal.length === 0 ? (
+                <div className="text-gray-500 text-sm italic">Belum ada aktivitas</div>
+              ) : (
+                aktivitasTerbaruReal.map((aktivitas) => (
+                  <div key={aktivitas.id} className="flex items-start space-x-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className="bg-green-100 p-2 rounded-full">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">{aktivitas.uraian}</p>
+                      {aktivitas.deskripsi && <p className="text-sm text-gray-600">{aktivitas.deskripsi}</p>}
+                      <p className="text-xs text-gray-500">{new Date(aktivitas.waktu).toLocaleString("id-ID")}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{aktivitas.aksi}</p>
-                    <p className="text-sm text-gray-600">{aktivitas.guru}</p>
-                    <p className="text-xs text-gray-500">{aktivitas.waktu}</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
             <div className="pt-4 border-t">
