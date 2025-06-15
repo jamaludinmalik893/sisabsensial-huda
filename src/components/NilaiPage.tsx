@@ -2,11 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { UserSession } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import NilaiFilters from './nilai/NilaiFilters';
 import NilaiStatistics from './nilai/NilaiStatistics';
 import BulkNilaiEntry from './nilai/BulkNilaiEntry';
-import NilaiTable from './nilai/NilaiTable';
 import NilaiOverviewTable from './nilai/NilaiOverviewTable';
 import { useNilaiData } from '@/hooks/useNilaiData';
 
@@ -102,29 +100,16 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
       {/* Statistics */}
       <NilaiStatistics filteredNilai={filteredNilai} />
 
-      {/* Tabs for different views */}
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="overview">Rekapitulasi Nilai</TabsTrigger>
-          <TabsTrigger value="detailed">Daftar Detail Nilai</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="mt-6">
-          <NilaiOverviewTable 
-            filteredNilai={filteredNilai} 
-            loading={loading}
-            selectedMapel={selectedMapel}
-            selectedKelas={selectedKelas}
-            mapelList={mapelList}
-            kelasList={kelasList}
-            onUpdateNilai={updateNilai}
-          />
-        </TabsContent>
-        
-        <TabsContent value="detailed" className="mt-6">
-          <NilaiTable filteredNilai={filteredNilai} loading={loading} />
-        </TabsContent>
-      </Tabs>
+      {/* Rekapitulasi Nilai Table */}
+      <NilaiOverviewTable 
+        filteredNilai={filteredNilai} 
+        loading={loading}
+        selectedMapel={selectedMapel}
+        selectedKelas={selectedKelas}
+        mapelList={mapelList}
+        kelasList={kelasList}
+        onUpdateNilai={updateNilai}
+      />
     </div>
   );
 };

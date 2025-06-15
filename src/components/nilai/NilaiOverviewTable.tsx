@@ -239,7 +239,7 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                 </TableHeader>
                 <TableBody>
                   {studentGradesData.map((studentData) => (
-                    <TableRow key={studentData.siswa.id_siswa} className="hover:bg-gray-50 h-12">
+                    <TableRow key={studentData.siswa.id_siswa} className="hover:bg-gray-50 group">
                       <TableCell className="p-2">
                         <Button
                           variant="ghost"
@@ -300,14 +300,16 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                                 <div className="flex items-center gap-1">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <Badge 
-                                        className={`text-xs relative ${getScoreColor(studentData.grades[task.name].skor)}`}
-                                      >
-                                        {studentData.grades[task.name].skor}
+                                      <div className="relative">
+                                        <Badge 
+                                          className={`text-xs cursor-pointer ${getScoreColor(studentData.grades[task.name].skor)}`}
+                                        >
+                                          {studentData.grades[task.name].skor}
+                                        </Badge>
                                         {studentData.grades[task.name].catatan && (
                                           <span className="absolute -top-1 -right-1 h-2 w-2 bg-blue-500 rounded-full"></span>
                                         )}
-                                      </Badge>
+                                      </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
                                       <div className="text-xs">
@@ -322,7 +324,7 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => startEditing(studentData.siswa.id_siswa, task.name, studentData.grades[task.name])}
-                                    className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 hover:opacity-100"
+                                    className="h-4 w-4 p-0 ml-1 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
                                   >
                                     <Edit className="h-3 w-3" />
                                   </Button>
