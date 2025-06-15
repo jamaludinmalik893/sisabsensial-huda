@@ -3,16 +3,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
 
-interface MataPelajaran {
-  id_mapel: string;
-  nama_mapel: string;
-}
-
-interface Kelas {
-  id_kelas: string;
-  nama_kelas: string;
-}
-
 interface RiwayatAbsensi {
   id_absensi: string;
   status: string;
@@ -51,6 +41,16 @@ interface RiwayatAbsensi {
   };
 }
 
+interface MataPelajaran {
+  id_mapel: string;
+  nama_mapel: string;
+}
+
+interface Kelas {
+  id_kelas: string;
+  nama_kelas: string;
+}
+
 export const useRiwayatAbsensiData = (userSession: UserSession) => {
   const [selectedMapel, setSelectedMapel] = useState('all');
   const [selectedKelas, setSelectedKelas] = useState('all');
@@ -63,18 +63,17 @@ export const useRiwayatAbsensiData = (userSession: UserSession) => {
     loadInitialData();
   }, [userSession]);
 
-  useEffect(() => {
-    loadRiwayatAbsensi();
-  }, [selectedMapel, selectedKelas, userSession]);
-
   const loadInitialData = async () => {
     try {
       await Promise.all([
         loadMataPelajaranByGuru(),
-        loadKelas()
+        loadKelas(),
+        loadRiwayatAbsensi()
       ]);
     } catch (error) {
       console.error('Error loading initial data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -115,9 +114,7 @@ export const useRiwayatAbsensiData = (userSession: UserSession) => {
 
   const loadRiwayatAbsensi = async () => {
     try {
-      setLoading(true);
-      
-      let query = supabase
+      const { data, error } = await supabase
         .from('absensi')
         .select(`
           id_absensi,
@@ -150,16 +147,12 @@ export const useRiwayatAbsensiData = (userSession: UserSession) => {
           )
         `)
         .eq('jurnal_harian.id_guru', userSession.guru.id_guru)
-        .order('jurnal_harian.tanggal_pelajaran', { ascending: false });
-
-      const { data, error } = await query;
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setRiwayatAbsensi(data || []);
     } catch (error) {
       console.error('Error loading riwayat absensi:', error);
-    } finally {
-      setLoading(false);
     }
   };
 

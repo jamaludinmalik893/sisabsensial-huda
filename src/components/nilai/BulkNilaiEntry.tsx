@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Save } from 'lucide-react';
@@ -34,9 +35,9 @@ interface BulkNilaiEntryProps {
   mapelList: MataPelajaran[];
   kelasList: Kelas[];
   bulkValues: Record<string, BulkNilaiEntry>;
-  onLoadSiswa: (kelasId: string) => Promise<void>;
   onBulkValueChange: (siswaId: string, entry: BulkNilaiEntry) => void;
   onBulkSubmit: (selectedMapel: string, jenisNilai: string, judulTugas: string, tanggalTugasDibuat: string) => Promise<boolean>;
+  onLoadSiswa: (kelasId: string) => Promise<void>;
 }
 
 const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
@@ -44,19 +45,19 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
   mapelList,
   kelasList,
   bulkValues,
-  onLoadSiswa,
   onBulkValueChange,
-  onBulkSubmit
+  onBulkSubmit,
+  onLoadSiswa
 }) => {
-  const [selectedMapel, setSelectedMapel] = React.useState('all');
-  const [selectedKelas, setSelectedKelas] = React.useState('all');
-  const [selectedJenisNilai, setSelectedJenisNilai] = React.useState('all');
+  const [selectedMapel, setSelectedMapel] = React.useState('');
+  const [selectedKelas, setSelectedKelas] = React.useState('');
+  const [selectedJenisNilai, setSelectedJenisNilai] = React.useState('');
   const [judulTugas, setJudulTugas] = React.useState('');
   const [tanggalTugasDibuat, setTanggalTugasDibuat] = React.useState(new Date().toISOString().split('T')[0]);
 
   const handleKelasChange = (value: string) => {
     setSelectedKelas(value);
-    if (value !== 'all') {
+    if (value && value !== '') {
       onLoadSiswa(value);
     }
   };
@@ -71,8 +72,13 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
   };
 
   const handleSubmit = async () => {
+    if (!selectedMapel || !selectedJenisNilai || !judulTugas) {
+      return;
+    }
     await onBulkSubmit(selectedMapel, selectedJenisNilai, judulTugas, tanggalTugasDibuat);
   };
+
+  const canShowTable = selectedMapel && selectedKelas && selectedJenisNilai && judulTugas && siswaList.length > 0;
 
   return (
     <Card>
@@ -152,7 +158,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
           </div>
         </div>
 
-        {selectedMapel !== 'all' && selectedKelas !== 'all' && selectedJenisNilai !== 'all' && judulTugas && siswaList.length > 0 && (
+        {canShowTable && (
           <>
             <div className="border rounded-lg overflow-hidden">
               <Table>
@@ -181,11 +187,12 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
                         />
                       </TableCell>
                       <TableCell>
-                        <Input
+                        <Textarea
                           value={bulkValues[siswa.id_siswa]?.catatan || ''}
                           onChange={(e) => handleBulkValueChange(siswa.id_siswa, 'catatan', e.target.value)}
                           placeholder="Catatan (opsional)"
-                          className="w-full"
+                          className="w-full min-h-[40px] resize-none"
+                          rows={2}
                         />
                       </TableCell>
                     </TableRow>
@@ -198,7 +205,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
               <Button 
                 onClick={handleSubmit} 
                 className="flex items-center gap-2"
-                disabled={!judulTugas}
+                disabled={!judulTugas || !selectedMapel || !selectedJenisNilai}
               >
                 <Save className="h-4 w-4" />
                 Simpan Semua Nilai
@@ -207,13 +214,13 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
           </>
         )}
 
-        {selectedMapel !== 'all' && selectedKelas !== 'all' && selectedJenisNilai !== 'all' && !judulTugas && (
+        {selectedMapel && selectedKelas && selectedJenisNilai && !judulTugas && (
           <div className="text-center py-8 text-gray-500">
             Masukkan judul tugas untuk melanjutkan
           </div>
         )}
 
-        {selectedMapel !== 'all' && selectedKelas !== 'all' && selectedJenisNilai !== 'all' && judulTugas && siswaList.length === 0 && (
+        {selectedMapel && selectedKelas && selectedJenisNilai && judulTugas && siswaList.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             Tidak ada siswa di kelas yang dipilih
           </div>
