@@ -8,7 +8,28 @@ const FALLBACK_FOTO_URL = "/placeholder.svg"; // Sesuaikan dengan file static pa
 export function convertSiswaToFullSiswa(
   siswa: Partial<SiswaNilai> & { id_siswa: string; nama_lengkap: string; nisn: string }
 ): SiswaIndex {
-  return {
+  // DEBUG: log siswa param
+  console.log("[DEBUG convertSiswaToFullSiswa] input:", siswa);
+
+  // Pastikan kelas dan guru_wali hanya diassign valid object atau undefined
+  const kelas = (siswa as any).kelas && typeof (siswa as any).kelas === "object"
+    && !(typeof (siswa as any).kelas._type === "string") // not buggy placeholder object
+    ? (siswa as any).kelas
+    : undefined;
+
+  const guru_wali = (siswa as any).guru_wali && typeof (siswa as any).guru_wali === "object"
+    && !(typeof (siswa as any).guru_wali._type === "string")
+    ? (siswa as any).guru_wali
+    : undefined;
+
+  const foto_url_raw = (siswa as any).foto_url;
+  // Pastikan link string tidak kosong/false/null
+  const foto_url =
+    typeof foto_url_raw === "string" && foto_url_raw.trim()
+      ? foto_url_raw
+      : FALLBACK_FOTO_URL;
+
+  const result: SiswaIndex = {
     id_siswa: siswa.id_siswa,
     nisn: siswa.nisn ?? "",
     nama_lengkap: siswa.nama_lengkap ?? "",
@@ -25,14 +46,15 @@ export function convertSiswaToFullSiswa(
     id_kelas: (siswa as any).id_kelas ?? "",
     id_guru_wali: (siswa as any).id_guru_wali ?? "",
     tahun_masuk: typeof (siswa as any).tahun_masuk === "number" ? (siswa as any).tahun_masuk : 0,
-    foto_url:
-      typeof (siswa as any).foto_url === "string" && (siswa as any).foto_url?.trim()
-        ? (siswa as any).foto_url
-        : FALLBACK_FOTO_URL,
+    foto_url,
     created_at: (siswa as any).created_at ?? "",
     updated_at: (siswa as any).updated_at ?? "",
-    kelas: (siswa as any).kelas ?? undefined,
-    guru_wali: (siswa as any).guru_wali ?? undefined,
+    kelas,
+    guru_wali,
   };
-}
 
+  // DEBUG: log result
+  console.log("[DEBUG convertSiswaToFullSiswa] output:", result);
+
+  return result;
+}

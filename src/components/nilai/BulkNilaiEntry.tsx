@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProfilSiswaPopup from '../ProfilSiswaPopup';
@@ -41,11 +40,24 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
   const [judulTugas, setJudulTugas] = React.useState('');
   const [tanggalTugasDibuat, setTanggalTugasDibuat] = React.useState(new Date().toISOString().split('T')[0]);
 
+  // DEBUG: Log siswaList yang diterima dari parent
+  React.useEffect(() => {
+    if (siswaList && siswaList.length > 0) {
+      console.log("[DEBUG BulkNilaiEntry] siswaList SUPABASE:", siswaList);
+      console.log("[DEBUG BulkNilaiEntry] Contoh siswa from DB:", siswaList[0]);
+    }
+  }, [siswaList]);
+
   // Pipeline siswaList konversi ke 'full' (untuk tabel/avatar)
-  const fullSiswaList = React.useMemo(
-    () => siswaList.map(s => convertSiswaToFullSiswa(s)),
-    [siswaList]
-  );
+  const fullSiswaList = React.useMemo(() => {
+    const hasil = siswaList.map(s => {
+      const converted = convertSiswaToFullSiswa(s);
+      console.log("[DEBUG BulkNilaiEntry] convertSiswaToFullSiswa input:", s);
+      console.log("[DEBUG BulkNilaiEntry] convertSiswaToFullSiswa output:", converted);
+      return converted;
+    });
+    return hasil;
+  }, [siswaList]);
 
   // GUNAKAN pipeline open profil re-usable (full) seperti di rekapitulasi
   const {
@@ -54,6 +66,16 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
     openProfil,
     closeProfil
   } = useOpenProfilSiswaWithConversion();
+
+  React.useEffect(() => {
+    // Log selectedSiswa setiap kali berubah (untuk popup)
+    if (selectedSiswa) {
+      console.log("[DEBUG BulkNilaiEntry] selectedSiswa for popup:", selectedSiswa);
+      if (selectedSiswa.foto_url) {
+        console.log("[DEBUG BulkNilaiEntry] selectedSiswa.foto_url:", selectedSiswa.foto_url);
+      }
+    }
+  }, [selectedSiswa]);
 
   const handleKelasChange = (value: string) => {
     setSelectedKelas(value);
