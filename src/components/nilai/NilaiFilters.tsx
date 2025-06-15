@@ -52,7 +52,7 @@ const NilaiFilters: React.FC<NilaiFiltersProps> = ({
                 <SelectValue placeholder="Pilih mata pelajaran" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Mata Pelajaran</SelectItem>
+                <SelectItem value="all">Semua Mata Pelajaran</SelectItem>
                 {mapelList.map((mapel) => (
                   <SelectItem key={mapel.id_mapel} value={mapel.id_mapel}>
                     {mapel.nama_mapel}
@@ -69,7 +69,7 @@ const NilaiFilters: React.FC<NilaiFiltersProps> = ({
                 <SelectValue placeholder="Pilih kelas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Kelas</SelectItem>
+                <SelectItem value="all">Semua Kelas</SelectItem>
                 {kelasList.map((kelas) => (
                   <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
                     {kelas.nama_kelas}
@@ -86,7 +86,7 @@ const NilaiFilters: React.FC<NilaiFiltersProps> = ({
                 <SelectValue placeholder="Pilih jenis nilai" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Jenis</SelectItem>
+                <SelectItem value="all">Semua Jenis</SelectItem>
                 <SelectItem value="Tugas Harian">Tugas Harian</SelectItem>
                 <SelectItem value="Quiz">Quiz</SelectItem>
                 <SelectItem value="UTS">UTS</SelectItem>

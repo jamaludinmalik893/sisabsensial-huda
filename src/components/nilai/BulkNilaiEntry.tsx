@@ -118,7 +118,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
           </div>
         </div>
 
-        {selectedMapel && selectedKelas && selectedJenisNilai && siswaList.length > 0 && (
+        {selectedMapel !== 'all' && selectedKelas !== 'all' && selectedJenisNilai !== 'all' && siswaList.length > 0 && (
           <>
             <div className="border rounded-lg overflow-hidden">
               <Table>
@@ -171,7 +171,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
           </>
         )}
 
-        {selectedMapel && selectedKelas && selectedJenisNilai && siswaList.length === 0 && (
+        {selectedMapel !== 'all' && selectedKelas !== 'all' && selectedJenisNilai !== 'all' && siswaList.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             Tidak ada siswa di kelas yang dipilih
           </div>

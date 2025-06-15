@@ -15,10 +15,10 @@ interface NilaiPageProps {
 const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
   const [bulkEntryMode, setBulkEntryMode] = useState(false);
   
-  // Filter states
-  const [selectedMapel, setSelectedMapel] = useState('');
-  const [selectedKelas, setSelectedKelas] = useState('');
-  const [selectedJenisNilai, setSelectedJenisNilai] = useState('');
+  // Filter states - using "all" instead of empty strings
+  const [selectedMapel, setSelectedMapel] = useState('all');
+  const [selectedKelas, setSelectedKelas] = useState('all');
+  const [selectedJenisNilai, setSelectedJenisNilai] = useState('all');
 
   const {
     nilaiList,
@@ -34,14 +34,14 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
   } = useNilaiData(userSession);
 
   useEffect(() => {
-    if (selectedMapel && selectedKelas) {
+    if (selectedMapel !== 'all' && selectedKelas !== 'all') {
       loadSiswaByKelas(selectedKelas);
     }
   }, [selectedKelas]);
 
   const filteredNilai = nilaiList.filter(nilai => {
-    if (selectedMapel && nilai.mata_pelajaran.nama_mapel !== mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel) return false;
-    if (selectedJenisNilai && nilai.jenis_nilai !== selectedJenisNilai) return false;
+    if (selectedMapel !== 'all' && nilai.mata_pelajaran.nama_mapel !== mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel) return false;
+    if (selectedJenisNilai !== 'all' && nilai.jenis_nilai !== selectedJenisNilai) return false;
     return true;
   });
 

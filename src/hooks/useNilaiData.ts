@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
@@ -176,7 +175,7 @@ export const useNilaiData = (userSession: UserSession) => {
   };
 
   const handleBulkSubmit = async (selectedMapel: string, selectedJenisNilai: string) => {
-    if (!selectedMapel || !selectedJenisNilai) {
+    if (selectedMapel === 'all' || selectedJenisNilai === 'all' || !selectedMapel || !selectedJenisNilai) {
       toast({
         title: "Error",
         description: "Pilih mata pelajaran dan jenis nilai terlebih dahulu",
