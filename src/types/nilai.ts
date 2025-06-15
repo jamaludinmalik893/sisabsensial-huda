@@ -11,6 +11,21 @@ export interface Nilai {
     id_siswa: string;
     nama_lengkap: string;
     nisn: string;
+    jenis_kelamin: string;
+    tanggal_lahir: string;
+    tempat_lahir: string;
+    alamat: string;
+    nomor_telepon?: string;
+    nama_orang_tua: string;
+    nomor_telepon_orang_tua?: string;
+    tahun_masuk: number;
+    foto_url?: string;
+    kelas?: {
+      nama_kelas: string;
+    };
+    guru_wali?: {
+      nama_lengkap: string;
+    };
   };
   mata_pelajaran: {
     nama_mapel: string;

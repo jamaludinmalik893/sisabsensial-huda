@@ -34,7 +34,7 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
   // Filter nilai based on selected filters
   const filteredNilai = nilaiList.filter(nilai => {
     const matchMapel = selectedMapel === 'all' || nilai.mata_pelajaran.nama_mapel === mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel;
-    const matchKelas = selectedKelas === 'all' || nilai.siswa.kelas?.nama_kelas === kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas;
+    const matchKelas = selectedKelas === 'all' || (nilai.siswa.kelas && nilai.siswa.kelas.nama_kelas === kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas);
     const matchJenis = selectedJenisNilai === 'all' || nilai.jenis_nilai === selectedJenisNilai;
     return matchMapel && matchKelas && matchJenis;
   });

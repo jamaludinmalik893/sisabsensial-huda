@@ -25,41 +25,54 @@ interface Siswa {
 
 interface BulkNilaiEntry {
   id_siswa: string;
-  skor: string;
+  skor: number;
   catatan: string;
 }
 
 interface BulkNilaiEntryProps {
-  selectedMapel: string;
-  setSelectedMapel: (value: string) => void;
-  selectedKelas: string;
-  setSelectedKelas: (value: string) => void;
-  selectedJenisNilai: string;
-  setSelectedJenisNilai: (value: string) => void;
+  siswaList: Siswa[];
   mapelList: MataPelajaran[];
   kelasList: Kelas[];
-  siswaList: Siswa[];
   bulkValues: Record<string, BulkNilaiEntry>;
-  handleBulkValueChange: (siswaId: string, field: 'skor' | 'catatan', value: string) => void;
-  handleBulkSubmit: (judulTugas: string, tanggalTugasDibuat: string) => void;
+  onLoadSiswa: (kelasId: string) => Promise<void>;
+  onBulkValueChange: (siswaId: string, entry: BulkNilaiEntry) => void;
+  onBulkSubmit: (selectedMapel: string, jenisNilai: string, judulTugas: string, tanggalTugasDibuat: string) => Promise<boolean>;
 }
 
 const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
-  selectedMapel,
-  setSelectedMapel,
-  selectedKelas,
-  setSelectedKelas,
-  selectedJenisNilai,
-  setSelectedJenisNilai,
+  siswaList,
   mapelList,
   kelasList,
-  siswaList,
   bulkValues,
-  handleBulkValueChange,
-  handleBulkSubmit
+  onLoadSiswa,
+  onBulkValueChange,
+  onBulkSubmit
 }) => {
+  const [selectedMapel, setSelectedMapel] = React.useState('all');
+  const [selectedKelas, setSelectedKelas] = React.useState('all');
+  const [selectedJenisNilai, setSelectedJenisNilai] = React.useState('all');
   const [judulTugas, setJudulTugas] = React.useState('');
   const [tanggalTugasDibuat, setTanggalTugasDibuat] = React.useState(new Date().toISOString().split('T')[0]);
+
+  const handleKelasChange = (value: string) => {
+    setSelectedKelas(value);
+    if (value !== 'all') {
+      onLoadSiswa(value);
+    }
+  };
+
+  const handleBulkValueChange = (siswaId: string, field: 'skor' | 'catatan', value: string) => {
+    const currentEntry = bulkValues[siswaId] || { id_siswa: siswaId, skor: 0, catatan: '' };
+    const updatedEntry = {
+      ...currentEntry,
+      [field]: field === 'skor' ? parseFloat(value) || 0 : value
+    };
+    onBulkValueChange(siswaId, updatedEntry);
+  };
+
+  const handleSubmit = async () => {
+    await onBulkSubmit(selectedMapel, selectedJenisNilai, judulTugas, tanggalTugasDibuat);
+  };
 
   return (
     <Card>
@@ -89,7 +102,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
 
           <div>
             <label className="text-sm font-medium mb-2 block">Kelas *</label>
-            <Select value={selectedKelas} onValueChange={setSelectedKelas}>
+            <Select value={selectedKelas} onValueChange={handleKelasChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Pilih kelas" />
               </SelectTrigger>
@@ -183,7 +196,7 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
 
             <div className="flex justify-end">
               <Button 
-                onClick={() => handleBulkSubmit(judulTugas, tanggalTugasDibuat)} 
+                onClick={handleSubmit} 
                 className="flex items-center gap-2"
                 disabled={!judulTugas}
               >
