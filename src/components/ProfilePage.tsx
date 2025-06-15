@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { UserSession, Guru, Siswa } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,65 +79,31 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!session?.isGuru) return; // Only guru can save
     setSaving(true);
     try {
       if (session?.isGuru) {
-        // Guru update; DO NOT include password in this update
         const guruUpdate = {
           nama_lengkap: profile.nama_lengkap,
           alamat: profile.alamat,
           nomor_telepon: profile.nomor_telepon,
           foto_url: profile.foto_url,
           email: newEmail || profile.email,
-          // password is NOT included here!
         };
         const { error } = await supabase
           .from("guru")
           .update(guruUpdate)
           .eq("id_guru", session.guru.id_guru);
         if (error) throw error;
-      } else if (session?.guru && session.guru.id_guru) {
-        // Siswa update: nomor_telepon_siswa sebagai fallback
-        const nomor_telepon_siswa =
-          "nomor_telepon_siswa" in profile
-            ? (profile as any).nomor_telepon_siswa
-            : undefined;
 
-        // Make sure NOT to include password in the updateObject!
-        const updateObject: Partial<Siswa> & { nomor_telepon_siswa?: string } = {
-          nama_lengkap: profile.nama_lengkap,
-          alamat: profile.alamat,
-          nomor_telepon: profile.nomor_telepon,
-          ...(typeof nomor_telepon_siswa !== "undefined"
-            ? { nomor_telepon_siswa: nomor_telepon_siswa ?? profile.nomor_telepon ?? "" }
-            : {}),
-          foto_url: profile.foto_url,
-          email: newEmail || profile.email,
-          // password is NOT included here!
-        };
-
-        const { error } = await supabase
-          .from("siswa")
-          .update(updateObject) // No password here!
-          .eq("id_siswa", session.guru.id_guru);
-        if (error) throw error;
-      }
-
-      // Separate password update if needed
-      if (newPassword && newPassword.length >= 6) {
-        if (session?.isGuru) {
+        // Separate password update if needed
+        if (newPassword && newPassword.length >= 6) {
           await supabase
             .from("guru")
             .update({ password: newPassword })
             .eq("id_guru", session.guru.id_guru);
-        } else if (session?.guru && session.guru.id_guru) {
-          await supabase
-            .from("siswa")
-            .update({ password: newPassword })
-            .eq("id_siswa", session.guru.id_guru);
         }
       }
-
       toast({ title: "Disimpan", description: "Profil berhasil diperbarui." });
     } catch {
       toast({ title: "Gagal", description: "Gagal menyimpan profil.", variant: "destructive" });
@@ -148,6 +113,9 @@ const ProfilePage: React.FC = () => {
   };
 
   if (loading) return <div className="p-8 text-center">Memuat profil...</div>;
+
+  // Cek apakah yang login adalah guru
+  const canEdit = session?.isGuru;
 
   return (
     <div className="max-w-xl w-full mx-auto p-6">
@@ -161,7 +129,7 @@ const ProfilePage: React.FC = () => {
             <ProfilePhotoUpload
               currentPhotoUrl={profile.foto_url}
               onUploadSuccess={(url) => setProfile((p) => ({ ...p, foto_url: url }))}
-              disabled={saving}
+              disabled={!canEdit || saving}
             />
 
             <div className="space-y-2">
@@ -171,7 +139,8 @@ const ProfilePage: React.FC = () => {
                 onChange={(e) =>
                   setProfile((p) => ({ ...p, nama_lengkap: e.target.value }))
                 }
-                disabled={saving}
+                disabled={!canEdit || saving}
+                readOnly={!canEdit}
               />
             </div>
             <div className="space-y-2">
@@ -181,7 +150,8 @@ const ProfilePage: React.FC = () => {
                 onChange={(e) =>
                   setProfile((p) => ({ ...p, alamat: e.target.value }))
                 }
-                disabled={saving}
+                disabled={!canEdit || saving}
+                readOnly={!canEdit}
               />
             </div>
             <div className="space-y-2">
@@ -198,7 +168,8 @@ const ProfilePage: React.FC = () => {
                       : { nomor_telepon_siswa: v }),
                   }));
                 }}
-                disabled={saving}
+                disabled={!canEdit || saving}
+                readOnly={!canEdit}
               />
             </div>
             <div className="space-y-2">
@@ -206,23 +177,28 @@ const ProfilePage: React.FC = () => {
               <Input
                 value={newEmail || profile.email || ""}
                 onChange={(e) => setNewEmail(e.target.value)}
-                disabled={saving}
+                disabled={!canEdit || saving}
+                readOnly={!canEdit}
                 type="email"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Password Baru</label>
-              <Input
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                type="password"
-                placeholder="(Minimal 6 karakter atau kosongkan jika tidak mengubah)"
-                disabled={saving}
-              />
-            </div>
-            <Button className="w-full mt-3" onClick={handleSave} disabled={saving}>
-              {saving ? "Menyimpan..." : "Simpan Perubahan"}
-            </Button>
+            {canEdit && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Password Baru</label>
+                <Input
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  type="password"
+                  placeholder="(Minimal 6 karakter atau kosongkan jika tidak mengubah)"
+                  disabled={saving}
+                />
+              </div>
+            )}
+            {canEdit && (
+              <Button className="w-full mt-3" onClick={handleSave} disabled={saving}>
+                {saving ? "Menyimpan..." : "Simpan Perubahan"}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -231,4 +207,3 @@ const ProfilePage: React.FC = () => {
 };
 
 export default ProfilePage;
-
