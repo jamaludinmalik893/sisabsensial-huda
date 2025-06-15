@@ -5,11 +5,11 @@ import { UserSession } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Calendar, Filter, FileText, Search, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import AbsensiOverviewTable from './absensi/AbsensiOverviewTable';
 
 interface RiwayatAbsensiPageProps {
   userSession: UserSession;
@@ -21,8 +21,24 @@ interface RiwayatAbsensi {
   catatan?: string;
   created_at: string;
   siswa: {
+    id_siswa: string;
     nama_lengkap: string;
     nisn: string;
+    jenis_kelamin: string;
+    tanggal_lahir: string;
+    tempat_lahir: string;
+    alamat: string;
+    nomor_telepon?: string;
+    nama_orang_tua: string;
+    nomor_telepon_orang_tua?: string;
+    tahun_masuk: number;
+    foto_url?: string;
+    kelas?: {
+      nama_kelas: string;
+    };
+    guru_wali?: {
+      nama_lengkap: string;
+    };
   };
   jurnal_harian: {
     id_jurnal: string;
@@ -149,7 +165,22 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
           status,
           catatan,
           created_at,
-          siswa!inner(nama_lengkap, nisn, id_siswa),
+          siswa!inner(
+            id_siswa,
+            nama_lengkap, 
+            nisn,
+            jenis_kelamin,
+            tanggal_lahir,
+            tempat_lahir,
+            alamat,
+            nomor_telepon,
+            nama_orang_tua,
+            nomor_telepon_orang_tua,
+            tahun_masuk,
+            foto_url,
+            kelas(nama_kelas),
+            guru_wali:guru(nama_lengkap)
+          ),
           jurnal_harian!inner(
             id_jurnal,
             tanggal_pelajaran,
@@ -196,7 +227,7 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
 
       const { data, error } = await query
         .order('created_at', { ascending: false })
-        .limit(200);
+        .limit(500);
 
       if (error) throw error;
       setRiwayatAbsensi(data || []);
@@ -224,16 +255,6 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
       tanggalAkhir: '',
       searchJudul: ''
     });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Hadir': return 'bg-green-100 text-green-800';
-      case 'Izin': return 'bg-yellow-100 text-yellow-800';
-      case 'Sakit': return 'bg-blue-100 text-blue-800';
-      case 'Alpha': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
   };
 
   const getStatusStats = () => {
@@ -327,7 +348,9 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
                   <SelectValue placeholder="Semua Mata Pelajaran" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Mata Pelajaran</SelectItem>
+                  {mapelList.length > 1 && (
+                    <SelectItem value="all">Semua Mata Pelajaran</SelectItem>
+                  )}
                   {mapelList.map((mapel) => (
                     <SelectItem key={mapel.id_mapel} value={mapel.id_mapel}>
                       {mapel.nama_mapel}
@@ -410,72 +433,15 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
         </CardContent>
       </Card>
 
-      {/* Data Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Data Absensi - Mata Pelajaran yang Anda Ampu
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-8">Memuat data...</div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Tanggal</TableHead>
-                  <TableHead>Siswa</TableHead>
-                  <TableHead>Kelas</TableHead>
-                  <TableHead>Mata Pelajaran</TableHead>
-                  <TableHead>Materi</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Catatan</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {riwayatAbsensi.map((absensi) => (
-                  <TableRow key={absensi.id_absensi}>
-                    <TableCell>
-                      {new Date(absensi.jurnal_harian.tanggal_pelajaran).toLocaleDateString('id-ID')}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{absensi.siswa.nama_lengkap}</div>
-                        <div className="text-sm text-gray-500">{absensi.siswa.nisn}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{absensi.jurnal_harian.kelas.nama_kelas}</TableCell>
-                    <TableCell>{absensi.jurnal_harian.mata_pelajaran.nama_mapel}</TableCell>
-                    <TableCell className="max-w-xs truncate">{absensi.jurnal_harian.judul_materi}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(absensi.status)}>
-                        {absensi.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">{absensi.catatan || '-'}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-          
-          {!loading && riwayatAbsensi.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              {mapelList.length === 0 ? (
-                <div>
-                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p>Anda belum ditugaskan untuk mengajar mata pelajaran apapun.</p>
-                  <p className="text-sm mt-1">Silakan hubungi administrator untuk mendapatkan penugasan mata pelajaran.</p>
-                </div>
-              ) : (
-                "Tidak ada data absensi ditemukan dengan filter yang dipilih"
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Rekapitulasi Absensi Table */}
+      <AbsensiOverviewTable 
+        riwayatAbsensi={riwayatAbsensi}
+        loading={loading}
+        selectedMapel={filters.mapel}
+        selectedKelas={filters.kelas}
+        mapelList={mapelList}
+        kelasList={kelasList}
+      />
     </div>
   );
 };

@@ -52,7 +52,9 @@ const NilaiFilters: React.FC<NilaiFiltersProps> = ({
                 <SelectValue placeholder="Pilih mata pelajaran" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Semua Mata Pelajaran</SelectItem>
+                {mapelList.length > 1 && (
+                  <SelectItem value="all">Semua Mata Pelajaran</SelectItem>
+                )}
                 {mapelList.map((mapel) => (
                   <SelectItem key={mapel.id_mapel} value={mapel.id_mapel}>
                     {mapel.nama_mapel}
