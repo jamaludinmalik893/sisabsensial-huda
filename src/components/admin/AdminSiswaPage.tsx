@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,10 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, Plus, Edit2, Trash2, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Siswa, Kelas, Guru, UserSession } from '@/types';
+import PhotoCapture from './PhotoCapture';
 
 interface AdminSiswaPageProps {
   userSession: UserSession;
@@ -62,7 +62,8 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
     nomor_telepon_orang_tua: '',
     id_kelas: '',
     id_guru_wali: '',
-    tahun_masuk: new Date().getFullYear()
+    tahun_masuk: new Date().getFullYear(),
+    foto_url: ''
   });
 
   useEffect(() => {
@@ -187,7 +188,8 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
       nomor_telepon_orang_tua: siswa.nomor_telepon_orang_tua || '',
       id_kelas: siswa.id_kelas || '',
       id_guru_wali: siswa.id_guru_wali || '',
-      tahun_masuk: siswa.tahun_masuk
+      tahun_masuk: siswa.tahun_masuk,
+      foto_url: siswa.foto_url || ''
     });
     setIsDialogOpen(true);
   };
@@ -232,9 +234,18 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
       nomor_telepon_orang_tua: '',
       id_kelas: '',
       id_guru_wali: '',
-      tahun_masuk: new Date().getFullYear()
+      tahun_masuk: new Date().getFullYear(),
+      foto_url: ''
     });
     setEditingSiswa(null);
+  };
+
+  const handlePhotoCapture = (photoUrl: string) => {
+    setFormData(prev => ({ ...prev, foto_url: photoUrl }));
+  };
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
   const filteredSiswa = siswaList.filter(siswa => {
@@ -267,7 +278,7 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
               Tambah Siswa
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingSiswa ? 'Edit Siswa' : 'Tambah Siswa Baru'}
@@ -275,6 +286,14 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <Label>Foto Siswa</Label>
+                  <PhotoCapture 
+                    onPhotoCapture={handlePhotoCapture}
+                    currentPhotoUrl={formData.foto_url}
+                  />
+                </div>
+                
                 <div>
                   <Label htmlFor="nisn">NISN</Label>
                   <Input
@@ -453,6 +472,7 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Foto</TableHead>
                 <TableHead>NISN</TableHead>
                 <TableHead>Nama Lengkap</TableHead>
                 <TableHead>Kelas</TableHead>
@@ -465,6 +485,12 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
             <TableBody>
               {filteredSiswa.map((siswa) => (
                 <TableRow key={siswa.id_siswa}>
+                  <TableCell>
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={siswa.foto_url} alt={siswa.nama_lengkap} />
+                      <AvatarFallback>{getInitials(siswa.nama_lengkap)}</AvatarFallback>
+                    </Avatar>
+                  </TableCell>
                   <TableCell className="font-mono">{siswa.nisn}</TableCell>
                   <TableCell className="font-medium">{siswa.nama_lengkap}</TableCell>
                   <TableCell>
@@ -508,4 +534,3 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
 };
 
 export default AdminSiswaPage;
-

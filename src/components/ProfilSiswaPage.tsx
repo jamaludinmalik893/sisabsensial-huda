@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
@@ -7,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, Users, GraduationCap, Filter } from 'lucide-react';
 
 interface ProfilSiswaPageProps {
@@ -26,6 +25,7 @@ interface Siswa {
   nama_orang_tua: string;
   nomor_telepon_orang_tua?: string;
   tahun_masuk: number;
+  foto_url?: string;
   kelas: {
     nama_kelas: string;
   };
@@ -84,6 +84,7 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
           nama_orang_tua,
           nomor_telepon_orang_tua,
           tahun_masuk,
+          foto_url,
           kelas!inner(nama_kelas),
           guru_wali:guru!inner(nama_lengkap)
         `);
@@ -255,6 +256,7 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>
+                          <AvatarImage src={siswa.foto_url} alt={siswa.nama_lengkap} />
                           <AvatarFallback className="bg-blue-100 text-blue-600">
                             {getInitials(siswa.nama_lengkap)}
                           </AvatarFallback>
