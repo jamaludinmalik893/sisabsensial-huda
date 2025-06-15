@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -475,8 +474,7 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>NIP</TableHead>
-                <TableHead>Nama Lengkap</TableHead>
+                <TableHead>Nama & NIP</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Peran/Status</TableHead>
                 <TableHead>Wali Kelas</TableHead>
@@ -487,8 +485,12 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
             <TableBody>
               {filteredGuru.map((guru) => (
                 <TableRow key={guru.id_guru}>
-                  <TableCell className="font-mono">{guru.nip}</TableCell>
-                  <TableCell className="font-medium">{guru.nama_lengkap}</TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <div className="font-medium">{guru.nama_lengkap}</div>
+                      <div className="text-sm text-gray-500 font-mono">{guru.nip}</div>
+                    </div>
+                  </TableCell>
                   <TableCell>{guru.email}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
