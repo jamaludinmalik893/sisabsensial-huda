@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users } from 'lucide-react';
+import { Users, TrendingUp, UserCheck, UserX, AlertTriangle, Heart } from 'lucide-react';
 import StudentAttendanceRow from './StudentAttendanceRow';
 import ProfilSiswaPopup from '@/components/ProfilSiswaPopup';
 
@@ -64,8 +64,114 @@ const AbsensiList: React.FC<AbsensiListProps> = ({
     return absensiData.find(item => item.id_siswa === id_siswa);
   };
 
+  // Calculate attendance statistics
+  const attendanceStats = useMemo(() => {
+    const stats = {
+      total: siswaList.length,
+      hadir: 0,
+      izin: 0,
+      sakit: 0,
+      alpha: 0
+    };
+
+    absensiData.forEach(item => {
+      switch (item.status) {
+        case 'Hadir':
+          stats.hadir++;
+          break;
+        case 'Izin':
+          stats.izin++;
+          break;
+        case 'Sakit':
+          stats.sakit++;
+          break;
+        case 'Alpha':
+          stats.alpha++;
+          break;
+      }
+    });
+
+    return stats;
+  }, [siswaList, absensiData]);
+
+  const attendancePercentage = attendanceStats.total > 0 
+    ? Math.round((attendanceStats.hadir / attendanceStats.total) * 100) 
+    : 0;
+
   return (
     <>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <Users className="h-5 w-5 text-gray-600" />
+            </div>
+            <div className="text-2xl font-bold">{attendanceStats.total}</div>
+            <div className="text-sm text-gray-500">Total Siswa</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <UserCheck className="h-5 w-5 text-green-600" />
+            </div>
+            <div className="text-2xl font-bold text-green-600">{attendanceStats.hadir}</div>
+            <div className="text-sm text-gray-500">Hadir</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+            </div>
+            <div className="text-2xl font-bold text-yellow-600">{attendanceStats.izin}</div>
+            <div className="text-sm text-gray-500">Izin</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <Heart className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="text-2xl font-bold text-blue-600">{attendanceStats.sakit}</div>
+            <div className="text-sm text-gray-500">Sakit</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <UserX className="h-5 w-5 text-red-600" />
+            </div>
+            <div className="text-2xl font-bold text-red-600">{attendanceStats.alpha}</div>
+            <div className="text-sm text-gray-500">Alpha</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Attendance Percentage */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-600" />
+              <span className="font-medium">Tingkat Kehadiran</span>
+            </div>
+            <div className="text-2xl font-bold text-blue-600">{attendancePercentage}%</div>
+          </div>
+          <div className="mt-2 bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${attendancePercentage}%` }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
