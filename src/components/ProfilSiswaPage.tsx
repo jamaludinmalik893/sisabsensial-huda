@@ -9,6 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, Users, GraduationCap, Filter, Phone } from 'lucide-react';
 import ProfilSiswaPopup from './ProfilSiswaPopup';
+import ProfilSiswaStats from "./profil-siswa/ProfilSiswaStats";
+import ProfilSiswaFilter from "./profil-siswa/ProfilSiswaFilter";
+import ProfilSiswaTable from "./profil-siswa/ProfilSiswaTable";
 
 interface ProfilSiswaPageProps {
   userSession: UserSession;
@@ -160,178 +163,22 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Profil Siswa</h1>
-        <Badge variant="outline" className="text-sm">
-          <Users className="w-4 h-4 mr-1" />
-          {stats.total} Siswa
-        </Badge>
-      </div>
+      <ProfilSiswaStats stats={stats} />
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <div className="text-sm text-gray-500">Total Siswa</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{stats.lakiLaki}</div>
-            <div className="text-sm text-gray-500">Laki-laki</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-pink-600">{stats.perempuan}</div>
-            <div className="text-sm text-gray-500">Perempuan</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{stats.tahunIni}</div>
-            <div className="text-sm text-gray-500">Siswa Baru</div>
-          </CardContent>
-        </Card>
-      </div>
+      <ProfilSiswaFilter
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        filterKelas={filterKelas}
+        setFilterKelas={setFilterKelas}
+        kelasList={kelasList}
+      />
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filter & Pencarian
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Cari Siswa</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Cari nama atau NISN..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Filter Kelas</label>
-              <Select value={filterKelas} onValueChange={setFilterKelas}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Semua Kelas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Kelas</SelectItem>
-                  {kelasList.map((kelas) => (
-                    <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
-                      {kelas.nama_kelas}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Data Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Daftar Siswa</CardTitle>
-        </CardHeader>
-        <CardContent className="relative overflow-x-auto scrollbar-thin" style={{ WebkitOverflowScrolling: 'touch', overflowX: 'auto' }}>
-          {/* Wrapper div agar scroll horizontal selalu tampil */}
-          <div className="min-w-[900px]">
-            {loading ? (
-              <div className="text-center py-8">Memuat data...</div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Profil</TableHead>
-                    <TableHead>Kelas</TableHead>
-                    <TableHead>Jenis Kelamin</TableHead>
-                    <TableHead>Umur</TableHead>
-                    <TableHead>No. Telepon Siswa</TableHead>
-                    <TableHead>Alamat</TableHead>
-                    <TableHead>Tempat Lahir</TableHead>
-                    <TableHead>Orang Tua</TableHead>
-                    <TableHead>Wali Kelas</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {siswaList.map((siswa) => (
-                    <TableRow key={siswa.id_siswa}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar 
-                            className="cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={() => handleSiswaClick(siswa)}
-                          >
-                            <AvatarImage src={siswa.foto_url} alt={siswa.nama_lengkap} />
-                            <AvatarFallback className="bg-blue-100 text-blue-600">
-                              {getInitials(siswa.nama_lengkap)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div 
-                              className="font-medium cursor-pointer hover:text-blue-600 transition-colors"
-                              onClick={() => handleSiswaClick(siswa)}
-                            >
-                              {siswa.nama_lengkap}
-                            </div>
-                            <div className="text-sm text-gray-500">{siswa.nisn}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{siswa.kelas.nama_kelas}</TableCell>
-                      <TableCell>
-                        <Badge variant={siswa.jenis_kelamin === 'Laki-laki' ? 'default' : 'secondary'}>
-                          {siswa.jenis_kelamin}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{calculateAge(siswa.tanggal_lahir)} tahun</TableCell>
-                      <TableCell>
-                        {(siswa.nomor_telepon_siswa || siswa.nomor_telepon) ? (
-                          <div className="flex items-center gap-1">
-                            <Phone className="h-3 w-3 text-gray-400" />
-                            <span className="text-sm">{siswa.nomor_telepon_siswa || siswa.nomor_telepon}</span>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400 text-sm">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-xs truncate text-sm">{siswa.alamat}</div>
-                      </TableCell>
-                      <TableCell>{siswa.tempat_lahir}</TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{siswa.nama_orang_tua}</div>
-                          {siswa.nomor_telepon_orang_tua && (
-                            <div className="text-sm text-gray-500">{siswa.nomor_telepon_orang_tua}</div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>{siswa.guru_wali.nama_lengkap}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-            
-            {!loading && siswaList.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                Tidak ada data siswa ditemukan
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <ProfilSiswaTable
+        siswaList={siswaList}
+        loading={loading}
+        calculateAge={calculateAge}
+        handleSiswaClick={handleSiswaClick}
+      />
 
       {/* Popup Profil Siswa */}
       <ProfilSiswaPopup
