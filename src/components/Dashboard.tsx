@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +14,8 @@ import {
   UserCheck
 } from 'lucide-react';
 import { StatistikDashboard, UserSession } from '@/types';
+import StatistikNilaiChart from "./dashboard/StatistikNilaiChart";
+import StatistikAbsensiChart from "./dashboard/StatistikAbsensiChart";
 
 interface DashboardProps {
   userSession: UserSession;
@@ -167,6 +168,44 @@ const Dashboard: React.FC<DashboardProps> = ({ userSession }) => {
             </div>
           </div>
         </Card>
+      </div>
+
+      {/* Statistik Grafik */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <StatistikNilaiChart />
+        <StatistikAbsensiChart />
+      </div>
+
+      {/* Info Siswa & Guru Terbaik */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-gradient-to-r from-blue-100 via-blue-50 to-white rounded-lg p-6 shadow overflow-hidden">
+          <div className="flex items-center mb-4 gap-3">
+            <img
+              src="/placeholder.svg"
+              alt="Siswa Terbaik"
+              className="w-16 h-16 rounded-full border-2 border-blue-400"
+            />
+            <div>
+              <p className="text-lg font-semibold text-gray-800">Siswa Terbaik Bulan Ini</p>
+              <p className="text-blue-600 font-bold">Ahmad Rizki Pratama</p>
+              <p className="text-gray-600 text-sm">Nilai Rata-rata: <span className="font-medium">91</span></p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-gradient-to-r from-emerald-100 via-green-50 to-white rounded-lg p-6 shadow overflow-hidden">
+          <div className="flex items-center mb-4 gap-3">
+            <img
+              src="/placeholder.svg"
+              alt="Guru Teraktif"
+              className="w-16 h-16 rounded-full border-2 border-green-400"
+            />
+            <div>
+              <p className="text-lg font-semibold text-gray-800">Guru Teraktif Bulan Ini</p>
+              <p className="text-green-700 font-bold">Sri Mulyati, S.Kom</p>
+              <p className="text-gray-600 text-sm">Jurnal dibuat: <span className="font-medium">28</span></p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Detail Kehadiran & Aktivitas */}
