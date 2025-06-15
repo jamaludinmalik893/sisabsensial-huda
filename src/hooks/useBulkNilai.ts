@@ -41,31 +41,12 @@ export const useBulkNilai = (userSession: UserSession) => {
     }
 
     try {
-      // Create a dummy jurnal entry for bulk insert
-      const { data: jurnalData, error: jurnalError } = await supabase
-        .from('jurnal_harian')
-        .insert({
-          id_guru: userSession.guru.id_guru,
-          id_mapel: selectedMapel,
-          id_kelas: siswaList[0]?.id_siswa ? 
-            (await supabase.from('siswa').select('id_kelas').eq('id_siswa', siswaList[0].id_siswa).single()).data?.id_kelas 
-            : '',
-          tanggal_pelajaran: tanggalTugasDibuat,
-          waktu_mulai: '00:00',
-          waktu_selesai: '00:00',
-          judul_materi: judulTugas,
-          materi_diajarkan: `Entry nilai massal - ${judulTugas}`
-        })
-        .select()
-        .single();
-
-      if (jurnalError) throw jurnalError;
-
+      // Tidak perlu membuat jurnal_harian
       const nilaiToInsert: BulkNilaiData[] = Object.entries(bulkValues)
         .filter(([_, value]) => value.trim() !== '')
         .map(([siswaId, value]) => ({
           id_siswa: siswaId,
-          id_jurnal: jurnalData.id_jurnal,
+          // id_jurnal: '', // Tidak perlu id_jurnal lagi
           id_mapel: selectedMapel,
           skor: parseFloat(value),
           jenis_nilai: jenisNilai,
@@ -82,6 +63,10 @@ export const useBulkNilai = (userSession: UserSession) => {
         });
         return false;
       }
+
+      // Remove id_jurnal jika ada
+      // @ts-ignore
+      nilaiToInsert.forEach(v => { if ('id_jurnal' in v) delete v['id_jurnal']; });
 
       const { error } = await supabase
         .from('nilai')
