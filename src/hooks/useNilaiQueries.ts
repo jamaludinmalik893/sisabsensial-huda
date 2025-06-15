@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
 import { Nilai, Siswa, MataPelajaran, Kelas } from '@/types/nilai';
@@ -54,10 +53,16 @@ export const useNilaiQueries = (userSession: UserSession) => {
           nomor_telepon_orang_tua,
           tahun_masuk,
           foto_url,
-          kelas(nama_kelas),
+          kelas(
+            id_kelas,
+            nama_kelas
+          ),
           guru_wali:guru(nama_lengkap)
         ),
-        mata_pelajaran!inner(nama_mapel),
+        mata_pelajaran!inner(
+          id_mapel,
+          nama_mapel
+        ),
         jurnal_harian!inner(id_guru)
       `)
       .eq('jurnal_harian.id_guru', userSession.guru.id_guru)

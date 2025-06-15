@@ -20,6 +20,7 @@ export interface Nilai {
     tahun_masuk: number;
     foto_url?: string;
     kelas?: {
+      id_kelas?: string;
       nama_kelas: string;
     };
     guru_wali?: {
@@ -27,6 +28,7 @@ export interface Nilai {
     };
   };
   mata_pelajaran: {
+    id_mapel?: string;
     nama_mapel: string;
   };
 }

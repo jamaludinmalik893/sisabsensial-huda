@@ -31,23 +31,18 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
     updateNilai
   } = useNilaiData(userSession);
 
-  // Filter with correct property access based on type definitions
+  // Filter dengan property id_mapel dan id_kelas yang VALID dari hasil query baru!
   const filteredNilai = nilaiList.filter(nilai => {
-    // Filter mapel by matching nama_mapel (since id_mapel not available on nilai)
     const matchMapel =
       selectedMapel === 'all' ||
-      (nilai.mata_pelajaran && nilai.mata_pelajaran.nama_mapel === (mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel ?? ''));
+      (nilai.mata_pelajaran && nilai.mata_pelajaran.id_mapel === selectedMapel);
 
-    // Filter kelas: compare using nama_kelas, since id_kelas missing in siswa
     let matchKelas = selectedKelas === 'all';
     if (!matchKelas) {
-      // Find nama_kelas target via kelasList, fallback to selectedKelas if not found (should not happen)
-      const targetKelas = kelasList.find(k => k.id_kelas === selectedKelas);
-      const targetNamaKelas = targetKelas?.nama_kelas ?? '';
-      matchKelas = nilai.siswa?.kelas?.nama_kelas === targetNamaKelas;
+      // Bandingkan id_kelas di siswa.kelas
+      matchKelas = nilai.siswa?.kelas?.id_kelas === selectedKelas;
     }
 
-    // Jenis nilai
     const matchJenis =
       selectedJenisNilai === 'all' ||
       nilai.jenis_nilai === selectedJenisNilai;
