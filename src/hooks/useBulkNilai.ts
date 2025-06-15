@@ -42,17 +42,17 @@ export const useBulkNilai = (userSession: UserSession) => {
 
     try {
       // Tidak perlu membuat jurnal_harian
-      const nilaiToInsert: BulkNilaiData[] = Object.entries(bulkValues)
+      let nilaiToInsert: BulkNilaiData[] = Object.entries(bulkValues)
         .filter(([_, value]) => value.trim() !== '')
         .map(([siswaId, value]) => ({
           id_siswa: siswaId,
-          // id_jurnal: '', // Tidak perlu id_jurnal lagi
           id_mapel: selectedMapel,
           skor: parseFloat(value),
           jenis_nilai: jenisNilai,
           judul_tugas: judulTugas,
           tanggal_tugas_dibuat: tanggalTugasDibuat,
           tanggal_nilai: new Date().toISOString().split('T')[0]
+          // id_jurnal: tidak ada
         }));
 
       if (nilaiToInsert.length === 0) {
@@ -64,9 +64,11 @@ export const useBulkNilai = (userSession: UserSession) => {
         return false;
       }
 
-      // Remove id_jurnal jika ada
-      // @ts-ignore
-      nilaiToInsert.forEach(v => { if ('id_jurnal' in v) delete v['id_jurnal']; });
+      // Supaya tidak error, hapus id_jurnal pada semua objek (agar property benar-benar tidak terikut).
+      nilaiToInsert = nilaiToInsert.map(n => {
+        const { id_jurnal, ...rest } = n;
+        return rest;
+      });
 
       const { error } = await supabase
         .from('nilai')
