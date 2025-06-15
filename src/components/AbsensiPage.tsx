@@ -5,6 +5,7 @@ import { UserSession } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import JurnalForm from './absensi/JurnalForm';
 import JurnalSelector from './absensi/JurnalSelector';
 import AbsensiList from './absensi/AbsensiList';
 
@@ -26,6 +27,7 @@ interface Siswa {
   id_siswa: string;
   nama_lengkap: string;
   nisn: string;
+  foto_url?: string;
 }
 
 interface AbsensiData {
@@ -34,18 +36,30 @@ interface AbsensiData {
   catatan?: string;
 }
 
+interface Kelas {
+  id_kelas: string;
+  nama_kelas: string;
+}
+
+interface MataPelajaran {
+  id_mapel: string;
+  nama_mapel: string;
+}
+
 const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
   const [jurnalList, setJurnalList] = useState<JurnalHarian[]>([]);
   const [selectedJurnal, setSelectedJurnal] = useState<string>('');
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
   const [absensiData, setAbsensiData] = useState<AbsensiData[]>([]);
+  const [kelasList, setKelasList] = useState<Kelas[]>([]);
+  const [mapelList, setMapelList] = useState<MataPelajaran[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
-    loadJurnalHarian();
+    loadInitialData();
   }, [userSession]);
 
   useEffect(() => {
@@ -53,6 +67,18 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
       loadSiswaByJurnal();
     }
   }, [selectedJurnal]);
+
+  const loadInitialData = async () => {
+    try {
+      await Promise.all([
+        loadJurnalHarian(),
+        loadKelas(),
+        loadMataPelajaran()
+      ]);
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+    }
+  };
 
   const loadJurnalHarian = async () => {
     try {
@@ -91,6 +117,34 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
     }
   };
 
+  const loadKelas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('kelas')
+        .select('id_kelas, nama_kelas')
+        .order('nama_kelas');
+
+      if (error) throw error;
+      setKelasList(data || []);
+    } catch (error) {
+      console.error('Error loading kelas:', error);
+    }
+  };
+
+  const loadMataPelajaran = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('mata_pelajaran')
+        .select('id_mapel, nama_mapel')
+        .order('nama_mapel');
+
+      if (error) throw error;
+      setMapelList(data || []);
+    } catch (error) {
+      console.error('Error loading mata pelajaran:', error);
+    }
+  };
+
   const loadSiswaByJurnal = async () => {
     try {
       const jurnal = jurnalList.find(j => j.id_jurnal === selectedJurnal);
@@ -100,7 +154,7 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
 
       const { data, error } = await supabase
         .from('siswa')
-        .select('id_siswa, nama_lengkap, nisn')
+        .select('id_siswa, nama_lengkap, nisn, foto_url')
         .eq('id_kelas', jurnal.kelas.id_kelas)
         .order('nama_lengkap');
 
@@ -207,6 +261,10 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
     }
   };
 
+  const handleJurnalCreated = () => {
+    loadJurnalHarian();
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -216,6 +274,13 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
           {new Date(today).toLocaleDateString('id-ID')}
         </Badge>
       </div>
+
+      <JurnalForm
+        kelasList={kelasList}
+        mapelList={mapelList}
+        guruId={userSession.guru.id_guru}
+        onJurnalCreated={handleJurnalCreated}
+      />
 
       <JurnalSelector
         jurnalList={jurnalList}

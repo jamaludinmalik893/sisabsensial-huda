@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
@@ -12,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, BookOpen, Clock, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import JurnalFilter from './jurnal/JurnalFilter';
 
 interface JurnalPageProps {
   userSession: UserSession;
@@ -42,12 +42,24 @@ interface MataPelajaran {
   nama_mapel: string;
 }
 
+interface FilterState {
+  kelas: string;
+  mapel: string;
+  bulan: string;
+}
+
 const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
   const [jurnalList, setJurnalList] = useState<JurnalEntry[]>([]);
+  const [filteredJurnalList, setFilteredJurnalList] = useState<JurnalEntry[]>([]);
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [mapelList, setMapelList] = useState<MataPelajaran[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    kelas: 'all',
+    mapel: 'all',
+    bulan: new Date().toISOString().slice(0, 7) // Current month
+  });
   const [formData, setFormData] = useState({
     id_kelas: '',
     id_mapel: '',
@@ -62,6 +74,10 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
   useEffect(() => {
     loadInitialData();
   }, [userSession]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [jurnalList, filters]);
 
   const loadInitialData = async () => {
     setLoading(true);
@@ -89,6 +105,8 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
           waktu_selesai,
           judul_materi,
           materi_diajarkan,
+          id_kelas,
+          id_mapel,
           mata_pelajaran!inner(nama_mapel),
           kelas!inner(nama_kelas)
         `)
@@ -128,6 +146,34 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
     } catch (error) {
       console.error('Error loading mata pelajaran:', error);
     }
+  };
+
+  const applyFilters = () => {
+    let filtered = [...jurnalList];
+
+    // Filter by kelas
+    if (filters.kelas !== 'all') {
+      filtered = filtered.filter(jurnal => 
+        (jurnal as any).id_kelas === filters.kelas
+      );
+    }
+
+    // Filter by mata pelajaran
+    if (filters.mapel !== 'all') {
+      filtered = filtered.filter(jurnal => 
+        (jurnal as any).id_mapel === filters.mapel
+      );
+    }
+
+    // Filter by month
+    if (filters.bulan) {
+      filtered = filtered.filter(jurnal => {
+        const jurnalMonth = jurnal.tanggal_pelajaran.slice(0, 7);
+        return jurnalMonth === filters.bulan;
+      });
+    }
+
+    setFilteredJurnalList(filtered);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -346,10 +392,18 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
         </Card>
       </div>
 
+      {/* Filters */}
+      <JurnalFilter
+        kelasList={kelasList}
+        mapelList={mapelList}
+        filters={filters}
+        onFilterChange={setFilters}
+      />
+
       {/* Data Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Daftar Jurnal Pembelajaran</CardTitle>
+          <CardTitle>Daftar Jurnal Pembelajaran ({filteredJurnalList.length} jurnal)</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -367,7 +421,7 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {jurnalList.map((jurnal) => (
+                {filteredJurnalList.map((jurnal) => (
                   <TableRow key={jurnal.id_jurnal}>
                     <TableCell>
                       {new Date(jurnal.tanggal_pelajaran).toLocaleDateString('id-ID')}
@@ -387,9 +441,9 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
             </Table>
           )}
           
-          {!loading && jurnalList.length === 0 && (
+          {!loading && filteredJurnalList.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              Belum ada jurnal pembelajaran
+              {jurnalList.length === 0 ? 'Belum ada jurnal pembelajaran' : 'Tidak ada jurnal yang sesuai dengan filter'}
             </div>
           )}
         </CardContent>
