@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -59,6 +58,7 @@ interface AbsensiOverviewTableProps {
   selectedKelas: string;
   mapelList: Array<{id_mapel: string; nama_mapel: string}>;
   kelasList: Array<{id_kelas: string; nama_kelas: string}>;
+  refreshData?: () => Promise<void>; // Tambahan (opsional supaya tidak breaking)
 }
 
 interface StudentAttendance {
@@ -79,7 +79,8 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
   selectedMapel, 
   selectedKelas,
   mapelList,
-  kelasList
+  kelasList,
+  refreshData // Tambahan
 }) => {
   const [selectedSiswa, setSelectedSiswa] = useState<RiwayatAbsensi['siswa'] | null>(null);
   const [isProfilOpen, setIsProfilOpen] = useState(false);
@@ -196,8 +197,12 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
       setIsEditDialogOpen(false);
       setEditingAbsensi(null);
       
-      // Refresh data would need to be handled by parent component
-      window.location.reload(); // Simple refresh for now
+      // <--- REFRESH DATA TANPA RELOAD
+      if (typeof refreshData === "function") {
+        await refreshData();
+      }
+      // END
+      
     } catch (error) {
       console.error('Error updating absensi:', error);
       toast({

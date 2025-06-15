@@ -18,7 +18,8 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
     riwayatAbsensi,
     loading,
     setSelectedMapel,
-    setSelectedKelas
+    setSelectedKelas,
+    refreshData // Tambahan
   } = useRiwayatAbsensiData(userSession);
 
   return (
@@ -41,6 +42,7 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
         selectedKelas={selectedKelas}
         mapelList={mapelList}
         kelasList={kelasList}
+        refreshData={refreshData} {/* Tambahan */}
       />
     </div>
   );

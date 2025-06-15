@@ -156,6 +156,13 @@ export const useRiwayatAbsensiData = (userSession: UserSession) => {
     }
   };
 
+  // expose refreshData for refetching absensi
+  const refreshData = async () => {
+    setLoading(true);
+    await loadRiwayatAbsensi();
+    setLoading(false);
+  };
+
   return {
     selectedMapel,
     selectedKelas,
@@ -164,6 +171,7 @@ export const useRiwayatAbsensiData = (userSession: UserSession) => {
     riwayatAbsensi,
     loading,
     setSelectedMapel,
-    setSelectedKelas
+    setSelectedKelas,
+    refreshData // <--- new
   };
 };
