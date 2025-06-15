@@ -31,7 +31,13 @@ export const useBulkNilai = (userSession: UserSession) => {
     tanggalTugasDibuat: string,
     siswaList: Siswa[]
   ): Promise<boolean> => {
-    if (selectedMapel === 'all' || !jenisNilai || jenisNilai === 'all' || !judulTugas || !tanggalTugasDibuat) {
+    if (
+      selectedMapel === 'all' ||
+      !jenisNilai ||
+      jenisNilai === 'all' ||
+      !judulTugas ||
+      !tanggalTugasDibuat
+    ) {
       toast({
         title: "Error",
         description: "Semua field harus diisi",
@@ -42,7 +48,7 @@ export const useBulkNilai = (userSession: UserSession) => {
 
     try {
       // Tidak perlu membuat jurnal_harian
-      let nilaiToInsert: BulkNilaiData[] = Object.entries(bulkValues)
+      const nilaiToInsert = Object.entries(bulkValues)
         .filter(([_, value]) => value.trim() !== '')
         .map(([siswaId, value]) => ({
           id_siswa: siswaId,
@@ -51,8 +57,8 @@ export const useBulkNilai = (userSession: UserSession) => {
           jenis_nilai: jenisNilai,
           judul_tugas: judulTugas,
           tanggal_tugas_dibuat: tanggalTugasDibuat,
-          tanggal_nilai: new Date().toISOString().split('T')[0]
-          // id_jurnal: tidak ada
+          tanggal_nilai: new Date().toISOString().split('T')[0],
+          id_jurnal: null, // <-- tambahkan property ini agar sesuai type Supabase
         }));
 
       if (nilaiToInsert.length === 0) {
@@ -63,12 +69,6 @@ export const useBulkNilai = (userSession: UserSession) => {
         });
         return false;
       }
-
-      // Supaya tidak error, hapus id_jurnal pada semua objek (agar property benar-benar tidak terikut).
-      nilaiToInsert = nilaiToInsert.map(n => {
-        const { id_jurnal, ...rest } = n;
-        return rest;
-      });
 
       const { error } = await supabase
         .from('nilai')
