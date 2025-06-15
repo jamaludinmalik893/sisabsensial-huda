@@ -96,6 +96,18 @@ function NilaiRekapitulasiContent() {
     "Rata-rata"
   ], [taskInfoList]);
 
+  // Ambil filter saat ini dari daftar (ambil mapel "all" = Semua, dst)
+  const selectedMapel = "all";
+  const selectedKelas = "all";
+  // Ubah sesuai kebutuhan, misal ambil dari state jika ada filter state
+
+  const mapelName = selectedMapel === "all"
+    ? "Semua Mata Pelajaran"
+    : mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel ?? "";
+  const kelasName = selectedKelas === "all"
+    ? "Semua Kelas"
+    : kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas ?? "";
+
   return (
     <div className="relative">
       {/* Filter bar & export buttons */}
@@ -106,14 +118,16 @@ function NilaiRekapitulasiContent() {
             data={exportData}
             fileName="Rekap_Nilai_Siswa"
             columns={exportColumns}
+            mapelName={mapelName}
+            kelasName={kelasName}
           />
         </div>
       </div>
       <NilaiOverviewTable
         filteredNilai={nilaiList}
         loading={loading}
-        selectedMapel="all"
-        selectedKelas="all"
+        selectedMapel={selectedMapel}
+        selectedKelas={selectedKelas}
         mapelList={mapelList}
         kelasList={kelasList}
         onUpdateNilai={updateNilai}
