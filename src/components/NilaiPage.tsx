@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { UserSession } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -32,17 +31,23 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
     updateNilai
   } = useNilaiData(userSession);
 
-  // Perbaikan: filter berdasarkan ID, bukan nama!
+  // Filter with correct property access based on type definitions
   const filteredNilai = nilaiList.filter(nilai => {
-    const matchMapel = selectedMapel === 'all' || 
-      nilai.mata_pelajaran?.id_mapel === selectedMapel ||
-      nilai.id_mapel === selectedMapel; // fallback jika id_mapel ada di objek utama
+    // By id_mapel from nilai
+    const matchMapel =
+      selectedMapel === 'all' ||
+      nilai.id_mapel === selectedMapel;
 
-    const matchKelas = selectedKelas === 'all' || 
-      nilai.siswa?.kelas?.id_kelas === selectedKelas || 
-      nilai.siswa?.id_kelas === selectedKelas; // fallback jika id_kelas ada di objek siswa
+    // By id_kelas from nilai.siswa
+    const matchKelas =
+      selectedKelas === 'all' ||
+      nilai.siswa?.id_kelas === selectedKelas;
 
-    const matchJenis = selectedJenisNilai === 'all' || nilai.jenis_nilai === selectedJenisNilai;
+    // Jenis nilai
+    const matchJenis =
+      selectedJenisNilai === 'all' ||
+      nilai.jenis_nilai === selectedJenisNilai;
+
     return matchMapel && matchKelas && matchJenis;
   });
 
