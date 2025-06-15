@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,8 +55,7 @@ const StudentTable: React.FC<StudentTableProps> = ({
           <TableHeader>
             <TableRow>
               <TableHead>Foto</TableHead>
-              <TableHead>NISN</TableHead>
-              <TableHead>Nama Lengkap</TableHead>
+              <TableHead>Nama Siswa</TableHead>
               <TableHead>Kelas</TableHead>
               <TableHead>Jenis Kelamin</TableHead>
               <TableHead>No. Telepon Siswa</TableHead>
@@ -78,12 +76,14 @@ const StudentTable: React.FC<StudentTableProps> = ({
                     <AvatarFallback>{getInitials(siswa.nama_lengkap)}</AvatarFallback>
                   </Avatar>
                 </TableCell>
-                <TableCell className="font-mono">{siswa.nisn}</TableCell>
-                <TableCell 
-                  className="font-medium cursor-pointer hover:text-blue-600 transition-colors"
-                  onClick={() => onSiswaClick(siswa)}
-                >
-                  {siswa.nama_lengkap}
+                <TableCell>
+                  <div 
+                    className="font-medium cursor-pointer hover:text-blue-600 transition-colors"
+                    onClick={() => onSiswaClick(siswa)}
+                  >
+                    {siswa.nama_lengkap}
+                  </div>
+                  <div className="text-xs text-gray-500 font-mono">{siswa.nisn}</div>
                 </TableCell>
                 <TableCell>
                   {siswa.kelas ? (

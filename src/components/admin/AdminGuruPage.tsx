@@ -1,17 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { User, Plus, Edit2, Trash2, Search } from 'lucide-react';
+import { User, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Guru, Kelas, MataPelajaran, UserSession, SimpleGuruRole } from '@/types';
+import { Guru, Kelas, UserSession, SimpleGuruRole } from '@/types';
+import GuruForm from './GuruForm';
+import GuruTable from './GuruTable';
+import GuruSearch from './GuruSearch';
 
 interface AdminGuruPageProps {
   userSession: UserSession;
@@ -26,24 +24,11 @@ interface GuruWithRoles extends Guru {
 const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
   const [guruList, setGuruList] = useState<GuruWithRoles[]>([]);
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
-  const [mataPelajaranList, setMataPelajaranList] = useState<MataPelajaran[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGuru, setEditingGuru] = useState<GuruWithRoles | null>(null);
   const { toast } = useToast();
-
-  const [formData, setFormData] = useState({
-    nip: '',
-    nama_lengkap: '',
-    email: '',
-    password: '',
-    nomor_telepon: '',
-    alamat: '',
-    wali_kelas: '',
-    roles: [] as ('admin' | 'guru' | 'wali_kelas')[],
-    mata_pelajaran: [] as string[]
-  });
 
   useEffect(() => {
     fetchData();
@@ -53,7 +38,6 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
     try {
       setLoading(true);
       
-      // Fetch guru with relations and roles
       const { data: guruData, error: guruError } = await supabase
         .from('guru')
         .select(`
@@ -64,7 +48,6 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
 
       if (guruError) throw guruError;
 
-      // Fetch kelas
       const { data: kelasData, error: kelasError } = await supabase
         .from('kelas')
         .select('*')
@@ -72,15 +55,6 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
 
       if (kelasError) throw kelasError;
 
-      // Fetch mata pelajaran
-      const { data: mapelData, error: mapelError } = await supabase
-        .from('mata_pelajaran')
-        .select('*')
-        .order('nama_mapel');
-
-      if (mapelError) throw mapelError;
-
-      // Transform guru data to include roles array with proper typing
       const transformedGuruData: GuruWithRoles[] = guruData?.map(guru => ({
         ...guru,
         kelas_wali: guru.kelas_wali,
@@ -90,7 +64,6 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
 
       setGuruList(transformedGuruData);
       setKelasList(kelasData || []);
-      setMataPelajaranList(mapelData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -103,11 +76,8 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (formData: any) => {
     try {
-      // Validate that at least one role is selected
       if (formData.roles.length === 0) {
         toast({
           title: "Error",
@@ -117,21 +87,20 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
         return;
       }
 
-      const guruFormData = {
-        nip: formData.nip,
-        nama_lengkap: formData.nama_lengkap,
-        email: formData.email,
-        password: formData.password,
-        nomor_telepon: formData.nomor_telepon,
-        alamat: formData.alamat,
-        wali_kelas: formData.wali_kelas || null,
-        status: formData.roles.includes('admin') ? 'admin' : 'guru' // Keep for backward compatibility
+      const { password, ...restOfData } = formData;
+      const guruFormData: any = {
+          ...restOfData,
+          wali_kelas: formData.wali_kelas || null,
+          status: formData.roles.includes('admin') ? 'admin' : 'guru'
       };
+
+      if (password) {
+        guruFormData.password = password;
+      }
 
       let guruId: string;
 
       if (editingGuru) {
-        // Update guru
         const { error } = await supabase
           .from('guru')
           .update(guruFormData)
@@ -140,7 +109,7 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
         if (error) throw error;
         guruId = editingGuru.id_guru;
       } else {
-        // Create new guru
+        guruFormData.password = password; // Ensure password is set for new user
         const { data: newGuru, error } = await supabase
           .from('guru')
           .insert(guruFormData)
@@ -151,8 +120,6 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
         guruId = newGuru.id_guru;
       }
 
-      // Update roles
-      // First, delete existing roles if editing
       if (editingGuru) {
         const { error: deleteError } = await supabase
           .from('guru_roles')
@@ -162,8 +129,7 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
         if (deleteError) throw deleteError;
       }
 
-      // Insert new roles
-      const roleInserts = formData.roles.map(role => ({
+      const roleInserts = formData.roles.map((role: string) => ({
         id_guru: guruId,
         role: role
       }));
@@ -180,7 +146,7 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
       });
 
       setIsDialogOpen(false);
-      resetForm();
+      setEditingGuru(null);
       fetchData();
     } catch (error) {
       console.error('Error saving guru:', error);
@@ -194,17 +160,6 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
 
   const handleEdit = (guru: GuruWithRoles) => {
     setEditingGuru(guru);
-    setFormData({
-      nip: guru.nip,
-      nama_lengkap: guru.nama_lengkap,
-      email: guru.email,
-      password: '',
-      nomor_telepon: guru.nomor_telepon || '',
-      alamat: guru.alamat || '',
-      wali_kelas: guru.wali_kelas || '',
-      roles: guru.roles || [],
-      mata_pelajaran: []
-    });
     setIsDialogOpen(true);
   };
 
@@ -212,7 +167,6 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
     if (!confirm('Apakah Anda yakin ingin menghapus guru ini?')) return;
 
     try {
-      // Delete roles first (will cascade)
       const { error: rolesError } = await supabase
         .from('guru_roles')
         .delete()
@@ -220,7 +174,6 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
 
       if (rolesError) throw rolesError;
 
-      // Delete guru
       const { error } = await supabase
         .from('guru')
         .delete()
@@ -241,43 +194,6 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
         description: "Gagal menghapus guru",
         variant: "destructive"
       });
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      nip: '',
-      nama_lengkap: '',
-      email: '',
-      password: '',
-      nomor_telepon: '',
-      alamat: '',
-      wali_kelas: '',
-      roles: [],
-      mata_pelajaran: []
-    });
-    setEditingGuru(null);
-  };
-
-  const handleRoleToggle = (role: 'admin' | 'guru' | 'wali_kelas', checked: boolean) => {
-    if (checked) {
-      setFormData(prev => ({
-        ...prev,
-        roles: [...prev.roles, role]
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        roles: prev.roles.filter(r => r !== role)
-      }));
-    }
-  };
-
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'admin': return 'default';
-      case 'wali_kelas': return 'secondary';
-      default: return 'outline';
     }
   };
 
@@ -305,7 +221,7 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm}>
+            <Button onClick={() => setEditingGuru(null)}>
               <Plus className="h-4 w-4 mr-2" />
               Tambah Guru
             </Button>
@@ -319,224 +235,30 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
                 {editingGuru ? 'Edit informasi guru yang sudah ada' : 'Tambahkan guru baru ke dalam sistem'}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="nip">NIP</Label>
-                  <Input
-                    id="nip"
-                    value={formData.nip}
-                    onChange={(e) => setFormData({...formData, nip: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="nama_lengkap">Nama Lengkap</Label>
-                  <Input
-                    id="nama_lengkap"
-                    value={formData.nama_lengkap}
-                    onChange={(e) => setFormData({...formData, nama_lengkap: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    placeholder={editingGuru ? "Kosongkan jika tidak ingin mengubah" : ""}
-                    required={!editingGuru}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="nomor_telepon">Nomor Telepon</Label>
-                  <Input
-                    id="nomor_telepon"
-                    value={formData.nomor_telepon}
-                    onChange={(e) => setFormData({...formData, nomor_telepon: e.target.value})}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label htmlFor="alamat">Alamat</Label>
-                  <Input
-                    id="alamat"
-                    value={formData.alamat}
-                    onChange={(e) => setFormData({...formData, alamat: e.target.value})}
-                  />
-                </div>
-                
-                {/* Multiple Roles Selection */}
-                <div className="col-span-2">
-                  <Label>Peran/Status <span className="text-red-500">*</span></Label>
-                  <div className="space-y-3 mt-2 p-4 border rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="role-admin"
-                        checked={formData.roles.includes('admin')}
-                        onCheckedChange={(checked) => handleRoleToggle('admin', checked as boolean)}
-                      />
-                      <Label htmlFor="role-admin" className="cursor-pointer">
-                        Administrator - Akses penuh sistem
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="role-guru"
-                        checked={formData.roles.includes('guru')}
-                        onCheckedChange={(checked) => handleRoleToggle('guru', checked as boolean)}
-                      />
-                      <Label htmlFor="role-guru" className="cursor-pointer">
-                        Guru - Mengajar dan input nilai
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="role-wali"
-                        checked={formData.roles.includes('wali_kelas')}
-                        onCheckedChange={(checked) => handleRoleToggle('wali_kelas', checked as boolean)}
-                      />
-                      <Label htmlFor="role-wali" className="cursor-pointer">
-                        Wali Kelas - Mengelola kelas dan siswa
-                      </Label>
-                    </div>
-                  </div>
-                  {formData.roles.length === 0 && (
-                    <p className="text-sm text-red-500 mt-1">Pilih minimal satu peran</p>
-                  )}
-                </div>
-
-                {/* Wali Kelas Selection - only show if wali_kelas role is selected */}
-                {formData.roles.includes('wali_kelas') && (
-                  <div className="col-span-2">
-                    <Label htmlFor="wali_kelas">Kelas yang Diwali</Label>
-                    <Select value={formData.wali_kelas} onValueChange={(value) => setFormData({...formData, wali_kelas: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pilih kelas untuk menjadi wali" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Belum ditentukan</SelectItem>
-                        {kelasList.map((kelas) => (
-                          <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
-                            {kelas.nama_kelas}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Batal
-                </Button>
-                <Button type="submit">
-                  {editingGuru ? 'Perbarui' : 'Simpan'}
-                </Button>
-              </div>
-            </form>
+            <GuruForm
+              onSubmit={handleSubmit}
+              onCancel={() => setIsDialogOpen(false)}
+              isEditing={!!editingGuru}
+              editingGuru={editingGuru}
+              kelasList={kelasList}
+            />
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Search */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Cari guru (nama, NIP, atau email)..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <GuruSearch searchTerm={searchTerm} onSearchChange={setSearchTerm} />
 
-      {/* Table */}
       <Card>
         <CardHeader>
           <CardTitle>Daftar Guru ({filteredGuru.length} guru)</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nama & NIP</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Peran/Status</TableHead>
-                <TableHead>Wali Kelas</TableHead>
-                <TableHead>No. Telepon</TableHead>
-                <TableHead>Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredGuru.map((guru) => (
-                <TableRow key={guru.id_guru}>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="font-medium">{guru.nama_lengkap}</div>
-                      <div className="text-sm text-gray-500 font-mono">{guru.nip}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{guru.email}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {guru.roles && guru.roles.length > 0 ? (
-                        guru.roles.map((role) => (
-                          <Badge key={role} variant={getRoleBadgeVariant(role)} className="text-xs">
-                            {role === 'admin' ? 'Admin' : 
-                             role === 'wali_kelas' ? 'Wali Kelas' : 'Guru'}
-                          </Badge>
-                        ))
-                      ) : (
-                        <Badge variant="secondary">Guru</Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {guru.kelas_wali ? (
-                      <Badge variant="outline">{guru.kelas_wali.nama_kelas}</Badge>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell>{guru.nomor_telepon || '-'}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(guru)}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDelete(guru.id_guru)}
-                        disabled={guru.id_guru === userSession.guru.id_guru}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <GuruTable
+            guruList={filteredGuru}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            userSession={userSession}
+          />
         </CardContent>
       </Card>
     </div>
