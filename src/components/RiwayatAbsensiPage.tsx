@@ -91,6 +91,9 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
     return Object.values(grouped).sort((a, b) => a.siswa.nama_lengkap.localeCompare(b.siswa.nama_lengkap));
   }, [relevantAbsensi]);
 
+  // Logika: tampilkan tabel HANYA jika salah satu filter dipilih
+  const isFiltered = selectedMapel !== 'all' || selectedKelas !== 'all';
+
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold">Riwayat Absensi</h1>
@@ -106,15 +109,21 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
         dateList={dateList}
       />
 
-      <AbsensiOverviewTable 
-        riwayatAbsensi={riwayatAbsensi}
-        loading={loading}
-        selectedMapel={selectedMapel}
-        selectedKelas={selectedKelas}
-        mapelList={mapelList}
-        kelasList={kelasList}
-        refreshData={refreshData}
-      />
+      {!isFiltered ? (
+        <div className="text-center py-8 text-gray-500 border rounded-lg bg-gray-50">
+          Silakan pilih <b>mata pelajaran</b> atau <b>kelas</b> terlebih dahulu untuk melihat rekapitulasi absensi.
+        </div>
+      ) : (
+        <AbsensiOverviewTable 
+          riwayatAbsensi={riwayatAbsensi}
+          loading={loading}
+          selectedMapel={selectedMapel}
+          selectedKelas={selectedKelas}
+          mapelList={mapelList}
+          kelasList={kelasList}
+          refreshData={refreshData}
+        />
+      )}
     </div>
   );
 };
