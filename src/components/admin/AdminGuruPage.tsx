@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { User, Plus, Edit2, Trash2, Search } from 'lucide-react';
@@ -247,6 +248,9 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
               <DialogTitle>
                 {editingGuru ? 'Edit Guru' : 'Tambah Guru Baru'}
               </DialogTitle>
+              <DialogDescription>
+                {editingGuru ? 'Edit informasi guru yang sudah ada' : 'Tambahkan guru baru ke dalam sistem'}
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -324,7 +328,7 @@ const AdminGuruPage: React.FC<AdminGuruPageProps> = ({ userSession }) => {
                       <SelectValue placeholder="Pilih kelas untuk menjadi wali" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tidak menjadi wali kelas</SelectItem>
+                      <SelectItem value="none">Tidak menjadi wali kelas</SelectItem>
                       {kelasList.map((kelas) => (
                         <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
                           {kelas.nama_kelas}
