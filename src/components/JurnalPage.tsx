@@ -9,9 +9,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, BookOpen, Clock, Calendar } from 'lucide-react';
+import { Plus, BookOpen, Clock, Calendar, Edit, Trash } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import JurnalFilter from './jurnal/JurnalFilter';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface JurnalPageProps {
   userSession: UserSession;
@@ -55,6 +66,9 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
   const [mapelList, setMapelList] = useState<MataPelajaran[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedJurnal, setSelectedJurnal] = useState<JurnalEntry | null>(null);
   const [filters, setFilters] = useState<FilterState>({
     kelas: 'all',
     mapel: 'all',
@@ -64,6 +78,16 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
     id_kelas: '',
     id_mapel: '',
     tanggal_pelajaran: new Date().toISOString().split('T')[0],
+    waktu_mulai: '',
+    waktu_selesai: '',
+    judul_materi: '',
+    materi_diajarkan: ''
+  });
+  const [editFormData, setEditFormData] = useState({
+    id_jurnal: '',
+    id_kelas: '',
+    id_mapel: '',
+    tanggal_pelajaran: '',
     waktu_mulai: '',
     waktu_selesai: '',
     judul_materi: '',
@@ -225,6 +249,111 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
       toast({
         title: "Error",
         description: "Gagal menyimpan jurnal pembelajaran",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const openEditDialog = (jurnal: JurnalEntry) => {
+    setEditFormData({
+      id_jurnal: jurnal.id_jurnal,
+      id_kelas: (jurnal as any).id_kelas,
+      id_mapel: (jurnal as any).id_mapel,
+      tanggal_pelajaran: jurnal.tanggal_pelajaran,
+      waktu_mulai: jurnal.waktu_mulai,
+      waktu_selesai: jurnal.waktu_selesai,
+      judul_materi: jurnal.judul_materi,
+      materi_diajarkan: jurnal.materi_diajarkan,
+    });
+    setSelectedJurnal(jurnal);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditChange = (field: string, value: string) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // Validasi wajib isi
+    if (
+      !editFormData.id_kelas ||
+      !editFormData.id_mapel ||
+      !editFormData.judul_materi ||
+      !editFormData.materi_diajarkan
+    ) {
+      toast({
+        title: "Error",
+        description: "Mohon lengkapi semua field yang wajib diisi",
+        variant: "destructive"
+      });
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from('jurnal_harian')
+        .update({
+          id_kelas: editFormData.id_kelas,
+          id_mapel: editFormData.id_mapel,
+          tanggal_pelajaran: editFormData.tanggal_pelajaran,
+          waktu_mulai: editFormData.waktu_mulai,
+          waktu_selesai: editFormData.waktu_selesai,
+          judul_materi: editFormData.judul_materi,
+          materi_diajarkan: editFormData.materi_diajarkan,
+        })
+        .eq('id_jurnal', editFormData.id_jurnal);
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Jurnal berhasil diperbarui"
+      });
+
+      setEditDialogOpen(false);
+      setSelectedJurnal(null);
+      loadJurnal();
+    } catch (error) {
+      console.error('Error updating jurnal:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memperbarui jurnal",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const openDeleteDialog = (jurnal: JurnalEntry) => {
+    setSelectedJurnal(jurnal);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteJurnal = async () => {
+    if (!selectedJurnal) return;
+    try {
+      const { error } = await supabase
+        .from('jurnal_harian')
+        .delete()
+        .eq('id_jurnal', selectedJurnal.id_jurnal);
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Jurnal berhasil dihapus"
+      });
+
+      setDeleteDialogOpen(false);
+      setSelectedJurnal(null);
+      loadJurnal();
+    } catch (error) {
+      console.error('Error deleting jurnal:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus jurnal",
         variant: "destructive"
       });
     }
@@ -418,6 +547,7 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
                   <TableHead>Mata Pelajaran</TableHead>
                   <TableHead>Judul Materi</TableHead>
                   <TableHead>Materi Diajarkan</TableHead>
+                  <TableHead>Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -435,6 +565,26 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
                     <TableCell>{jurnal.mata_pelajaran.nama_mapel}</TableCell>
                     <TableCell className="font-medium">{jurnal.judul_materi}</TableCell>
                     <TableCell className="max-w-xs truncate">{jurnal.materi_diajarkan}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          aria-label="Edit jurnal"
+                          onClick={() => openEditDialog(jurnal)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          aria-label="Hapus jurnal"
+                          onClick={() => openDeleteDialog(jurnal)}
+                        >
+                          <Trash className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -448,6 +598,121 @@ const JurnalPage: React.FC<JurnalPageProps> = ({ userSession }) => {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog Edit Jurnal */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Jurnal Pembelajaran</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Kelas *</label>
+                <Select value={editFormData.id_kelas} onValueChange={(value) => handleEditChange('id_kelas', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih kelas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {kelasList.map((kelas) => (
+                      <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
+                        {kelas.nama_kelas}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Mata Pelajaran *</label>
+                <Select value={editFormData.id_mapel} onValueChange={(value) => handleEditChange('id_mapel', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih mata pelajaran" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mapelList.map((mapel) => (
+                      <SelectItem key={mapel.id_mapel} value={mapel.id_mapel}>
+                        {mapel.nama_mapel}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Tanggal *</label>
+                <Input
+                  type="date"
+                  value={editFormData.tanggal_pelajaran}
+                  onChange={(e) => handleEditChange('tanggal_pelajaran', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Waktu Mulai *</label>
+                <Input
+                  type="time"
+                  value={editFormData.waktu_mulai}
+                  onChange={(e) => handleEditChange('waktu_mulai', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Waktu Selesai *</label>
+                <Input
+                  type="time"
+                  value={editFormData.waktu_selesai}
+                  onChange={(e) => handleEditChange('waktu_selesai', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Judul Materi *</label>
+              <Input
+                value={editFormData.judul_materi}
+                onChange={(e) => handleEditChange('judul_materi', e.target.value)}
+                placeholder="Masukkan judul materi"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Materi yang Diajarkan *</label>
+              <Textarea
+                value={editFormData.materi_diajarkan}
+                onChange={(e) => handleEditChange('materi_diajarkan', e.target.value)}
+                placeholder="Jelaskan materi yang diajarkan"
+                rows={4}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Batal
+              </Button>
+              <Button type="submit">
+                Simpan Perubahan
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Konfirmasi Hapus */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Jurnal?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus jurnal <b>{selectedJurnal?.judul_materi}</b>? Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteDialogOpen(false)}>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteJurnal}>Hapus</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
