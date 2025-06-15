@@ -206,8 +206,9 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-40">Nama Siswa</TableHead>
+                    {/* Pindahkan TableHead "No Absen" ke paling kiri */}
                     <TableHead className="w-12 text-center">No Absen</TableHead>
+                    <TableHead className="min-w-40">Nama Siswa</TableHead>
                     <TableHead className="min-w-24 text-center">Rekapitulasi<br /><span className="font-light">(Rata-rata)</span></TableHead>
                     {taskList.map((task) => (
                       <TableHead key={task.name} className="text-center min-w-24">

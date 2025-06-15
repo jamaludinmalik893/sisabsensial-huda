@@ -35,16 +35,16 @@ const NilaiTableRow: React.FC<NilaiTableRowProps> = ({
   handleSiswaClick,
 }) => (
   <TableRow key={studentData.siswa.id_siswa} className="hover:bg-gray-50 group">
+    {/* No Absen pindah ke paling kiri */}
+    <TableCell className="p-2 text-center align-middle">
+      {idx + 1}
+    </TableCell>
     {/* Nama Siswa (with avatar and clickable for popup) */}
     <TableCell className="p-2 align-middle">
       <StudentCell
         siswa={studentData.siswa}
         onClickProfil={handleSiswaClick}
       />
-    </TableCell>
-    {/* No Absen */}
-    <TableCell className="p-2 text-center align-middle">
-      {idx + 1}
     </TableCell>
     {/* Rekapitulasi (average) */}
     <TableCell className="p-2 text-center align-middle">
