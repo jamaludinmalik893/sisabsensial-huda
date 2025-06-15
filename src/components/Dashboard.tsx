@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +17,7 @@ import {
 import { StatistikDashboard, UserSession } from '@/types';
 import StatistikNilaiChart from "./dashboard/StatistikNilaiChart";
 import StatistikAbsensiChart from "./dashboard/StatistikAbsensiChart";
+import { supabase } from '@/integrations/supabase/client';
 
 interface DashboardProps {
   userSession: UserSession;
@@ -34,25 +36,69 @@ const Dashboard: React.FC<DashboardProps> = ({ userSession }) => {
     },
     jurnal_hari_ini: 0
   });
+  const [loading, setLoading] = useState(true);
 
-  // Mock data - dalam implementasi nyata, data ini akan diambil dari Supabase
   useEffect(() => {
-    const loadStatistik = () => {
+    const fetchStatistik = async () => {
+      setLoading(true);
+      // 1. Total siswa
+      const { count: siswaCount } = await supabase
+        .from('siswa')
+        .select('id_siswa', { count: 'exact', head: true });
+      // 2. Total guru
+      const { count: guruCount } = await supabase
+        .from('guru')
+        .select('id_guru', { count: 'exact', head: true });
+      // 3. Total kelas
+      const { count: kelasCount } = await supabase
+        .from('kelas')
+        .select('id_kelas', { count: 'exact', head: true });
+
+      // 4. Statistik Kehadiran Hari Ini (tanggal lokal)
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const tanggalStr = today.toISOString().slice(0, 10);
+
+      // Cek jurnal_harian hari ini
+      const { data: jurnalHariIni, error: jurnalError } = await supabase
+        .from('jurnal_harian')
+        .select('id_jurnal')
+        .eq('tanggal_pelajaran', tanggalStr);
+
+      // Ambil data absensi untuk jurnal/jadwal hari ini
+      let hadir = 0, izin = 0, sakit = 0, alpha = 0;
+      if (jurnalHariIni && jurnalHariIni.length > 0) {
+        const jurnalIdList = jurnalHariIni.map(j => j.id_jurnal);
+        const { data: absensiData } = await supabase
+          .from('absensi')
+          .select('status')
+          .in('id_jurnal', jurnalIdList);
+
+        // Hitung agregat kehadiran
+        absensiData?.forEach(row => {
+          if (row.status === 'Hadir') hadir++;
+          else if (row.status === 'Izin') izin++;
+          else if (row.status === 'Sakit') sakit++;
+          else if (row.status === 'Alpha') alpha++;
+        });
+      }
+
       setStatistik({
-        total_siswa: 240,
-        total_guru: 24,
-        total_kelas: 12,
+        total_siswa: siswaCount || 0,
+        total_guru: guruCount || 0,
+        total_kelas: kelasCount || 0,
         kehadiran_hari_ini: {
-          hadir: 195,
-          izin: 12,
-          sakit: 8,
-          alpha: 5
+          hadir,
+          izin,
+          sakit,
+          alpha
         },
-        jurnal_hari_ini: 18
+        jurnal_hari_ini: jurnalHariIni ? jurnalHariIni.length : 0,
       });
+      setLoading(false);
     };
 
-    loadStatistik();
+    fetchStatistik();
   }, []);
 
   const totalKehadiran = Object.values(statistik.kehadiran_hari_ini).reduce((a, b) => a + b, 0);
@@ -109,7 +155,11 @@ const Dashboard: React.FC<DashboardProps> = ({ userSession }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Siswa</p>
-              <p className="text-3xl font-bold text-gray-900">{statistik.total_siswa}</p>
+              {loading ? (
+                <div className="animate-pulse h-8 w-20 bg-gray-200 rounded mb-2" />
+              ) : (
+                <p className="text-3xl font-bold text-gray-900">{statistik.total_siswa}</p>
+              )}
               <p className="text-xs text-green-600 flex items-center mt-1">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 Aktif pembelajaran
@@ -125,7 +175,11 @@ const Dashboard: React.FC<DashboardProps> = ({ userSession }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Kelas</p>
-              <p className="text-3xl font-bold text-gray-900">{statistik.total_kelas}</p>
+              {loading ? (
+                <div className="animate-pulse h-8 w-12 bg-gray-200 rounded mb-2" />
+              ) : (
+                <p className="text-3xl font-bold text-gray-900">{statistik.total_kelas}</p>
+              )}
               <p className="text-xs text-blue-600 flex items-center mt-1">
                 <BookOpen className="h-3 w-3 mr-1" />
                 Kelas aktif
@@ -141,7 +195,11 @@ const Dashboard: React.FC<DashboardProps> = ({ userSession }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Kehadiran Hari Ini</p>
-              <p className="text-3xl font-bold text-gray-900">{persentaseKehadiran.toFixed(1)}%</p>
+              {loading ? (
+                <div className="animate-pulse h-8 w-16 bg-gray-200 rounded mb-2" />
+              ) : (
+                <p className="text-3xl font-bold text-gray-900">{persentaseKehadiran.toFixed(1)}%</p>
+              )}
               <p className="text-xs text-green-600 flex items-center mt-1">
                 <UserCheck className="h-3 w-3 mr-1" />
                 {statistik.kehadiran_hari_ini.hadir} dari {totalKehadiran} siswa
@@ -157,7 +215,11 @@ const Dashboard: React.FC<DashboardProps> = ({ userSession }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Jurnal Hari Ini</p>
-              <p className="text-3xl font-bold text-gray-900">{statistik.jurnal_hari_ini}</p>
+              {loading ? (
+                <div className="animate-pulse h-8 w-10 bg-gray-200 rounded mb-2" />
+              ) : (
+                <p className="text-3xl font-bold text-gray-900">{statistik.jurnal_hari_ini}</p>
+              )}
               <p className="text-xs text-purple-600 flex items-center mt-1">
                 <BookOpen className="h-3 w-3 mr-1" />
                 Jurnal dibuat
