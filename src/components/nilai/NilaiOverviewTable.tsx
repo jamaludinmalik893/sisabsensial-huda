@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -160,6 +159,10 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
     return `${mapelName} - ${kelasName}`;
   };
 
+  /**
+   * Updates: remove the edit icon, and start editing
+   * score/note by double-clicking the cell value.
+   */
   const startEditing = (studentId: string, taskKey: string, grade: {skor: number; catatan?: string}) => {
     setEditingCell({
       studentId,
@@ -207,7 +210,7 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
               {getSelectedInfo()}
             </p>
             <p className="text-xs text-gray-500">
-              Klik nama siswa atau ikon untuk melihat profil lengkap. Klik ikon edit untuk mengubah nilai.
+              Klik nama siswa atau ikon untuk melihat profil lengkap. **Double klik** pada nilai/tugas untuk mengubah nilai/catatan.
             </p>
           </div>
         </CardHeader>
@@ -297,7 +300,11 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                                   </div>
                                 </div>
                               ) : (
-                                <div className="flex items-center gap-1">
+                                <div
+                                  className="flex items-center gap-1 cursor-pointer"
+                                  onDoubleClick={() => startEditing(studentData.siswa.id_siswa, task.name, studentData.grades[task.name])}
+                                  title="Double klik untuk edit nilai & catatan"
+                                >
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <div className="relative">
@@ -317,17 +324,10 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                                         {studentData.grades[task.name].catatan && (
                                           <p>Catatan: {studentData.grades[task.name].catatan}</p>
                                         )}
+                                        <p className="text-gray-400 mt-1">Double klik untuk edit</p>
                                       </div>
                                     </TooltipContent>
                                   </Tooltip>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => startEditing(studentData.siswa.id_siswa, task.name, studentData.grades[task.name])}
-                                    className="h-4 w-4 p-0 ml-1 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
-                                  >
-                                    <Edit className="h-3 w-3" />
-                                  </Button>
                                 </div>
                               )}
                             </div>
