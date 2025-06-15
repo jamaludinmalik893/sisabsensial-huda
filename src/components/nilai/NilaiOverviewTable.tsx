@@ -5,6 +5,8 @@ import StudentCell from './StudentCell';
 import NilaiEditCell from './NilaiEditCell';
 import NilaiDisplayCell from './NilaiDisplayCell';
 import ProfilSiswaPopup from '../ProfilSiswaPopup';
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 interface Nilai {
   id_nilai: string;
