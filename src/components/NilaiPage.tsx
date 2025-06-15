@@ -10,11 +10,6 @@ interface NilaiPageProps {
   userSession: UserSession;
 }
 
-interface BulkNilaiEntry {
-  skor: number;
-  catatan?: string;
-}
-
 const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
   const [activeTab, setActiveTab] = useState('overview');
   
@@ -32,16 +27,20 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
     updateNilai
   } = useNilaiData(userSession);
 
-  // Convert string bulk values to BulkNilaiEntry format
-  const convertedBulkValues: Record<string, BulkNilaiEntry> = Object.entries(bulkValues).reduce((acc, [key, value]) => {
+  // Convert string bulk values to the expected format for BulkNilaiEntry component
+  const convertedBulkValues = Object.entries(bulkValues).reduce((acc, [key, value]) => {
     if (value.trim() !== '') {
-      acc[key] = { skor: parseFloat(value) };
+      acc[key] = {
+        id_siswa: key,
+        skor: parseFloat(value),
+        catatan: ''
+      };
     }
     return acc;
-  }, {} as Record<string, BulkNilaiEntry>);
+  }, {} as Record<string, any>);
 
   // Handle bulk value change with proper type conversion
-  const handleBulkEntryChange = (siswaId: string, entry: BulkNilaiEntry) => {
+  const handleBulkEntryChange = (siswaId: string, entry: any) => {
     handleBulkValueChange(siswaId, entry.skor.toString());
   };
 
@@ -57,7 +56,6 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
         
         <TabsContent value="overview" className="space-y-4">
           <NilaiOverviewTable 
-            nilaiList={nilaiList}
             loading={loading}
             mapelList={mapelList}
             kelasList={kelasList}
