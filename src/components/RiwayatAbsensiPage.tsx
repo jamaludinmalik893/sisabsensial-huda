@@ -107,9 +107,15 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
 
   const loadMapelList = async () => {
     try {
+      // Hanya load mata pelajaran yang diampu oleh guru ini
       const { data, error } = await supabase
         .from('mata_pelajaran')
-        .select('id_mapel, nama_mapel')
+        .select(`
+          id_mapel, 
+          nama_mapel,
+          guru_mata_pelajaran!inner(id_guru)
+        `)
+        .eq('guru_mata_pelajaran.id_guru', userSession.guru.id_guru)
         .order('nama_mapel');
 
       if (error) throw error;
@@ -149,11 +155,15 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
             tanggal_pelajaran,
             judul_materi,
             id_guru,
-            mata_pelajaran!inner(nama_mapel, id_mapel),
+            mata_pelajaran!inner(
+              nama_mapel, 
+              id_mapel,
+              guru_mata_pelajaran!inner(id_guru)
+            ),
             kelas!inner(nama_kelas, id_kelas)
           )
         `)
-        .eq('jurnal_harian.id_guru', userSession.guru.id_guru);
+        .eq('jurnal_harian.mata_pelajaran.guru_mata_pelajaran.id_guru', userSession.guru.id_guru);
 
       // Apply filters
       if (filters.kelas !== 'all') {
@@ -405,7 +415,7 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Data Absensi
+            Data Absensi - Mata Pelajaran yang Anda Ampu
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -453,7 +463,15 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
           
           {!loading && riwayatAbsensi.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              Tidak ada data absensi ditemukan dengan filter yang dipilih
+              {mapelList.length === 0 ? (
+                <div>
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p>Anda belum ditugaskan untuk mengajar mata pelajaran apapun.</p>
+                  <p className="text-sm mt-1">Silakan hubungi administrator untuk mendapatkan penugasan mata pelajaran.</p>
+                </div>
+              ) : (
+                "Tidak ada data absensi ditemukan dengan filter yang dipilih"
+              )}
             </div>
           )}
         </CardContent>

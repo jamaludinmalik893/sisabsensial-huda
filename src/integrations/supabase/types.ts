@@ -107,6 +107,42 @@ export type Database = {
           },
         ]
       }
+      guru_mata_pelajaran: {
+        Row: {
+          created_at: string | null
+          id: string
+          id_guru: string
+          id_mapel: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          id_guru: string
+          id_mapel: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          id_guru?: string
+          id_mapel?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guru_mata_pelajaran_id_guru_fkey"
+            columns: ["id_guru"]
+            isOneToOne: false
+            referencedRelation: "guru"
+            referencedColumns: ["id_guru"]
+          },
+          {
+            foreignKeyName: "guru_mata_pelajaran_id_mapel_fkey"
+            columns: ["id_mapel"]
+            isOneToOne: false
+            referencedRelation: "mata_pelajaran"
+            referencedColumns: ["id_mapel"]
+          },
+        ]
+      }
       guru_roles: {
         Row: {
           created_at: string | null

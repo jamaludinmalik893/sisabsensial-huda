@@ -6,21 +6,29 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BookOpen, Plus, Edit2, Trash2, Search } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { BookOpen, Plus, Edit2, Trash2, Search, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { MataPelajaran, UserSession } from '@/types';
+import { MataPelajaran, UserSession, Guru } from '@/types';
 
 interface AdminMapelPageProps {
   userSession: UserSession;
 }
 
+interface MapelWithGuru extends MataPelajaran {
+  guru_pengampu?: Guru[];
+}
+
 const AdminMapelPage: React.FC<AdminMapelPageProps> = ({ userSession }) => {
-  const [mapelList, setMapelList] = useState<MataPelajaran[]>([]);
+  const [mapelList, setMapelList] = useState<MapelWithGuru[]>([]);
+  const [guruList, setGuruList] = useState<Guru[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingMapel, setEditingMapel] = useState<MataPelajaran | null>(null);
+  const [editingMapel, setEditingMapel] = useState<MapelWithGuru | null>(null);
+  const [selectedGuru, setSelectedGuru] = useState<string[]>([]);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -35,14 +43,35 @@ const AdminMapelPage: React.FC<AdminMapelPageProps> = ({ userSession }) => {
     try {
       setLoading(true);
       
+      // Load mata pelajaran dengan guru pengampunya
       const { data: mapelData, error: mapelError } = await supabase
         .from('mata_pelajaran')
-        .select('*')
+        .select(`
+          *,
+          guru_mata_pelajaran(
+            guru(id_guru, nama_lengkap, nip)
+          )
+        `)
         .order('nama_mapel');
 
       if (mapelError) throw mapelError;
 
-      setMapelList(mapelData || []);
+      // Transform data untuk menyesuaikan interface
+      const transformedMapel = mapelData?.map(mapel => ({
+        ...mapel,
+        guru_pengampu: mapel.guru_mata_pelajaran?.map((gmp: any) => gmp.guru) || []
+      })) || [];
+
+      setMapelList(transformedMapel);
+
+      // Load semua guru
+      const { data: guruData, error: guruError } = await supabase
+        .from('guru')
+        .select('id_guru, nama_lengkap, nip')
+        .order('nama_lengkap');
+
+      if (guruError) throw guruError;
+      setGuruList(guruData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -59,6 +88,8 @@ const AdminMapelPage: React.FC<AdminMapelPageProps> = ({ userSession }) => {
     e.preventDefault();
     
     try {
+      let mapelId: string;
+
       if (editingMapel) {
         // Update mata pelajaran
         const { error } = await supabase
@@ -67,6 +98,7 @@ const AdminMapelPage: React.FC<AdminMapelPageProps> = ({ userSession }) => {
           .eq('id_mapel', editingMapel.id_mapel);
 
         if (error) throw error;
+        mapelId = editingMapel.id_mapel;
 
         toast({
           title: "Sukses",
@@ -74,16 +106,42 @@ const AdminMapelPage: React.FC<AdminMapelPageProps> = ({ userSession }) => {
         });
       } else {
         // Create new mata pelajaran
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('mata_pelajaran')
-          .insert(formData);
+          .insert(formData)
+          .select()
+          .single();
 
         if (error) throw error;
+        mapelId = data.id_mapel;
 
         toast({
           title: "Sukses",
           description: "Mata pelajaran baru berhasil ditambahkan",
         });
+      }
+
+      // Update guru pengampu
+      if (editingMapel) {
+        // Hapus semua guru pengampu yang lama
+        await supabase
+          .from('guru_mata_pelajaran')
+          .delete()
+          .eq('id_mapel', mapelId);
+      }
+
+      // Tambahkan guru pengampu yang baru
+      if (selectedGuru.length > 0) {
+        const guruMapelData = selectedGuru.map(idGuru => ({
+          id_guru: idGuru,
+          id_mapel: mapelId
+        }));
+
+        const { error: guruMapelError } = await supabase
+          .from('guru_mata_pelajaran')
+          .insert(guruMapelData);
+
+        if (guruMapelError) throw guruMapelError;
       }
 
       setIsDialogOpen(false);
@@ -99,11 +157,12 @@ const AdminMapelPage: React.FC<AdminMapelPageProps> = ({ userSession }) => {
     }
   };
 
-  const handleEdit = (mapel: MataPelajaran) => {
+  const handleEdit = (mapel: MapelWithGuru) => {
     setEditingMapel(mapel);
     setFormData({
       nama_mapel: mapel.nama_mapel
     });
+    setSelectedGuru(mapel.guru_pengampu?.map(g => g.id_guru) || []);
     setIsDialogOpen(true);
   };
 
@@ -163,7 +222,16 @@ const AdminMapelPage: React.FC<AdminMapelPageProps> = ({ userSession }) => {
     setFormData({
       nama_mapel: ''
     });
+    setSelectedGuru([]);
     setEditingMapel(null);
+  };
+
+  const handleGuruSelection = (guruId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedGuru(prev => [...prev, guruId]);
+    } else {
+      setSelectedGuru(prev => prev.filter(id => id !== guruId));
+    }
   };
 
   const filteredMapel = mapelList.filter(mapel => 
@@ -193,7 +261,7 @@ const AdminMapelPage: React.FC<AdminMapelPageProps> = ({ userSession }) => {
               Tambah Mata Pelajaran
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
                 {editingMapel ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran Baru'}
@@ -210,6 +278,28 @@ const AdminMapelPage: React.FC<AdminMapelPageProps> = ({ userSession }) => {
                   required
                 />
               </div>
+
+              <div>
+                <Label>Guru Pengampu</Label>
+                <div className="mt-2 space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
+                  {guruList.map((guru) => (
+                    <div key={guru.id_guru} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={guru.id_guru}
+                        checked={selectedGuru.includes(guru.id_guru)}
+                        onCheckedChange={(checked) => handleGuruSelection(guru.id_guru, checked as boolean)}
+                      />
+                      <label htmlFor={guru.id_guru} className="text-sm cursor-pointer">
+                        {guru.nama_lengkap} ({guru.nip})
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Pilih satu atau lebih guru yang mengampu mata pelajaran ini
+                </p>
+              </div>
+
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Batal
@@ -248,6 +338,7 @@ const AdminMapelPage: React.FC<AdminMapelPageProps> = ({ userSession }) => {
             <TableHeader>
               <TableRow>
                 <TableHead>Nama Mata Pelajaran</TableHead>
+                <TableHead>Guru Pengampu</TableHead>
                 <TableHead>Tanggal Dibuat</TableHead>
                 <TableHead className="w-32">Aksi</TableHead>
               </TableRow>
@@ -256,6 +347,19 @@ const AdminMapelPage: React.FC<AdminMapelPageProps> = ({ userSession }) => {
               {filteredMapel.map((mapel) => (
                 <TableRow key={mapel.id_mapel}>
                   <TableCell className="font-medium">{mapel.nama_mapel}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {mapel.guru_pengampu && mapel.guru_pengampu.length > 0 ? (
+                        mapel.guru_pengampu.map((guru) => (
+                          <Badge key={guru.id_guru} variant="secondary" className="text-xs">
+                            {guru.nama_lengkap}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-gray-500 text-sm">Belum ada guru</span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     {mapel.created_at ? new Date(mapel.created_at).toLocaleDateString('id-ID') : '-'}
                   </TableCell>
