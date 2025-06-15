@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -5,10 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Users, MessageCircle } from 'lucide-react';
+import { User, Users, MessageCircle, Edit, Trash } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import ProfilSiswaPopup from '../ProfilSiswaPopup';
@@ -81,7 +84,7 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
   selectedKelas,
   mapelList,
   kelasList,
-  refreshData // Tambahan
+  refreshData
 }) => {
   const [selectedSiswa, setSelectedSiswa] = useState<RiwayatAbsensi['siswa'] | null>(null);
   const [isProfilOpen, setIsProfilOpen] = useState(false);
@@ -94,6 +97,20 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
     materi: string;
   } | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  // New states for journal editing
+  const [editingJurnal, setEditingJurnal] = useState<{
+    id_jurnal: string;
+    judul_materi: string;
+    tanggal_pelajaran: string;
+    materi_diajarkan: string;
+    waktu_mulai: string;
+    waktu_selesai: string;
+  } | null>(null);
+  const [isEditJurnalDialogOpen, setIsEditJurnalDialogOpen] = useState(false);
+  const [isDeleteJurnalDialogOpen, setIsDeleteJurnalDialogOpen] = useState(false);
+  const [jurnalToDelete, setJurnalToDelete] = useState<string | null>(null);
+  
   const { toast } = useToast();
 
   // Filter absensi by selected subject and class
@@ -176,6 +193,26 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
     }
   };
 
+  const handleJurnalDoubleClick = (dateKey: string, materi: string) => {
+    // Find the journal entry for this date and material
+    const jurnalEntry = relevantAbsensi.find(absensi => {
+      const absensiDate = new Date(absensi.jurnal_harian.tanggal_pelajaran).toLocaleDateString('id-ID');
+      return absensiDate === dateKey && absensi.jurnal_harian.judul_materi === materi;
+    })?.jurnal_harian;
+
+    if (jurnalEntry) {
+      setEditingJurnal({
+        id_jurnal: jurnalEntry.id_jurnal,
+        judul_materi: jurnalEntry.judul_materi,
+        tanggal_pelajaran: jurnalEntry.tanggal_pelajaran,
+        materi_diajarkan: jurnalEntry.materi_diajarkan || '',
+        waktu_mulai: jurnalEntry.waktu_mulai || '',
+        waktu_selesai: jurnalEntry.waktu_selesai || ''
+      });
+      setIsEditJurnalDialogOpen(true);
+    }
+  };
+
   const handleSaveAbsensi = async () => {
     if (!editingAbsensi) return;
 
@@ -198,11 +235,9 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
       setIsEditDialogOpen(false);
       setEditingAbsensi(null);
       
-      // <--- REFRESH DATA TANPA RELOAD
       if (typeof refreshData === "function") {
         await refreshData();
       }
-      // END
       
     } catch (error) {
       console.error('Error updating absensi:', error);
@@ -210,6 +245,107 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
         title: "Error",
         description: "Gagal memperbarui data absensi",
         variant: "destructive"
+      });
+    }
+  };
+
+  const handleSaveJurnal = async () => {
+    if (!editingJurnal) return;
+
+    try {
+      const { error } = await supabase
+        .from('jurnal_harian')
+        .update({
+          judul_materi: editingJurnal.judul_materi,
+          tanggal_pelajaran: editingJurnal.tanggal_pelajaran,
+          materi_diajarkan: editingJurnal.materi_diajarkan,
+          waktu_mulai: editingJurnal.waktu_mulai,
+          waktu_selesai: editingJurnal.waktu_selesai
+        })
+        .eq('id_jurnal', editingJurnal.id_jurnal);
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Data jurnal berhasil diperbarui",
+      });
+
+      setIsEditJurnalDialogOpen(false);
+      setEditingJurnal(null);
+      
+      if (typeof refreshData === "function") {
+        await refreshData();
+      }
+      
+    } catch (error) {
+      console.error('Error updating jurnal:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memperbarui data jurnal",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteJurnal = async () => {
+    if (!jurnalToDelete) return;
+
+    try {
+      // First delete all related absensi records
+      const { error: absensiError } = await supabase
+        .from('absensi')
+        .delete()
+        .eq('id_jurnal', jurnalToDelete);
+
+      if (absensiError) throw absensiError;
+
+      // Then delete the jurnal
+      const { error: jurnalError } = await supabase
+        .from('jurnal_harian')
+        .delete()
+        .eq('id_jurnal', jurnalToDelete);
+
+      if (jurnalError) throw jurnalError;
+
+      toast({
+        title: "Berhasil",
+        description: "Jurnal dan data absensi terkait berhasil dihapus",
+      });
+
+      setIsDeleteJurnalDialogOpen(false);
+      setJurnalToDelete(null);
+      
+      if (typeof refreshData === "function") {
+        await refreshData();
+      }
+      
+    } catch (error) {
+      console.error('Error deleting jurnal:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus jurnal",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const showJurnalMenu = (dateKey: string, materi: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    const jurnalEntry = relevantAbsensi.find(absensi => {
+      const absensiDate = new Date(absensi.jurnal_harian.tanggal_pelajaran).toLocaleDateString('id-ID');
+      return absensiDate === dateKey && absensi.jurnal_harian.judul_materi === materi;
+    })?.jurnal_harian;
+
+    if (jurnalEntry) {
+      setJurnalToDelete(jurnalEntry.id_jurnal);
+      setEditingJurnal({
+        id_jurnal: jurnalEntry.id_jurnal,
+        judul_materi: jurnalEntry.judul_materi,
+        tanggal_pelajaran: jurnalEntry.tanggal_pelajaran,
+        materi_diajarkan: jurnalEntry.materi_diajarkan || '',
+        waktu_mulai: jurnalEntry.waktu_mulai || '',
+        waktu_selesai: jurnalEntry.waktu_selesai || ''
       });
     }
   };
@@ -245,7 +381,7 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
               {getSelectedInfo()}
             </p>
             <p className="text-xs text-gray-500">
-              Klik nama atau foto siswa untuk melihat profil lengkap. Double klik kehadiran untuk mengedit.
+              Klik nama atau foto siswa untuk melihat profil lengkap. Double klik kehadiran untuk mengedit. Double klik judul/tanggal untuk menu jurnal.
             </p>
           </div>
         </CardHeader>
@@ -262,10 +398,28 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
                     {dateList.slice(0, 10).map(([date, materi]) => (
                       <TableHead key={date} className="text-center min-w-24">
                         <div className="flex flex-col">
-                          <span className="text-xs font-medium text-blue-600 mb-1">
-                            {materi.length > 15 ? `${materi.substring(0, 15)}...` : materi}
-                          </span>
-                          <span className="text-xs">{date}</span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div 
+                                className="cursor-pointer hover:bg-blue-50 p-1 rounded"
+                                onDoubleClick={() => handleJurnalDoubleClick(date, materi)}
+                                onContextMenu={(e) => showJurnalMenu(date, materi, e)}
+                              >
+                                <span className="text-xs font-medium text-blue-600 mb-1">
+                                  {materi.length > 15 ? `${materi.substring(0, 15)}...` : materi}
+                                </span>
+                                <br />
+                                <span className="text-xs">{date}</span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <div className="text-xs">
+                                <p>Materi: {materi}</p>
+                                <p>Tanggal: {date}</p>
+                                <p className="text-gray-400 mt-1">Double klik untuk edit jurnal</p>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </TableHead>
                     ))}
@@ -439,6 +593,121 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit Jurnal Dialog */}
+      <Dialog open={isEditJurnalDialogOpen} onOpenChange={setIsEditJurnalDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" />
+              Edit Jurnal Harian
+            </DialogTitle>
+          </DialogHeader>
+          {editingJurnal && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="judul_materi">Judul Materi</Label>
+                <Input
+                  id="judul_materi"
+                  value={editingJurnal.judul_materi}
+                  onChange={(e) => setEditingJurnal({...editingJurnal, judul_materi: e.target.value})}
+                  placeholder="Masukkan judul materi..."
+                />
+              </div>
+              <div>
+                <Label htmlFor="tanggal_pelajaran">Tanggal Pelajaran</Label>
+                <Input
+                  id="tanggal_pelajaran"
+                  type="date"
+                  value={editingJurnal.tanggal_pelajaran}
+                  onChange={(e) => setEditingJurnal({...editingJurnal, tanggal_pelajaran: e.target.value})}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="waktu_mulai">Waktu Mulai</Label>
+                  <Input
+                    id="waktu_mulai"
+                    type="time"
+                    value={editingJurnal.waktu_mulai}
+                    onChange={(e) => setEditingJurnal({...editingJurnal, waktu_mulai: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="waktu_selesai">Waktu Selesai</Label>
+                  <Input
+                    id="waktu_selesai"
+                    type="time"
+                    value={editingJurnal.waktu_selesai}
+                    onChange={(e) => setEditingJurnal({...editingJurnal, waktu_selesai: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="materi_diajarkan">Materi yang Diajarkan</Label>
+                <Textarea
+                  id="materi_diajarkan"
+                  value={editingJurnal.materi_diajarkan}
+                  onChange={(e) => setEditingJurnal({...editingJurnal, materi_diajarkan: e.target.value})}
+                  placeholder="Deskripsi materi yang diajarkan..."
+                  rows={4}
+                />
+              </div>
+              <div className="flex gap-2 justify-between">
+                <Button 
+                  variant="destructive" 
+                  onClick={() => {
+                    setIsEditJurnalDialogOpen(false);
+                    setIsDeleteJurnalDialogOpen(true);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Trash className="h-4 w-4" />
+                  Hapus
+                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsEditJurnalDialogOpen(false);
+                      setEditingJurnal(null);
+                    }}
+                  >
+                    Batal
+                  </Button>
+                  <Button onClick={handleSaveJurnal}>
+                    Simpan
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Jurnal Confirmation Dialog */}
+      <AlertDialog open={isDeleteJurnalDialogOpen} onOpenChange={setIsDeleteJurnalDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Jurnal</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus jurnal ini? Semua data absensi yang terkait juga akan dihapus. 
+              Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setIsDeleteJurnalDialogOpen(false);
+              setJurnalToDelete(null);
+            }}>
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteJurnal} className="bg-red-600 hover:bg-red-700">
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ProfilSiswaPopup
         siswa={selectedSiswa}
