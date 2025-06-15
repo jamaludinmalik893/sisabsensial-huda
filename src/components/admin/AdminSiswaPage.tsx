@@ -1,20 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, Plus, Edit2, Trash2, Search } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Users, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Siswa, Kelas, Guru, UserSession } from '@/types';
-import PhotoCapture from './PhotoCapture';
+import { Kelas, Guru, UserSession } from '@/types';
 import ProfilSiswaPopup from '@/components/ProfilSiswaPopup';
+import StudentFilters from './StudentFilters';
+import StudentTable from './StudentTable';
+import StudentForm from './StudentForm';
 
 interface AdminSiswaPageProps {
   userSession: UserSession;
@@ -248,14 +243,6 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
     setEditingSiswa(null);
   };
 
-  const handlePhotoCapture = (photoUrl: string) => {
-    setFormData(prev => ({ ...prev, foto_url: photoUrl }));
-  };
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
   const handleSiswaClick = (siswa: SiswaWithRelations) => {
     setSelectedSiswa(siswa);
     setIsProfilOpen(true);
@@ -296,279 +283,36 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
               <DialogTitle>
                 {editingSiswa ? 'Edit Siswa' : 'Tambah Siswa Baru'}
               </DialogTitle>
-              <DialogDescription>
-                {editingSiswa ? 'Perbarui informasi siswa' : 'Tambahkan siswa baru ke dalam sistem'}
-              </DialogDescription>
+              <StudentForm
+                formData={formData}
+                setFormData={setFormData}
+                onSubmit={handleSubmit}
+                onCancel={() => setIsDialogOpen(false)}
+                isEditing={!!editingSiswa}
+                kelasList={kelasList}
+                guruList={guruList}
+              />
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <Label>Foto Siswa</Label>
-                  <PhotoCapture 
-                    onPhotoCapture={handlePhotoCapture}
-                    currentPhotoUrl={formData.foto_url}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="nisn">NISN</Label>
-                  <Input
-                    id="nisn"
-                    value={formData.nisn}
-                    onChange={(e) => setFormData({...formData, nisn: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="nama_lengkap">Nama Lengkap</Label>
-                  <Input
-                    id="nama_lengkap"
-                    value={formData.nama_lengkap}
-                    onChange={(e) => setFormData({...formData, nama_lengkap: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="jenis_kelamin">Jenis Kelamin</Label>
-                  <Select value={formData.jenis_kelamin} onValueChange={(value) => setFormData({...formData, jenis_kelamin: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih jenis kelamin" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Laki-laki">Laki-laki</SelectItem>
-                      <SelectItem value="Perempuan">Perempuan</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="tanggal_lahir">Tanggal Lahir</Label>
-                  <Input
-                    id="tanggal_lahir"
-                    type="date"
-                    value={formData.tanggal_lahir}
-                    onChange={(e) => setFormData({...formData, tanggal_lahir: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="tempat_lahir">Tempat Lahir</Label>
-                  <Input
-                    id="tempat_lahir"
-                    value={formData.tempat_lahir}
-                    onChange={(e) => setFormData({...formData, tempat_lahir: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="tahun_masuk">Tahun Masuk</Label>
-                  <Input
-                    id="tahun_masuk"
-                    type="number"
-                    value={formData.tahun_masuk}
-                    onChange={(e) => setFormData({...formData, tahun_masuk: parseInt(e.target.value)})}
-                    required
-                  />
-                </div>
-                <div className="col-span-2">
-                  <Label htmlFor="alamat">Alamat</Label>
-                  <Input
-                    id="alamat"
-                    value={formData.alamat}
-                    onChange={(e) => setFormData({...formData, alamat: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="nomor_telepon">Nomor Telepon (Lama)</Label>
-                  <Input
-                    id="nomor_telepon"
-                    value={formData.nomor_telepon}
-                    onChange={(e) => setFormData({...formData, nomor_telepon: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="nomor_telepon_siswa">Nomor Telepon Siswa</Label>
-                  <Input
-                    id="nomor_telepon_siswa"
-                    value={formData.nomor_telepon_siswa}
-                    onChange={(e) => setFormData({...formData, nomor_telepon_siswa: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="nama_orang_tua">Nama Orang Tua</Label>
-                  <Input
-                    id="nama_orang_tua"
-                    value={formData.nama_orang_tua}
-                    onChange={(e) => setFormData({...formData, nama_orang_tua: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="nomor_telepon_orang_tua">Nomor Telepon Orang Tua</Label>
-                  <Input
-                    id="nomor_telepon_orang_tua"
-                    value={formData.nomor_telepon_orang_tua}
-                    onChange={(e) => setFormData({...formData, nomor_telepon_orang_tua: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="id_kelas">Kelas</Label>
-                  <Select value={formData.id_kelas} onValueChange={(value) => setFormData({...formData, id_kelas: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih kelas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {kelasList.map((kelas) => (
-                        <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
-                          {kelas.nama_kelas}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="id_guru_wali">Guru Wali</Label>
-                  <Select value={formData.id_guru_wali} onValueChange={(value) => setFormData({...formData, id_guru_wali: value})}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih guru wali" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {guruList.map((guru) => (
-                        <SelectItem key={guru.id_guru} value={guru.id_guru}>
-                          {guru.nama_lengkap}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Batal
-                </Button>
-                <Button type="submit">
-                  {editingSiswa ? 'Perbarui' : 'Simpan'}
-                </Button>
-              </div>
-            </form>
           </DialogContent>
         </Dialog>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Cari siswa (nama atau NISN)..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Select value={selectedKelas} onValueChange={setSelectedKelas}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter kelas" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Kelas</SelectItem>
-                {kelasList.map((kelas) => (
-                  <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
-                    {kelas.nama_kelas}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <StudentFilters
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        selectedKelas={selectedKelas}
+        onKelasChange={setSelectedKelas}
+        kelasList={kelasList}
+      />
 
       {/* Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Daftar Siswa ({filteredSiswa.length} siswa)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Foto</TableHead>
-                <TableHead>NISN</TableHead>
-                <TableHead>Nama Lengkap</TableHead>
-                <TableHead>Kelas</TableHead>
-                <TableHead>Jenis Kelamin</TableHead>
-                <TableHead>No. Telepon Siswa</TableHead>
-                <TableHead>Tahun Masuk</TableHead>
-                <TableHead>Guru Wali</TableHead>
-                <TableHead>Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSiswa.map((siswa) => (
-                <TableRow key={siswa.id_siswa}>
-                  <TableCell>
-                    <Avatar 
-                      className="h-10 w-10 cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => handleSiswaClick(siswa)}
-                    >
-                      <AvatarImage src={siswa.foto_url} alt={siswa.nama_lengkap} />
-                      <AvatarFallback>{getInitials(siswa.nama_lengkap)}</AvatarFallback>
-                    </Avatar>
-                  </TableCell>
-                  <TableCell className="font-mono">{siswa.nisn}</TableCell>
-                  <TableCell 
-                    className="font-medium cursor-pointer hover:text-blue-600 transition-colors"
-                    onClick={() => handleSiswaClick(siswa)}
-                  >
-                    {siswa.nama_lengkap}
-                  </TableCell>
-                  <TableCell>
-                    {siswa.kelas ? (
-                      <Badge variant="outline">{siswa.kelas.nama_kelas}</Badge>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell>{siswa.jenis_kelamin}</TableCell>
-                  <TableCell>
-                    {(siswa.nomor_telepon_siswa || siswa.nomor_telepon) ? (
-                      <span className="text-sm">{siswa.nomor_telepon_siswa || siswa.nomor_telepon}</span>
-                    ) : (
-                      <span className="text-gray-400 text-sm">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell>{siswa.tahun_masuk}</TableCell>
-                  <TableCell>
-                    {siswa.guru_wali ? siswa.guru_wali.nama_lengkap : '-'}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(siswa)}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDelete(siswa.id_siswa)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <StudentTable
+        siswaList={filteredSiswa}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onSiswaClick={handleSiswaClick}
+      />
 
       {/* Popup Profil Siswa */}
       <ProfilSiswaPopup
