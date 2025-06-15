@@ -23,16 +23,16 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
     refreshData
   } = useRiwayatAbsensiData(userSession);
 
-  // Ringkas data absensi untuk export
+  // Map & export: (absensi di data ini = kehadiran satu siswa untuk satu hari/pelajaran)
   const exportData = riwayatAbsensi.map(item => ({
-    Tanggal: item.tanggal_pelajaran,
-    Kelas: item.kelas?.nama_kelas ?? "",
-    Mapel: item.mata_pelajaran?.nama_mapel ?? "",
-    Guru: item.guru?.nama_lengkap ?? "",
-    Hadir: item.absensi?.filter(a => a.status === "Hadir").length ?? 0,
-    Izin: item.absensi?.filter(a => a.status === "Izin").length ?? 0,
-    Sakit: item.absensi?.filter(a => a.status === "Sakit").length ?? 0,
-    Alpha: item.absensi?.filter(a => a.status === "Alpha").length ?? 0
+    Tanggal: item.jurnal_harian?.tanggal_pelajaran ?? "",
+    Kelas: item.jurnal_harian?.kelas?.nama_kelas ?? "",
+    Mapel: item.jurnal_harian?.mata_pelajaran?.nama_mapel ?? "",
+    Siswa: item.siswa?.nama_lengkap ?? "",
+    NISN: item.siswa?.nisn ?? "",
+    Status: item.status ?? "",
+    Catatan: item.catatan ?? ""
+    // Optionally you could add: Guru: userSession.guru.nama_lengkap
   }));
 
   return (
