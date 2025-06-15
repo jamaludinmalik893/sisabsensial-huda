@@ -67,20 +67,27 @@ const ProfilSiswaPopup: React.FC<ProfilSiswaPopupProps> = ({ siswa, isOpen, onCl
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex flex-col items-center text-center space-y-3">
-            <Avatar className="h-36 w-36 mb-2">
-              <AvatarImage src={siswa.foto_url} alt={siswa.nama_lengkap} />
-              <AvatarFallback className="bg-blue-100 text-blue-600 text-3xl">
-                {getInitials(siswa.nama_lengkap)}
-              </AvatarFallback>
-            </Avatar>
-            <DialogTitle className="text-xl font-bold leading-tight">{siswa.nama_lengkap}</DialogTitle>
-            <Badge variant="outline" className="mt-1">
-              NISN: {siswa.nisn}
-            </Badge>
-            <DialogDescription className="text-center text-sm mt-1 mb-2">
-              Profil lengkap siswa dengan informasi personal dan akademik
-            </DialogDescription>
+          <div className="flex flex-col gap-4">
+            {/* Layout foto kiri, info kanan */}
+            <div className="flex flex-row items-center justify-center gap-5">
+              <Avatar className="h-28 w-28">
+                <AvatarImage src={siswa.foto_url} alt={siswa.nama_lengkap} />
+                <AvatarFallback className="bg-blue-100 text-blue-600 text-2xl">
+                  {getInitials(siswa.nama_lengkap)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col gap-2 items-start">
+                <div className="flex flex-row items-center gap-2">
+                  <DialogTitle className="text-xl font-bold leading-tight">{siswa.nama_lengkap}</DialogTitle>
+                  <Badge variant="outline" className="text-xs py-1 px-2">
+                    NISN: {siswa.nisn}
+                  </Badge>
+                </div>
+                <DialogDescription className="text-left text-sm mt-0 mb-2">
+                  Profil lengkap siswa dengan informasi personal dan akademik
+                </DialogDescription>
+              </div>
+            </div>
           </div>
         </DialogHeader>
 
@@ -175,3 +182,4 @@ const ProfilSiswaPopup: React.FC<ProfilSiswaPopupProps> = ({ siswa, isOpen, onCl
 };
 
 export default ProfilSiswaPopup;
+

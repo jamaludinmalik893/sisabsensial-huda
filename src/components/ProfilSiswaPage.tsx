@@ -243,90 +243,93 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
         <CardHeader>
           <CardTitle>Daftar Siswa</CardTitle>
         </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-8">Memuat data...</div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Profil</TableHead>
-                  <TableHead>Kelas</TableHead>
-                  <TableHead>Jenis Kelamin</TableHead>
-                  <TableHead>Umur</TableHead>
-                  <TableHead>No. Telepon Siswa</TableHead>
-                  <TableHead>Alamat</TableHead>
-                  <TableHead>Tempat Lahir</TableHead>
-                  <TableHead>Orang Tua</TableHead>
-                  <TableHead>Wali Kelas</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {siswaList.map((siswa) => (
-                  <TableRow key={siswa.id_siswa}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar 
-                          className="cursor-pointer hover:opacity-80 transition-opacity"
-                          onClick={() => handleSiswaClick(siswa)}
-                        >
-                          <AvatarImage src={siswa.foto_url} alt={siswa.nama_lengkap} />
-                          <AvatarFallback className="bg-blue-100 text-blue-600">
-                            {getInitials(siswa.nama_lengkap)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div 
-                            className="font-medium cursor-pointer hover:text-blue-600 transition-colors"
+        <CardContent className="relative overflow-x-auto scrollbar-thin" style={{ WebkitOverflowScrolling: 'touch', overflowX: 'auto' }}>
+          {/* Wrapper div agar scroll horizontal selalu tampil */}
+          <div className="min-w-[900px]">
+            {loading ? (
+              <div className="text-center py-8">Memuat data...</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Profil</TableHead>
+                    <TableHead>Kelas</TableHead>
+                    <TableHead>Jenis Kelamin</TableHead>
+                    <TableHead>Umur</TableHead>
+                    <TableHead>No. Telepon Siswa</TableHead>
+                    <TableHead>Alamat</TableHead>
+                    <TableHead>Tempat Lahir</TableHead>
+                    <TableHead>Orang Tua</TableHead>
+                    <TableHead>Wali Kelas</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {siswaList.map((siswa) => (
+                    <TableRow key={siswa.id_siswa}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar 
+                            className="cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={() => handleSiswaClick(siswa)}
                           >
-                            {siswa.nama_lengkap}
+                            <AvatarImage src={siswa.foto_url} alt={siswa.nama_lengkap} />
+                            <AvatarFallback className="bg-blue-100 text-blue-600">
+                              {getInitials(siswa.nama_lengkap)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div 
+                              className="font-medium cursor-pointer hover:text-blue-600 transition-colors"
+                              onClick={() => handleSiswaClick(siswa)}
+                            >
+                              {siswa.nama_lengkap}
+                            </div>
+                            <div className="text-sm text-gray-500">{siswa.nisn}</div>
                           </div>
-                          <div className="text-sm text-gray-500">{siswa.nisn}</div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{siswa.kelas.nama_kelas}</TableCell>
-                    <TableCell>
-                      <Badge variant={siswa.jenis_kelamin === 'Laki-laki' ? 'default' : 'secondary'}>
-                        {siswa.jenis_kelamin}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{calculateAge(siswa.tanggal_lahir)} tahun</TableCell>
-                    <TableCell>
-                      {(siswa.nomor_telepon_siswa || siswa.nomor_telepon) ? (
-                        <div className="flex items-center gap-1">
-                          <Phone className="h-3 w-3 text-gray-400" />
-                          <span className="text-sm">{siswa.nomor_telepon_siswa || siswa.nomor_telepon}</span>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 text-sm">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="max-w-xs truncate text-sm">{siswa.alamat}</div>
-                    </TableCell>
-                    <TableCell>{siswa.tempat_lahir}</TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{siswa.nama_orang_tua}</div>
-                        {siswa.nomor_telepon_orang_tua && (
-                          <div className="text-sm text-gray-500">{siswa.nomor_telepon_orang_tua}</div>
+                      </TableCell>
+                      <TableCell>{siswa.kelas.nama_kelas}</TableCell>
+                      <TableCell>
+                        <Badge variant={siswa.jenis_kelamin === 'Laki-laki' ? 'default' : 'secondary'}>
+                          {siswa.jenis_kelamin}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{calculateAge(siswa.tanggal_lahir)} tahun</TableCell>
+                      <TableCell>
+                        {(siswa.nomor_telepon_siswa || siswa.nomor_telepon) ? (
+                          <div className="flex items-center gap-1">
+                            <Phone className="h-3 w-3 text-gray-400" />
+                            <span className="text-sm">{siswa.nomor_telepon_siswa || siswa.nomor_telepon}</span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{siswa.guru_wali.nama_lengkap}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-          
-          {!loading && siswaList.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              Tidak ada data siswa ditemukan
-            </div>
-          )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-xs truncate text-sm">{siswa.alamat}</div>
+                      </TableCell>
+                      <TableCell>{siswa.tempat_lahir}</TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{siswa.nama_orang_tua}</div>
+                          {siswa.nomor_telepon_orang_tua && (
+                            <div className="text-sm text-gray-500">{siswa.nomor_telepon_orang_tua}</div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>{siswa.guru_wali.nama_lengkap}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+            
+            {!loading && siswaList.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                Tidak ada data siswa ditemukan
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
