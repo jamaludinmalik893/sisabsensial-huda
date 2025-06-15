@@ -45,6 +45,10 @@ export const useNilaiData = (userSession: UserSession) => {
   const loadSiswaByKelas = async (kelasId: string) => {
     try {
       const siswaDataRaw = await queries.loadSiswaByKelas(kelasId);
+
+      // Tambahkan log hasil mentah
+      console.log("[DEBUG useNilaiData.ts] siswaDataRaw dari Supabase:", siswaDataRaw);
+
       // Always convert siswa to full type
       const siswaData: SiswaIndex[] = siswaDataRaw.map(siswa => convertSiswaToFullSiswa(siswa));
       setSiswaList(siswaData);
