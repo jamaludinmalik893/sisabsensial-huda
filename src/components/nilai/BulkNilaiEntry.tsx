@@ -265,7 +265,23 @@ const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
         </CardContent>
       </Card>
       <ProfilSiswaPopup
-        siswa={selectedSiswa}
+        siswa={selectedSiswa ? {
+          id_siswa: selectedSiswa.id_siswa,
+          nisn: selectedSiswa.nisn,
+          nama_lengkap: selectedSiswa.nama_lengkap,
+          jenis_kelamin: selectedSiswa.jenis_kelamin || "",
+          tanggal_lahir: (selectedSiswa as any).tanggal_lahir || "",
+          tempat_lahir: (selectedSiswa as any).tempat_lahir || "",
+          alamat: (selectedSiswa as any).alamat || "",
+          nomor_telepon: (selectedSiswa as any).nomor_telepon || "",
+          nomor_telepon_siswa: (selectedSiswa as any).nomor_telepon_siswa || "",
+          nama_orang_tua: (selectedSiswa as any).nama_orang_tua || "",
+          nomor_telepon_orang_tua: (selectedSiswa as any).nomor_telepon_orang_tua || "",
+          tahun_masuk: (selectedSiswa as any).tahun_masuk || 0,
+          foto_url: selectedSiswa.foto_url,
+          kelas: (selectedSiswa as any).kelas || undefined,
+          guru_wali: (selectedSiswa as any).guru_wali || undefined,
+        } : null}
         isOpen={profilOpen}
         onClose={() => { setProfilOpen(false); setSelectedSiswa(null); }}
       />
