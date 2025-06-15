@@ -24,6 +24,7 @@ interface Siswa {
   tempat_lahir: string;
   alamat: string;
   nomor_telepon?: string;
+  nomor_telepon_siswa?: string;
   nama_orang_tua: string;
   nomor_telepon_orang_tua?: string;
   tahun_masuk: number;
@@ -85,6 +86,7 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
           tempat_lahir,
           alamat,
           nomor_telepon,
+          nomor_telepon_siswa,
           nama_orang_tua,
           nomor_telepon_orang_tua,
           tahun_masuk,
@@ -254,7 +256,7 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
                   <TableHead>Kelas</TableHead>
                   <TableHead>Jenis Kelamin</TableHead>
                   <TableHead>Umur</TableHead>
-                  <TableHead>No. Telepon</TableHead>
+                  <TableHead>No. Telepon Siswa</TableHead>
                   <TableHead>Tempat Lahir</TableHead>
                   <TableHead>Orang Tua</TableHead>
                   <TableHead>Wali Kelas</TableHead>
@@ -296,10 +298,10 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
                     </TableCell>
                     <TableCell>{calculateAge(siswa.tanggal_lahir)} tahun</TableCell>
                     <TableCell>
-                      {siswa.nomor_telepon ? (
+                      {(siswa.nomor_telepon_siswa || siswa.nomor_telepon) ? (
                         <div className="flex items-center gap-1">
                           <Phone className="h-3 w-3 text-gray-400" />
-                          <span className="text-sm">{siswa.nomor_telepon}</span>
+                          <span className="text-sm">{siswa.nomor_telepon_siswa || siswa.nomor_telepon}</span>
                         </div>
                       ) : (
                         <span className="text-gray-400 text-sm">-</span>

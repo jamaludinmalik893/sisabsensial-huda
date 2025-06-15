@@ -362,6 +362,7 @@ export type Database = {
           nisn: string
           nomor_telepon: string | null
           nomor_telepon_orang_tua: string | null
+          nomor_telepon_siswa: string | null
           tahun_masuk: number
           tanggal_lahir: string
           tempat_lahir: string
@@ -380,6 +381,7 @@ export type Database = {
           nisn: string
           nomor_telepon?: string | null
           nomor_telepon_orang_tua?: string | null
+          nomor_telepon_siswa?: string | null
           tahun_masuk: number
           tanggal_lahir: string
           tempat_lahir: string
@@ -398,6 +400,7 @@ export type Database = {
           nisn?: string
           nomor_telepon?: string | null
           nomor_telepon_orang_tua?: string | null
+          nomor_telepon_siswa?: string | null
           tahun_masuk?: number
           tanggal_lahir?: string
           tempat_lahir?: string

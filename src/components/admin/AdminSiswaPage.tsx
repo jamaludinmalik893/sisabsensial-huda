@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ interface SiswaWithRelations {
   tempat_lahir: string;
   alamat: string;
   nomor_telepon?: string;
+  nomor_telepon_siswa?: string;
   nama_orang_tua: string;
   nomor_telepon_orang_tua?: string;
   id_kelas: string;
@@ -61,6 +63,7 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
     tempat_lahir: '',
     alamat: '',
     nomor_telepon: '',
+    nomor_telepon_siswa: '',
     nama_orang_tua: '',
     nomor_telepon_orang_tua: '',
     id_kelas: '',
@@ -187,6 +190,7 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
       tempat_lahir: siswa.tempat_lahir,
       alamat: siswa.alamat,
       nomor_telepon: siswa.nomor_telepon || '',
+      nomor_telepon_siswa: siswa.nomor_telepon_siswa || '',
       nama_orang_tua: siswa.nama_orang_tua,
       nomor_telepon_orang_tua: siswa.nomor_telepon_orang_tua || '',
       id_kelas: siswa.id_kelas || '',
@@ -233,6 +237,7 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
       tempat_lahir: '',
       alamat: '',
       nomor_telepon: '',
+      nomor_telepon_siswa: '',
       nama_orang_tua: '',
       nomor_telepon_orang_tua: '',
       id_kelas: '',
@@ -374,11 +379,19 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="nomor_telepon">Nomor Telepon</Label>
+                  <Label htmlFor="nomor_telepon">Nomor Telepon (Lama)</Label>
                   <Input
                     id="nomor_telepon"
                     value={formData.nomor_telepon}
                     onChange={(e) => setFormData({...formData, nomor_telepon: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="nomor_telepon_siswa">Nomor Telepon Siswa</Label>
+                  <Input
+                    id="nomor_telepon_siswa"
+                    value={formData.nomor_telepon_siswa}
+                    onChange={(e) => setFormData({...formData, nomor_telepon_siswa: e.target.value})}
                   />
                 </div>
                 <div>
@@ -488,7 +501,7 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
                 <TableHead>Nama Lengkap</TableHead>
                 <TableHead>Kelas</TableHead>
                 <TableHead>Jenis Kelamin</TableHead>
-                <TableHead>No. Telepon</TableHead>
+                <TableHead>No. Telepon Siswa</TableHead>
                 <TableHead>Tahun Masuk</TableHead>
                 <TableHead>Guru Wali</TableHead>
                 <TableHead>Aksi</TableHead>
@@ -522,8 +535,8 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
                   </TableCell>
                   <TableCell>{siswa.jenis_kelamin}</TableCell>
                   <TableCell>
-                    {siswa.nomor_telepon ? (
-                      <span className="text-sm">{siswa.nomor_telepon}</span>
+                    {(siswa.nomor_telepon_siswa || siswa.nomor_telepon) ? (
+                      <span className="text-sm">{siswa.nomor_telepon_siswa || siswa.nomor_telepon}</span>
                     ) : (
                       <span className="text-gray-400 text-sm">-</span>
                     )}
