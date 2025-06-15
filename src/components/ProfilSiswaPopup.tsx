@@ -1,8 +1,8 @@
+
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, MapPin, Phone, User, Users, GraduationCap } from 'lucide-react';
 
 interface Siswa {
@@ -55,10 +55,9 @@ const ProfilSiswaPopup: React.FC<ProfilSiswaPopupProps> = ({ siswa, isOpen, onCl
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('id-ID', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
     });
   };
 
@@ -66,7 +65,7 @@ const ProfilSiswaPopup: React.FC<ProfilSiswaPopupProps> = ({ siswa, isOpen, onCl
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex flex-col items-center text-center space-y-4">
+          <div className="flex flex-col items-center text-center space-y-3">
             <Avatar className="h-48 w-48">
               <AvatarImage src={siswa.foto_url} alt={siswa.nama_lengkap} />
               <AvatarFallback className="bg-blue-100 text-blue-600 text-3xl">
@@ -86,111 +85,103 @@ const ProfilSiswaPopup: React.FC<ProfilSiswaPopupProps> = ({ siswa, isOpen, onCl
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Informasi Dasar */}
-          <Card>
-            <CardContent className="p-4">
-              <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm">
-                <User className="h-4 w-4" />
-                Informasi Dasar
-              </h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <label className="text-xs font-medium text-gray-500">Jenis Kelamin</label>
-                  <div className="mt-1">
-                    <Badge variant={siswa.jenis_kelamin === 'Laki-laki' ? 'default' : 'secondary'} className="text-xs">
-                      {siswa.jenis_kelamin}
-                    </Badge>
+          {/* Informasi dalam format list */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="space-y-3">
+              {/* Personal Info */}
+              <div className="flex items-center justify-between py-2 border-b">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium">Jenis Kelamin</span>
+                </div>
+                <Badge variant={siswa.jenis_kelamin === 'Laki-laki' ? 'default' : 'secondary'} className="text-xs">
+                  {siswa.jenis_kelamin}
+                </Badge>
+              </div>
+
+              <div className="flex items-center justify-between py-2 border-b">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium">Tanggal Lahir</span>
+                </div>
+                <span className="text-sm">{formatDate(siswa.tanggal_lahir)} ({calculateAge(siswa.tanggal_lahir)} tahun)</span>
+              </div>
+
+              <div className="flex items-center justify-between py-2 border-b">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium">Tempat Lahir</span>
+                </div>
+                <span className="text-sm">{siswa.tempat_lahir}</span>
+              </div>
+
+              <div className="flex items-start justify-between py-2 border-b">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-gray-500 mt-0.5" />
+                  <span className="text-sm font-medium">Alamat</span>
+                </div>
+                <span className="text-sm text-right max-w-xs">{siswa.alamat}</span>
+              </div>
+
+              {siswa.nomor_telepon && (
+                <div className="flex items-center justify-between py-2 border-b">
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm font-medium">No. Telepon</span>
                   </div>
+                  <span className="text-sm">{siswa.nomor_telepon}</span>
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-500">Umur</label>
-                  <p className="mt-1 font-medium">{calculateAge(siswa.tanggal_lahir)} tahun</p>
+              )}
+
+              {/* Academic Info */}
+              <div className="flex items-center justify-between py-2 border-b">
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium">Kelas</span>
                 </div>
-                <div className="col-span-2">
-                  <label className="text-xs font-medium text-gray-500">Tanggal Lahir</label>
-                  <div className="mt-1 flex items-center gap-2">
-                    <Calendar className="h-3 w-3 text-gray-400" />
-                    <span className="text-xs">{formatDate(siswa.tanggal_lahir)}</span>
-                  </div>
-                </div>
-                <div className="col-span-2">
-                  <label className="text-xs font-medium text-gray-500">Tempat Lahir</label>
-                  <div className="mt-1 flex items-center gap-2">
-                    <MapPin className="h-3 w-3 text-gray-400" />
-                    <span className="text-xs">{siswa.tempat_lahir}</span>
-                  </div>
-                </div>
-                <div className="col-span-2">
-                  <label className="text-xs font-medium text-gray-500">Alamat</label>
-                  <p className="mt-1 text-xs">{siswa.alamat}</p>
-                </div>
-                {siswa.nomor_telepon && (
-                  <div className="col-span-2">
-                    <label className="text-xs font-medium text-gray-500">Nomor Telepon</label>
-                    <div className="mt-1 flex items-center gap-2">
-                      <Phone className="h-3 w-3 text-gray-400" />
-                      <span className="text-xs">{siswa.nomor_telepon}</span>
-                    </div>
-                  </div>
+                {siswa.kelas ? (
+                  <Badge variant="outline" className="text-xs">{siswa.kelas.nama_kelas}</Badge>
+                ) : (
+                  <span className="text-gray-400 text-sm">Belum ditentukan</span>
                 )}
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Informasi Akademik */}
-          <Card>
-            <CardContent className="p-4">
-              <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm">
-                <GraduationCap className="h-4 w-4" />
-                Informasi Akademik
-              </h3>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <label className="text-xs font-medium text-gray-500">Kelas</label>
-                  <div className="mt-1">
-                    {siswa.kelas ? (
-                      <Badge variant="outline" className="text-xs">{siswa.kelas.nama_kelas}</Badge>
-                    ) : (
-                      <span className="text-gray-400 text-xs">Belum ditentukan</span>
-                    )}
-                  </div>
+              <div className="flex items-center justify-between py-2 border-b">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium">Tahun Masuk</span>
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-500">Tahun Masuk</label>
-                  <p className="mt-1 font-medium">{siswa.tahun_masuk}</p>
-                </div>
-                <div className="col-span-2">
-                  <label className="text-xs font-medium text-gray-500">Wali Kelas</label>
-                  <p className="mt-1 text-xs">{siswa.guru_wali?.nama_lengkap || 'Belum ditentukan'}</p>
-                </div>
+                <span className="text-sm font-medium">{siswa.tahun_masuk}</span>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Informasi Orang Tua */}
-          <Card>
-            <CardContent className="p-4">
-              <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm">
-                <Users className="h-4 w-4" />
-                Informasi Orang Tua
-              </h3>
-              <div className="grid grid-cols-1 gap-3 text-sm">
-                <div>
-                  <label className="text-xs font-medium text-gray-500">Nama Orang Tua</label>
-                  <p className="mt-1 font-medium">{siswa.nama_orang_tua}</p>
+              <div className="flex items-center justify-between py-2 border-b">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium">Wali Kelas</span>
                 </div>
-                {siswa.nomor_telepon_orang_tua && (
-                  <div>
-                    <label className="text-xs font-medium text-gray-500">Nomor Telepon Orang Tua</label>
-                    <div className="mt-1 flex items-center gap-2">
-                      <Phone className="h-3 w-3 text-gray-400" />
-                      <span className="text-xs">{siswa.nomor_telepon_orang_tua}</span>
-                    </div>
-                  </div>
-                )}
+                <span className="text-sm">{siswa.guru_wali?.nama_lengkap || 'Belum ditentukan'}</span>
               </div>
-            </CardContent>
-          </Card>
+
+              {/* Parent Info */}
+              <div className="flex items-center justify-between py-2 border-b">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm font-medium">Nama Orang Tua</span>
+                </div>
+                <span className="text-sm font-medium">{siswa.nama_orang_tua}</span>
+              </div>
+
+              {siswa.nomor_telepon_orang_tua && (
+                <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm font-medium">No. Telepon Orang Tua</span>
+                  </div>
+                  <span className="text-sm">{siswa.nomor_telepon_orang_tua}</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
