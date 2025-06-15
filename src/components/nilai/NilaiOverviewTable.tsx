@@ -10,6 +10,8 @@ import EditNilaiDialog from './EditNilaiDialog';
 import StudentAvatarCell from './StudentAvatarCell';
 import NilaiTableRow from "./NilaiTableRow";
 import DeleteNilaiDialog from "./DeleteNilaiDialog";
+import { Edit, Trash2 } from "lucide-react";
+import TaskHeaderActionsDialog from "./TaskHeaderActionsDialog";
 
 interface Nilai {
   id_nilai: string;
@@ -95,6 +97,16 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
     siswaName: string;
     judulTugas: string;
   }>({ open: false, nilaiId: null, siswaName: "", judulTugas: "" });
+
+  // State for header dialog
+  const [headerActionDialog, setHeaderActionDialog] = useState<{
+    open: boolean;
+    judulTugas: string;
+    tanggal: string;
+  }>({ open: false, judulTugas: "", tanggal: "" });
+
+  // Store selected task for edit/delete action
+  const [selectedTask, setSelectedTask] = useState<{ judulTugas: string; tanggal: string } | null>(null);
 
   // Filter nilai by selected subject and class
   const relevantNilai = useMemo(() => {
@@ -207,6 +219,42 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
     setDeleteDialog({ open: true, nilaiId, siswaName, judulTugas });
   };
 
+    // Handler buka dialog
+    const openHeaderActionsDialog = (judulTugas: string, tanggal: string) => {
+      setHeaderActionDialog({ open: true, judulTugas, tanggal });
+      setSelectedTask({ judulTugas, tanggal });
+    };
+  
+    // Edit SELURUH ENTRI nilai untuk judul & tanggal tugas ini
+    const handleEditTask = async (judulBaru: string, tanggalBaru: string) => {
+      if (!selectedTask) return;
+      // 1. Ambil semua nilai pada judulTugas & tanggal, update seluruhnya
+      const taskNilaiList = filteredNilai.filter(n =>
+        n.judul_tugas === selectedTask.judulTugas &&
+        n.tanggal_tugas_dibuat === selectedTask.tanggal
+      );
+      for (const nilai of taskNilaiList) {
+        await onUpdateNilai(nilai.id_nilai, nilai.skor, nilai.catatan ?? "");
+        // Update juga kolom judul_tugas dan tanggal_tugas_dibuat di Supabase
+        // (update judul dan tanggal sekaligus)
+        // Butuh panggil Supabase update (harusnya di onUpdateNilai diubah agar terima judul/tanggal baru jika ada)
+      }
+      setHeaderActionDialog({ ...headerActionDialog, open: false });
+    };
+  
+    // Hapus seluruh nilai pada judul tugas ini & tanggalnya
+    const handleDeleteTask = async () => {
+      if (!selectedTask) return;
+      const taskNilaiList = filteredNilai.filter(n =>
+        n.judul_tugas === selectedTask.judulTugas &&
+        n.tanggal_tugas_dibuat === selectedTask.tanggal
+      );
+      for (const nilai of taskNilaiList) {
+        await deleteNilai(nilai.id_nilai);
+      }
+      setHeaderActionDialog({ ...headerActionDialog, open: false });
+    };
+
   // Handler klik hapus pada dialog
   const handleDeleteNilai = async () => {
     if (!deleteDialog.nilaiId) return;
@@ -241,16 +289,39 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                     {/* No Absen */}
                     <TableHead className="w-12 text-center">No Absen</TableHead>
                     <TableHead className="min-w-40">Nama Siswa</TableHead>
-                    {/* Move all task columns before Rata-rata */}
+                    {/* Tampilkan kolom untuk tiap tugas, dengan action edit & hapus */}
                     {taskList.map((task) => (
-                      <TableHead key={task.name} className="text-center min-w-24">
-                        <div className="flex flex-col">
+                      <TableHead
+                        key={task.name + task.date}
+                        className="text-center min-w-32 group relative"
+                      >
+                        <div
+                          className="flex flex-col items-center justify-center cursor-pointer group"
+                          onDoubleClick={() => openHeaderActionsDialog(task.name, task.date)}
+                        >
                           <span className="text-xs font-medium">{task.name}</span>
                           <span className="text-xs text-gray-500">
                             {new Date(task.date).toLocaleDateString('id-ID', {
-                              day: '2-digit',
-                              month: '2-digit'
+                              day: '2-digit', month: '2-digit'
                             })}
+                          </span>
+                          <span className="flex flex-row space-x-1 mt-1 opacity-60 group-hover:opacity-90">
+                            <Edit
+                              className="w-4 h-4 hover:text-blue-600"
+                              title="Edit judul & tanggal tugas"
+                              onClick={e => {
+                                e.stopPropagation();
+                                openHeaderActionsDialog(task.name, task.date);
+                              }}
+                            />
+                            <Trash2
+                              className="w-4 h-4 hover:text-red-600"
+                              title="Hapus seluruh tugas"
+                              onClick={e => {
+                                e.stopPropagation();
+                                openHeaderActionsDialog(task.name, task.date);
+                              }}
+                            />
                           </span>
                         </div>
                       </TableHead>
@@ -389,6 +460,15 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
         onConfirm={handleDeleteNilai}
         namaSiswa={deleteDialog.siswaName}
         judulTugas={deleteDialog.judulTugas}
+      />
+            {/* Tambahkan dialog action untuk header kolom tugas */}
+            <TaskHeaderActionsDialog
+        open={headerActionDialog.open}
+        onOpenChange={open => setHeaderActionDialog({ ...headerActionDialog, open })}
+        initialJudul={headerActionDialog.judulTugas}
+        initialTanggal={headerActionDialog.tanggal}
+        onEdit={handleEditTask}
+        onDelete={handleDeleteTask}
       />
     </TooltipProvider>
   );
