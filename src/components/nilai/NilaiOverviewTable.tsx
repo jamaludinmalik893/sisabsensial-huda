@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -8,6 +7,7 @@ import ProfilSiswaPopup from '../ProfilSiswaPopup';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import EditNilaiDialog from './EditNilaiDialog';
+import StudentAvatarCell from './StudentAvatarCell';
 
 interface Nilai {
   id_nilai: string;
@@ -206,7 +206,9 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                 <TableHeader>
                   <TableRow>
                     <TableHead className="min-w-16"></TableHead>
+                    <TableHead className="min-w-16" />
                     <TableHead className="min-w-40">Nama Siswa</TableHead>
+                    <TableHead className="text-center min-w-20 font-semibold">Rata-rata</TableHead>
                     {taskList.map((task) => (
                       <TableHead key={task.name} className="text-center min-w-24">
                         <div className="flex flex-col">
@@ -220,7 +222,6 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                         </div>
                       </TableHead>
                     ))}
-                    <TableHead className="text-center min-w-20 font-semibold">Rata-rata</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -228,10 +229,25 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                     <TableRow key={studentData.siswa.id_siswa} className="hover:bg-gray-50 group">
                       <TableCell className="p-2"></TableCell>
                       <TableCell className="p-2">
+                        <StudentAvatarCell siswa={studentData.siswa} />
+                      </TableCell>
+                      <TableCell className="p-2">
                         <StudentCell
                           siswa={studentData.siswa}
                           onClickProfil={handleSiswaClick}
                         />
+                      </TableCell>
+                      <TableCell className="text-center p-2">
+                        {studentData.average > 0 ? (
+                          <Badge
+                            variant="outline"
+                            className={`text-xs font-semibold ${getScoreColor(studentData.average)}`}
+                          >
+                            {studentData.average}
+                          </Badge>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
                       </TableCell>
                       {taskList.map((task) => {
                         const grade = studentData.grades[task.name];
@@ -266,18 +282,6 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                           </TableCell>
                         );
                       })}
-                      <TableCell className="text-center p-2">
-                        {studentData.average > 0 ? (
-                          <Badge
-                            variant="outline"
-                            className={`text-xs font-semibold ${getScoreColor(studentData.average)}`}
-                          >
-                            {studentData.average}
-                          </Badge>
-                        ) : (
-                          <span className="text-gray-400 text-xs">-</span>
-                        )}
-                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
