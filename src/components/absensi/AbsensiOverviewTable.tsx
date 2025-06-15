@@ -74,7 +74,7 @@ interface StudentAttendance {
   };
 }
 
-const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({ 
+const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
   riwayatAbsensi, 
   loading, 
   selectedMapel, 
@@ -238,6 +238,23 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
     const mapelName = selectedMapel === 'all' ? 'Semua Mata Pelajaran' : mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel;
     const kelasName = selectedKelas === 'all' ? 'Semua Kelas' : kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas;
     return `${mapelName} - ${kelasName}`;
+  };
+
+  // --- Add the missing handler stubs ---
+  // You may fill these with logic as needed, or connect to backend/parent logic
+  const handleSaveAbsensi = async () => {
+    // TODO: implement saving for absensi
+    console.log('handleSaveAbsensi not implemented');
+  };
+
+  const handleSaveJurnal = async () => {
+    // TODO: implement saving for jurnal
+    console.log('handleSaveJurnal not implemented');
+  };
+
+  const handleDeleteJurnal = async () => {
+    // TODO: implement delete for jurnal
+    console.log('handleDeleteJurnal not implemented');
   };
 
   return (
