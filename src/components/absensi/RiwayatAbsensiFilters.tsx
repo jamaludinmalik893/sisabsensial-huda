@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -52,7 +51,6 @@ const RiwayatAbsensiFilters: React.FC<RiwayatAbsensiFiltersProps> = ({
   studentAttendanceData,
   dateList
 }) => {
-
   // Bentuk data export format rekapitulasi absensi
   const exportData = React.useMemo(() => {
     // Header rekap: No, Nama, [tanggal...], Hadir, Izin, Sakit, Alpha
@@ -86,6 +84,14 @@ const RiwayatAbsensiFilters: React.FC<RiwayatAbsensiFiltersProps> = ({
 
   const columns = ["No", "Nama", ...dateList.map(([date]) => date), "Hadir", "Izin", "Sakit", "Alpha"];
 
+  // Mendapatkan nama mapel & kelas dari id terpilih
+  const mapelName = selectedMapel === "all"
+    ? "Semua Mata Pelajaran"
+    : mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel ?? "";
+  const kelasName = selectedKelas === "all"
+    ? "Semua Kelas"
+    : kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas ?? "";
+
   return (
     <Card>
       <CardHeader>
@@ -114,7 +120,6 @@ const RiwayatAbsensiFilters: React.FC<RiwayatAbsensiFiltersProps> = ({
               </SelectContent>
             </Select>
           </div>
-
           <div>
             <label className="text-sm font-medium mb-2 block">Kelas</label>
             <Select value={selectedKelas} onValueChange={onKelasChange}>
@@ -132,10 +137,15 @@ const RiwayatAbsensiFilters: React.FC<RiwayatAbsensiFiltersProps> = ({
             </Select>
           </div>
         </div>
-
         {/* Tombol Export/Cetak */}
         <div className="pt-2">
-          <ExportButtons data={exportData} fileName="Rekapitulasi_Absensi" columns={columns} />
+          <ExportButtons
+            data={exportData}
+            fileName="Rekapitulasi_Absensi"
+            columns={columns}
+            mapelName={mapelName}
+            kelasName={kelasName}
+          />
         </div>
       </CardContent>
     </Card>

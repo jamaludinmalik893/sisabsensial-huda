@@ -9,22 +9,32 @@ interface ExportButtonsProps {
   data: object[];
   fileName: string;
   columns?: string[];
+  mapelName?: string;
+  kelasName?: string;
 }
 
 /**
  * ExportButtons
  * Tambahan: custom columns pada export, jika props.columns disediakan.
+ * Versi terbaru: Print PDF sertakan info mapel dan kelas di atas tabel.
  */
-const ExportButtons: React.FC<ExportButtonsProps> = ({ data, fileName, columns }) => {
+const ExportButtons: React.FC<ExportButtonsProps> = ({
+  data,
+  fileName,
+  columns,
+  mapelName,
+  kelasName,
+}) => {
   // Export to Excel (XLSX)
   const exportToExcel = () => {
     if (!data.length) return;
     let exportRows = data;
     if (columns) {
-      // Urutkan kolom sesuai header jika columns disediakan
-      exportRows = data.map(row => {
+      exportRows = data.map((row) => {
         const ordered: any = {};
-        columns.forEach(c => { ordered[c] = (row as any)[c]; });
+        columns.forEach((c) => {
+          ordered[c] = (row as any)[c];
+        });
         return ordered;
       });
     }
@@ -38,32 +48,59 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ data, fileName, columns }
   const exportToPDF = () => {
     if (!data.length) return;
     const doc = new jsPDF({ orientation: "landscape" });
+    const marginLeft = 10;
+    let positionY = 12;
+
+    doc.setFontSize(14);
+    doc.text(fileName.replaceAll("_", " "), marginLeft, positionY);
+
+    // Tambahkan info mapel & kelas jika ada
+    doc.setFontSize(12);
+    positionY += 9;
+    if (mapelName) {
+      doc.text("Mata Pelajaran: " + mapelName, marginLeft, positionY);
+      positionY += 7;
+    }
+    if (kelasName) {
+      doc.text("Kelas         : " + kelasName, marginLeft, positionY);
+      positionY += 7;
+    }
+    if (mapelName || kelasName) positionY += 3;
+
     // PDF table header
     const headers = columns ?? Object.keys(data[0]);
-    // PDF max per page
-    const rows = (data as any[]).map(row => headers.map(h => String(row[h] ?? "")));
-    doc.setFontSize(12);
-    doc.text(fileName, 10, 10);
-    let y = 20;
+    const rows = (data as any[]).map((row) => headers.map((h) => String(row[h] ?? "")));
+
     // Draw header
     doc.setFontSize(10);
-    let x = 10;
-    headers.forEach((header, i) => {
-      doc.text(header, x, y);
-      x += 30;
+    let currentX = marginLeft;
+    headers.forEach((header) => {
+      doc.text(header, currentX, positionY);
+      currentX += 28;
     });
 
-    // Draw rows
-    y += 7;
-    rows.forEach(row => {
-      x = 10;
-      row.forEach(col => {
-        doc.text(col, x, y);
-        x += 30;
+    // Draw rows data
+    let rowY = positionY + 7;
+    rows.forEach((row) => {
+      let rowX = marginLeft;
+      row.forEach((col) => {
+        doc.text(col, rowX, rowY);
+        rowX += 28;
       });
-      y += 7;
-      if (y > 190) { doc.addPage(); y = 20; }
+      rowY += 7;
+      // max y: new page jika lebih dari 190  
+      if (rowY > 190) {
+        doc.addPage();
+        rowY = 20;
+        let headerX = marginLeft;
+        headers.forEach((header) => {
+          doc.text(header, headerX, rowY);
+          headerX += 28;
+        });
+        rowY += 7;
+      }
     });
+
     doc.save(fileName + ".pdf");
   };
 
