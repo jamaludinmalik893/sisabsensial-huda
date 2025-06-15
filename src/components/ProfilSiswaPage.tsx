@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, Users, GraduationCap, Filter } from 'lucide-react';
+import ProfilSiswaPopup from './ProfilSiswaPopup';
 
 interface ProfilSiswaPageProps {
   userSession: UserSession;
@@ -45,6 +46,8 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterKelas, setFilterKelas] = useState<string>('all');
+  const [selectedSiswa, setSelectedSiswa] = useState<Siswa | null>(null);
+  const [isProfilOpen, setIsProfilOpen] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -144,6 +147,11 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
       perempuan: siswaList.filter(s => s.jenis_kelamin === 'Perempuan').length,
       tahunIni: siswaList.filter(s => s.tahun_masuk === new Date().getFullYear()).length
     };
+  };
+
+  const handleSiswaClick = (siswa: Siswa) => {
+    setSelectedSiswa(siswa);
+    setIsProfilOpen(true);
   };
 
   const stats = getStatistics();
@@ -255,14 +263,22 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
                   <TableRow key={siswa.id_siswa}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar>
+                        <Avatar 
+                          className="cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => handleSiswaClick(siswa)}
+                        >
                           <AvatarImage src={siswa.foto_url} alt={siswa.nama_lengkap} />
                           <AvatarFallback className="bg-blue-100 text-blue-600">
                             {getInitials(siswa.nama_lengkap)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <div className="font-medium">{siswa.nama_lengkap}</div>
+                          <div 
+                            className="font-medium cursor-pointer hover:text-blue-600 transition-colors"
+                            onClick={() => handleSiswaClick(siswa)}
+                          >
+                            {siswa.nama_lengkap}
+                          </div>
                           <div className="text-sm text-gray-500">{siswa.alamat}</div>
                         </div>
                       </div>
@@ -300,6 +316,16 @@ const ProfilSiswaPage: React.FC<ProfilSiswaPageProps> = ({ userSession }) => {
           )}
         </CardContent>
       </Card>
+
+      {/* Popup Profil Siswa */}
+      <ProfilSiswaPopup
+        siswa={selectedSiswa}
+        isOpen={isProfilOpen}
+        onClose={() => {
+          setIsProfilOpen(false);
+          setSelectedSiswa(null);
+        }}
+      />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Camera, Upload, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -82,12 +82,31 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhot
         fileToUpload = file;
       }
 
+      // Ensure bucket exists, create if not
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets?.some(bucket => bucket.name === 'student-photos');
+      
+      if (!bucketExists) {
+        const { error: bucketError } = await supabase.storage.createBucket('student-photos', {
+          public: true,
+          allowedMimeTypes: ['image/*'],
+          fileSizeLimit: 5242880 // 5MB
+        });
+        if (bucketError) {
+          console.error('Error creating bucket:', bucketError);
+          throw bucketError;
+        }
+      }
+
       const fileExt = fileToUpload.name.split('.').pop();
-      const filePath = `${Date.now()}.${fileExt}`;
+      const filePath = `student-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('student-photos')
-        .upload(filePath, fileToUpload);
+        .upload(filePath, fileToUpload, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) throw uploadError;
 
@@ -107,7 +126,7 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhot
       console.error('Error uploading photo:', error);
       toast({
         title: "Error",
-        description: "Gagal mengupload foto",
+        description: "Gagal mengupload foto. Silakan coba lagi.",
         variant: "destructive"
       });
     } finally {
@@ -118,9 +137,29 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhot
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5242880) {
+        toast({
+          title: "Error",
+          description: "Ukuran file terlalu besar. Maksimal 5MB.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "File harus berupa gambar.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       uploadPhoto(file, file.name);
     }
-  }, [uploadPhoto]);
+  }, [uploadPhoto, toast]);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
@@ -147,6 +186,9 @@ const PhotoCapture: React.FC<PhotoCaptureProps> = ({ onPhotoCapture, currentPhot
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Tambah Foto Siswa</DialogTitle>
+            <DialogDescription>
+              Pilih cara untuk menambahkan foto siswa
+            </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">

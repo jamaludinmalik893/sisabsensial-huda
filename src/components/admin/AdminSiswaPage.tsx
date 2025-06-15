@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Siswa, Kelas, Guru, UserSession } from '@/types';
 import PhotoCapture from './PhotoCapture';
+import ProfilSiswaPopup from '@/components/ProfilSiswaPopup';
 
 interface AdminSiswaPageProps {
   userSession: UserSession;
@@ -48,6 +49,8 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
   const [selectedKelas, setSelectedKelas] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSiswa, setEditingSiswa] = useState<SiswaWithRelations | null>(null);
+  const [selectedSiswa, setSelectedSiswa] = useState<SiswaWithRelations | null>(null);
+  const [isProfilOpen, setIsProfilOpen] = useState(false);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -112,7 +115,7 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
       // Transform guru data to match our types
       const transformedGuruData = guruData?.map(guru => ({
         ...guru,
-        status: guru.status as 'admin' | 'guru'
+        status: guru.status as string
       })) || [];
 
       setSiswaList(transformedSiswaData);
@@ -248,6 +251,11 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  const handleSiswaClick = (siswa: SiswaWithRelations) => {
+    setSelectedSiswa(siswa);
+    setIsProfilOpen(true);
+  };
+
   const filteredSiswa = siswaList.filter(siswa => {
     const matchesSearch = siswa.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          siswa.nisn.includes(searchTerm);
@@ -283,6 +291,9 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
               <DialogTitle>
                 {editingSiswa ? 'Edit Siswa' : 'Tambah Siswa Baru'}
               </DialogTitle>
+              <DialogDescription>
+                {editingSiswa ? 'Perbarui informasi siswa' : 'Tambahkan siswa baru ke dalam sistem'}
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -486,13 +497,21 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
               {filteredSiswa.map((siswa) => (
                 <TableRow key={siswa.id_siswa}>
                   <TableCell>
-                    <Avatar className="h-10 w-10">
+                    <Avatar 
+                      className="h-10 w-10 cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => handleSiswaClick(siswa)}
+                    >
                       <AvatarImage src={siswa.foto_url} alt={siswa.nama_lengkap} />
                       <AvatarFallback>{getInitials(siswa.nama_lengkap)}</AvatarFallback>
                     </Avatar>
                   </TableCell>
                   <TableCell className="font-mono">{siswa.nisn}</TableCell>
-                  <TableCell className="font-medium">{siswa.nama_lengkap}</TableCell>
+                  <TableCell 
+                    className="font-medium cursor-pointer hover:text-blue-600 transition-colors"
+                    onClick={() => handleSiswaClick(siswa)}
+                  >
+                    {siswa.nama_lengkap}
+                  </TableCell>
                   <TableCell>
                     {siswa.kelas ? (
                       <Badge variant="outline">{siswa.kelas.nama_kelas}</Badge>
@@ -529,6 +548,16 @@ const AdminSiswaPage: React.FC<AdminSiswaPageProps> = ({ userSession }) => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Popup Profil Siswa */}
+      <ProfilSiswaPopup
+        siswa={selectedSiswa}
+        isOpen={isProfilOpen}
+        onClose={() => {
+          setIsProfilOpen(false);
+          setSelectedSiswa(null);
+        }}
+      />
     </div>
   );
 };
