@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,9 +20,18 @@ interface MapelWithGuru extends MataPelajaran {
   guru_pengampu?: Guru[];
 }
 
+// Simple interface for guru selection
+interface GuruForSelection {
+  id_guru: string;
+  nama_lengkap: string;
+  nip: string;
+  email: string;
+  status: string;
+}
+
 const AdminMapelPage: React.FC<AdminMapelPageProps> = ({ userSession }) => {
   const [mapelList, setMapelList] = useState<MapelWithGuru[]>([]);
-  const [guruList, setGuruList] = useState<Guru[]>([]);
+  const [guruList, setGuruList] = useState<GuruForSelection[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -49,7 +57,7 @@ const AdminMapelPage: React.FC<AdminMapelPageProps> = ({ userSession }) => {
         .select(`
           *,
           guru_mata_pelajaran(
-            guru(id_guru, nama_lengkap, nip)
+            guru(id_guru, nama_lengkap, nip, email, status)
           )
         `)
         .order('nama_mapel');
@@ -64,10 +72,10 @@ const AdminMapelPage: React.FC<AdminMapelPageProps> = ({ userSession }) => {
 
       setMapelList(transformedMapel);
 
-      // Load semua guru
+      // Load semua guru dengan properti lengkap yang diperlukan
       const { data: guruData, error: guruError } = await supabase
         .from('guru')
-        .select('id_guru, nama_lengkap, nip')
+        .select('id_guru, nama_lengkap, nip, email, status')
         .order('nama_lengkap');
 
       if (guruError) throw guruError;
