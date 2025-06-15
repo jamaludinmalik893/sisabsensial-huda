@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Download, FileText } from "lucide-react";
@@ -52,7 +51,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
     let positionY = 12;
 
     doc.setFontSize(14);
-    doc.text(fileName.replaceAll("_", " "), marginLeft, positionY);
+    doc.text(fileName.replace(/_/g, " "), marginLeft, positionY);
 
     // Tambahkan info mapel & kelas jika ada
     doc.setFontSize(12);
