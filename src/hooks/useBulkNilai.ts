@@ -6,20 +6,23 @@ import { BulkNilaiData, Siswa } from '@/types/nilai';
 import { useToast } from '@/hooks/use-toast';
 
 export const useBulkNilai = (userSession: UserSession) => {
-  const [bulkValues, setBulkValues] = useState<{ [key: string]: string }>({});
+  const [bulkValues, setBulkValues] = useState<{ [key: string]: string | { skor: string, catatan: string } }>({});
   const { toast } = useToast();
 
-  const handleBulkValueChange = (siswaId: string, value: string) => {
+  const handleBulkValueChange = (siswaId: string, value: string | { skor: number, catatan: string }) => {
+    // Support both backward (just skor) and forward (skor+catatan) entry
     setBulkValues(prev => ({
       ...prev,
-      [siswaId]: value
+      [siswaId]: typeof value === 'object'
+        ? { skor: String(value.skor), catatan: value.catatan }
+        : { skor: String(value), catatan: prev[siswaId]?.catatan ?? '' }
     }));
   };
 
   const initializeBulkValues = (siswaList: Siswa[]) => {
-    const initialValues: { [key: string]: string } = {};
+    const initialValues: { [key: string]: { skor: string, catatan: string } } = {};
     siswaList.forEach(siswa => {
-      initialValues[siswa.id_siswa] = '';
+      initialValues[siswa.id_siswa] = { skor: '', catatan: '' };
     });
     setBulkValues(initialValues);
   };
@@ -47,19 +50,26 @@ export const useBulkNilai = (userSession: UserSession) => {
     }
 
     try {
-      // Tidak perlu membuat jurnal_harian
+      // Insert skor & catatan
       const nilaiToInsert = Object.entries(bulkValues)
-        .filter(([_, value]) => value.trim() !== '')
-        .map(([siswaId, value]) => ({
-          id_siswa: siswaId,
-          id_mapel: selectedMapel,
-          skor: parseFloat(value),
-          jenis_nilai: jenisNilai,
-          judul_tugas: judulTugas,
-          tanggal_tugas_dibuat: tanggalTugasDibuat,
-          tanggal_nilai: new Date().toISOString().split('T')[0],
-          id_jurnal: null, // <-- tambahkan property ini agar sesuai type Supabase
-        }));
+        .filter(([_, value]) => {
+          const val = value as { skor: string, catatan: string };
+          return val && String(val.skor).trim() !== '';
+        })
+        .map(([siswaId, value]) => {
+          const val = value as { skor: string, catatan: string };
+          return {
+            id_siswa: siswaId,
+            id_mapel: selectedMapel,
+            skor: parseFloat(val.skor),
+            jenis_nilai: jenisNilai,
+            judul_tugas: judulTugas,
+            tanggal_tugas_dibuat: tanggalTugasDibuat,
+            tanggal_nilai: new Date().toISOString().split('T')[0],
+            catatan: val.catatan,
+            id_jurnal: null,
+          }
+        });
 
       if (nilaiToInsert.length === 0) {
         toast({

@@ -101,12 +101,12 @@ const BulkNilaiTable: React.FC<BulkNilaiTableProps> = ({
                     type="number"
                     min="0"
                     max="100"
-                    value={bulkValues[siswa.id_siswa]?.skor || ''}
+                    value={bulkValues[siswa.id_siswa]?.skor ?? ''}
                     onChange={(e) =>
                       onBulkValueChange(siswa.id_siswa, {
                         ...bulkValues[siswa.id_siswa],
                         id_siswa: siswa.id_siswa,
-                        skor: parseFloat(e.target.value) || 0,
+                        skor: Number(e.target.value),
                         catatan: bulkValues[siswa.id_siswa]?.catatan || ""
                       })
                     }
@@ -116,12 +116,12 @@ const BulkNilaiTable: React.FC<BulkNilaiTableProps> = ({
                 </TableCell>
                 <TableCell>
                   <Textarea
-                    value={bulkValues[siswa.id_siswa]?.catatan || ''}
+                    value={bulkValues[siswa.id_siswa]?.catatan ?? ""}
                     onChange={(e) =>
                       onBulkValueChange(siswa.id_siswa, {
                         ...bulkValues[siswa.id_siswa],
                         id_siswa: siswa.id_siswa,
-                        skor: bulkValues[siswa.id_siswa]?.skor || 0,
+                        skor: bulkValues[siswa.id_siswa]?.skor ?? 0,
                         catatan: e.target.value
                       })
                     }
