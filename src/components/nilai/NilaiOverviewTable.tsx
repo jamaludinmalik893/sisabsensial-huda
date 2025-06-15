@@ -68,6 +68,9 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
   kelasList,
   onUpdateNilai
 }) => {
+  // DEBUG: log apa yang diterima di filteredNilai (harusnya sama seperti nilaiList)
+  console.log("NilaiOverviewTable filteredNilai:", filteredNilai);
+
   const [selectedSiswa, setSelectedSiswa] = useState<Nilai['siswa'] | null>(null);
   const [isProfilOpen, setIsProfilOpen] = useState(false);
 

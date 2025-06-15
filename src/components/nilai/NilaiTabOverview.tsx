@@ -6,6 +6,9 @@ import { useNilai } from "./NilaiContext";
 const NilaiTabOverview: React.FC = () => {
   const { nilaiList, mapelList, kelasList, loading, updateNilai } = useNilai();
 
+  // DEBUG: log isi nilaiList yang di-fetch dari Supabase
+  console.log("NilaiTabOverview nilaiList:", nilaiList);
+
   // Langsung tampilkan semua nilai tanpa filter
   return (
     <>
