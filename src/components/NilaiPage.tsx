@@ -1,9 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { UserSession } from '@/types';
-import { Button } from '@/components/ui/button';
-import NilaiFilters from './nilai/NilaiFilters';
-import NilaiStatistics from './nilai/NilaiStatistics';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import BulkNilaiEntry from './nilai/BulkNilaiEntry';
 import NilaiOverviewTable from './nilai/NilaiOverviewTable';
 import { useNilaiData } from '@/hooks/useNilaiData';
@@ -12,14 +10,14 @@ interface NilaiPageProps {
   userSession: UserSession;
 }
 
-const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
-  const [bulkEntryMode, setBulkEntryMode] = useState(false);
-  
-  // Filter states - using "all" instead of empty strings
-  const [selectedMapel, setSelectedMapel] = useState('all');
-  const [selectedKelas, setSelectedKelas] = useState('all');
-  const [selectedJenisNilai, setSelectedJenisNilai] = useState('all');
+interface BulkNilaiEntry {
+  skor: number;
+  catatan?: string;
+}
 
+const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
+  const [activeTab, setActiveTab] = useState('overview');
+  
   const {
     nilaiList,
     siswaList,
@@ -34,82 +32,54 @@ const NilaiPage: React.FC<NilaiPageProps> = ({ userSession }) => {
     updateNilai
   } = useNilaiData(userSession);
 
-  useEffect(() => {
-    if (selectedMapel !== 'all' && selectedKelas !== 'all') {
-      loadSiswaByKelas(selectedKelas);
+  // Convert string bulk values to BulkNilaiEntry format
+  const convertedBulkValues: Record<string, BulkNilaiEntry> = Object.entries(bulkValues).reduce((acc, [key, value]) => {
+    if (value.trim() !== '') {
+      acc[key] = { skor: parseFloat(value) };
     }
-  }, [selectedKelas]);
+    return acc;
+  }, {} as Record<string, BulkNilaiEntry>);
 
-  const filteredNilai = nilaiList.filter(nilai => {
-    if (selectedMapel !== 'all' && nilai.mata_pelajaran.nama_mapel !== mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel) return false;
-    if (selectedJenisNilai !== 'all' && nilai.jenis_nilai !== selectedJenisNilai) return false;
-    return true;
-  });
-
-  const handleBulkSubmitWrapper = async (judulTugas: string, tanggalTugasDibuat: string) => {
-    const success = await handleBulkSubmit(selectedMapel, selectedJenisNilai, judulTugas, tanggalTugasDibuat);
-    if (success) {
-      setBulkEntryMode(false);
-    }
+  // Handle bulk value change with proper type conversion
+  const handleBulkEntryChange = (siswaId: string, entry: BulkNilaiEntry) => {
+    handleBulkValueChange(siswaId, entry.skor.toString());
   };
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Manajemen Nilai</h1>
-        <div className="flex gap-2">
-          <Button 
-            variant={bulkEntryMode ? "destructive" : "default"}
-            onClick={() => setBulkEntryMode(!bulkEntryMode)}
-          >
-            {bulkEntryMode ? "Batal Entry Massal" : "Entry Nilai Massal"}
-          </Button>
-        </div>
-      </div>
-
-      {/* Filter Section */}
-      <NilaiFilters
-        selectedMapel={selectedMapel}
-        setSelectedMapel={setSelectedMapel}
-        selectedKelas={selectedKelas}
-        setSelectedKelas={setSelectedKelas}
-        selectedJenisNilai={selectedJenisNilai}
-        setSelectedJenisNilai={setSelectedJenisNilai}
-        mapelList={mapelList}
-        kelasList={kelasList}
-      />
-
-      {/* Bulk Entry Mode */}
-      {bulkEntryMode && (
-        <BulkNilaiEntry
-          selectedMapel={selectedMapel}
-          setSelectedMapel={setSelectedMapel}
-          selectedKelas={selectedKelas}
-          setSelectedKelas={setSelectedKelas}
-          selectedJenisNilai={selectedJenisNilai}
-          setSelectedJenisNilai={setSelectedJenisNilai}
-          mapelList={mapelList}
-          kelasList={kelasList}
-          siswaList={siswaList}
-          bulkValues={bulkValues}
-          handleBulkValueChange={handleBulkValueChange}
-          handleBulkSubmit={handleBulkSubmitWrapper}
-        />
-      )}
-
-      {/* Statistics */}
-      <NilaiStatistics filteredNilai={filteredNilai} />
-
-      {/* Rekapitulasi Nilai Table */}
-      <NilaiOverviewTable 
-        filteredNilai={filteredNilai} 
-        loading={loading}
-        selectedMapel={selectedMapel}
-        selectedKelas={selectedKelas}
-        mapelList={mapelList}
-        kelasList={kelasList}
-        onUpdateNilai={updateNilai}
-      />
+      <h1 className="text-2xl font-bold">Manajemen Nilai</h1>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="overview">Rekapitulasi Nilai</TabsTrigger>
+          <TabsTrigger value="bulk-entry">Entry Nilai Massal</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview" className="space-y-4">
+          <NilaiOverviewTable 
+            nilaiList={nilaiList}
+            loading={loading}
+            mapelList={mapelList}
+            kelasList={kelasList}
+            onUpdateNilai={async (nilaiId: string, newSkor: number, newCatatan: string) => {
+              await updateNilai(nilaiId, newSkor, newCatatan);
+            }}
+          />
+        </TabsContent>
+        
+        <TabsContent value="bulk-entry" className="space-y-4">
+          <BulkNilaiEntry
+            siswaList={siswaList}
+            mapelList={mapelList}
+            kelasList={kelasList}
+            bulkValues={convertedBulkValues}
+            loading={loading}
+            onLoadSiswa={loadSiswaByKelas}
+            onBulkValueChange={handleBulkEntryChange}
+            onBulkSubmit={handleBulkSubmit}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
