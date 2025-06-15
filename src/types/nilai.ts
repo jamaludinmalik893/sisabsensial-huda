@@ -1,4 +1,3 @@
-
 export interface Nilai {
   id_nilai: string;
   skor: number;
@@ -50,7 +49,7 @@ export interface Kelas {
 
 export interface BulkNilaiData {
   id_siswa: string;
-  id_jurnal: string;
+  id_jurnal?: string; // Ubah jadi optional agar tidak error di bulk entry tanpa jurnal
   id_mapel: string;
   skor: number;
   jenis_nilai: string;
