@@ -12,6 +12,7 @@ import { User, Users, MessageCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import ProfilSiswaPopup from '../ProfilSiswaPopup';
+import StudentAvatarCell from "../nilai/StudentAvatarCell";
 
 interface RiwayatAbsensi {
   id_absensi: string;
@@ -244,7 +245,7 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
               {getSelectedInfo()}
             </p>
             <p className="text-xs text-gray-500">
-              Klik nama siswa atau ikon untuk melihat profil lengkap. Double klik kehadiran untuk mengedit.
+              Klik nama atau foto siswa untuk melihat profil lengkap. Double klik kehadiran untuk mengedit.
             </p>
           </div>
         </CardHeader>
@@ -279,21 +280,19 @@ const AbsensiOverviewTable: React.FC<AbsensiOverviewTableProps> = ({
                   {studentAttendanceData.map((studentData) => (
                     <TableRow key={studentData.siswa.id_siswa} className="hover:bg-gray-50">
                       <TableCell className="p-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <StudentAvatarCell
+                          siswa={studentData.siswa}
                           onClick={() => handleSiswaClick(studentData.siswa)}
-                          className="p-1 h-6 w-6"
-                        >
-                          <User className="h-3 w-3" />
-                        </Button>
+                          size="sm"
+                        />
                       </TableCell>
-                      <TableCell className="p-2">
+                      <TableCell className="p-2 align-middle">
                         <button
                           onClick={() => handleSiswaClick(studentData.siswa)}
                           className="text-left hover:text-blue-600 hover:underline transition-colors"
                         >
                           <div className="text-sm font-medium">{studentData.siswa.nama_lengkap}</div>
+                          <div className="text-xs text-gray-500">{studentData.siswa.nisn}</div>
                         </button>
                       </TableCell>
                       {dateList.slice(0, 10).map(([date]) => (

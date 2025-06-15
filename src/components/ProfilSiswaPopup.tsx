@@ -3,7 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar, MapPin, Phone, User, Users, GraduationCap } from 'lucide-react';
+import { GraduationCap, Users, User } from 'lucide-react';
 
 interface Siswa {
   id_siswa: string;
@@ -45,11 +45,9 @@ const ProfilSiswaPopup: React.FC<ProfilSiswaPopupProps> = ({ siswa, isOpen, onCl
     const birth = new Date(birthDate);
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-    
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
       age--;
     }
-    
     return age;
   };
 
@@ -62,30 +60,31 @@ const ProfilSiswaPopup: React.FC<ProfilSiswaPopupProps> = ({ siswa, isOpen, onCl
     });
   };
 
+  // Prioritaskan nomor_telepon_siswa jika ada, jika tidak ambil nomor_telepon
+  const phone = siswa.nomor_telepon_siswa || siswa.nomor_telepon || "-";
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex flex-col items-center text-center space-y-3">
-            <Avatar className="h-48 w-48">
+            <Avatar className="h-36 w-36 mb-2">
               <AvatarImage src={siswa.foto_url} alt={siswa.nama_lengkap} />
               <AvatarFallback className="bg-blue-100 text-blue-600 text-3xl">
                 {getInitials(siswa.nama_lengkap)}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <DialogTitle className="text-xl font-bold">{siswa.nama_lengkap}</DialogTitle>
-              <Badge variant="outline" className="mt-2">
-                NISN: {siswa.nisn}
-              </Badge>
-            </div>
+            <DialogTitle className="text-xl font-bold leading-tight">{siswa.nama_lengkap}</DialogTitle>
+            <Badge variant="outline" className="mt-1">
+              NISN: {siswa.nisn}
+            </Badge>
+            <DialogDescription className="text-center text-sm mt-1 mb-2">
+              Profil lengkap siswa dengan informasi personal dan akademik
+            </DialogDescription>
           </div>
-          <DialogDescription className="text-center text-sm">
-            Profil lengkap siswa dengan informasi personal dan akademik
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Informasi Personal */}
           <div className="bg-gray-50 rounded-lg p-4">
             <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
@@ -115,10 +114,10 @@ const ProfilSiswaPopup: React.FC<ProfilSiswaPopupProps> = ({ siswa, isOpen, onCl
                 <span className="text-gray-600">Alamat:</span>
                 <span className="font-medium text-xs leading-relaxed">{siswa.alamat}</span>
               </div>
-              {(siswa.nomor_telepon_siswa || siswa.nomor_telepon) && (
+              {phone && phone !== "-" && (
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">No. Telepon:</span>
-                  <span className="font-medium">{siswa.nomor_telepon_siswa || siswa.nomor_telepon}</span>
+                  <span className="font-medium">{phone}</span>
                 </div>
               )}
             </div>

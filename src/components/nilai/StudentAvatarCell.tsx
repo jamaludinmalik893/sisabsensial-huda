@@ -15,12 +15,28 @@ function getInitials(name: string) {
 }
 
 interface StudentAvatarCellProps {
-  siswa: Nilai["siswa"];
+  siswa: {
+    nama_lengkap: string;
+    foto_url?: string;
+  };
+  onClick?: () => void;
+  size?: "sm" | "md" | "lg";
 }
 
-const StudentAvatarCell: React.FC<StudentAvatarCellProps> = ({ siswa }) => {
+const StudentAvatarCell: React.FC<StudentAvatarCellProps> = ({
+  siswa,
+  onClick,
+  size = "md"
+}) => {
+  let dim = "h-9 w-9";
+  if (size === "sm") dim = "h-7 w-7";
+  if (size === "lg") dim = "h-14 w-14";
   return (
-    <Avatar className="h-9 w-9 ml-2 ring-2 ring-blue-200">
+    <Avatar
+      className={`${dim} ring-2 ring-blue-200 cursor-pointer`}
+      onClick={onClick}
+      title="Lihat profil siswa"
+    >
       {siswa.foto_url ? (
         <AvatarImage src={siswa.foto_url} alt={siswa.nama_lengkap} />
       ) : (
