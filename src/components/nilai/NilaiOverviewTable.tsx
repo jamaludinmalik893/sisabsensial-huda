@@ -193,7 +193,7 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
               {getSelectedInfo()}
             </p>
             <p className="text-xs text-gray-500">
-              Klik nama siswa atau ikon untuk melihat profil lengkap. <b>Double klik</b> pada nilai/tugas untuk mengubah nilai/catatan.
+              Klik <b>foto atau nama siswa</b> untuk melihat profil lengkap. <b>Double klik</b> pada nilai/tugas untuk mengubah nilai/catatan.
             </p>
           </div>
         </CardHeader>
@@ -206,9 +206,8 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                 <TableHeader>
                   <TableRow>
                     <TableHead className="min-w-16"></TableHead>
-                    <TableHead className="min-w-16" />
+                    <TableHead className="min-w-40 text-center">Rekapitulasi<br /><span className="font-light">(Rata-rata)</span></TableHead>
                     <TableHead className="min-w-40">Nama Siswa</TableHead>
-                    <TableHead className="text-center min-w-20 font-semibold">Rata-rata</TableHead>
                     {taskList.map((task) => (
                       <TableHead key={task.name} className="text-center min-w-24">
                         <div className="flex flex-col">
@@ -228,16 +227,7 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                   {studentGradesData.map((studentData) => (
                     <TableRow key={studentData.siswa.id_siswa} className="hover:bg-gray-50 group">
                       <TableCell className="p-2"></TableCell>
-                      <TableCell className="p-2">
-                        <StudentAvatarCell siswa={studentData.siswa} />
-                      </TableCell>
-                      <TableCell className="p-2">
-                        <StudentCell
-                          siswa={studentData.siswa}
-                          onClickProfil={handleSiswaClick}
-                        />
-                      </TableCell>
-                      <TableCell className="text-center p-2">
+                      <TableCell className="p-2 text-center align-middle">
                         {studentData.average > 0 ? (
                           <Badge
                             variant="outline"
@@ -249,10 +239,19 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                           <span className="text-gray-400 text-xs">-</span>
                         )}
                       </TableCell>
+                      <TableCell className="p-2 align-middle">
+                        <StudentCell
+                          siswa={studentData.siswa}
+                          onClickProfil={(siswa) => {
+                            setSelectedSiswa(siswa);
+                            setIsProfilOpen(true);
+                          }}
+                        />
+                      </TableCell>
                       {taskList.map((task) => {
                         const grade = studentData.grades[task.name];
                         return (
-                          <TableCell key={task.name} className="text-center p-2">
+                          <TableCell key={task.name} className="text-center p-2 align-middle">
                             {grade !== undefined ? (
                               <div
                                 onDoubleClick={() =>

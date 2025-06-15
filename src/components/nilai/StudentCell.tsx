@@ -1,7 +1,7 @@
+
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { User } from "lucide-react";
 import { Nilai } from "./NilaiOverviewTable";
+import StudentAvatarCell from "./StudentAvatarCell";
 
 interface StudentCellProps {
   siswa: Nilai["siswa"];
@@ -9,15 +9,26 @@ interface StudentCellProps {
 }
 
 const StudentCell: React.FC<StudentCellProps> = ({ siswa, onClickProfil }) => (
-  <div className="flex flex-col justify-center">
-    <button
+  <div className="flex items-center gap-3">
+    <div
+      className="cursor-pointer"
       onClick={() => onClickProfil(siswa)}
-      className="text-left hover:text-blue-600 hover:underline transition-colors"
+      title="Lihat profil siswa"
     >
-      <div className="text-sm font-medium">{siswa.nama_lengkap}</div>
-    </button>
-    <div className="text-xs text-gray-500">{siswa.nisn}</div>
+      <StudentAvatarCell siswa={siswa} />
+    </div>
+    <div className="flex flex-col justify-center">
+      <button
+        type="button"
+        onClick={() => onClickProfil(siswa)}
+        className="text-left hover:text-blue-600 hover:underline transition-colors"
+      >
+        <div className="text-sm font-medium">{siswa.nama_lengkap}</div>
+      </button>
+      <div className="text-xs text-gray-500">{siswa.nisn}</div>
+    </div>
   </div>
 );
 
 export default StudentCell;
+
