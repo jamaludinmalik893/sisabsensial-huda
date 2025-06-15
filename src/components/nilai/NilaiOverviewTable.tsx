@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import EditNilaiDialog from './EditNilaiDialog';
 import StudentAvatarCell from './StudentAvatarCell';
+import NilaiTableRow from "./NilaiTableRow";
 
 interface Nilai {
   id_nilai: string;
@@ -225,69 +226,18 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
                 </TableHeader>
                 <TableBody>
                   {studentGradesData.map((studentData, idx) => (
-                    <TableRow key={studentData.siswa.id_siswa} className="hover:bg-gray-50 group">
-                      {/* Nama Siswa (with avatar and clickable for popup) */}
-                      <TableCell className="p-2 align-middle">
-                        <StudentCell
-                          siswa={studentData.siswa}
-                          onClickProfil={(siswa) => {
-                            setSelectedSiswa(siswa);
-                            setIsProfilOpen(true);
-                          }}
-                        />
-                      </TableCell>
-                      {/* No Absen */}
-                      <TableCell className="p-2 text-center align-middle">
-                        {idx + 1}
-                      </TableCell>
-                      {/* Rekapitulasi (average) */}
-                      <TableCell className="p-2 text-center align-middle">
-                        {studentData.average > 0 ? (
-                          <Badge
-                            variant="outline"
-                            className={`text-xs font-semibold ${getScoreColor(studentData.average)}`}
-                          >
-                            {studentData.average}
-                          </Badge>
-                        ) : (
-                          <span className="text-gray-400 text-xs">-</span>
-                        )}
-                      </TableCell>
-                      {/* Task/score columns */}
-                      {taskList.map((task) => {
-                        const grade = studentData.grades[task.name];
-                        return (
-                          <TableCell key={task.name} className="text-center p-2 align-middle">
-                            {grade !== undefined ? (
-                              <div
-                                onDoubleClick={() =>
-                                  openEditDialog(
-                                    grade.id_nilai,
-                                    grade.skor,
-                                    grade.catatan ?? "",
-                                    studentData.siswa.nama_lengkap,
-                                    grade.judul_tugas
-                                  )
-                                }
-                                className="inline-block cursor-pointer group relative"
-                                title="Double klik untuk edit nilai & catatan"
-                              >
-                                <Badge className={`text-xs ${getScoreColor(grade.skor)} relative`}>
-                                  {grade.skor}
-                                  {grade.catatan && (
-                                    <span className="absolute top-[-3px] right-[-3px]">
-                                      <span className="inline-block h-2 w-2 rounded-full bg-green-500 border-2 border-white shadow" />
-                                    </span>
-                                  )}
-                                </Badge>
-                              </div>
-                            ) : (
-                              <span className="text-gray-400 text-xs">-</span>
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
+                    <NilaiTableRow
+                      key={studentData.siswa.id_siswa}
+                      studentData={studentData}
+                      idx={idx}
+                      taskList={taskList}
+                      openEditDialog={openEditDialog}
+                      getScoreColor={getScoreColor}
+                      handleSiswaClick={(siswa) => {
+                        setSelectedSiswa(siswa);
+                        setIsProfilOpen(true);
+                      }}
+                    />
                   ))}
                 </TableBody>
               </Table>
