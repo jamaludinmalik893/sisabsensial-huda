@@ -41,7 +41,7 @@ interface BulkNilaiEntryProps {
   siswaList: Siswa[];
   bulkValues: Record<string, BulkNilaiEntry>;
   handleBulkValueChange: (siswaId: string, field: 'skor' | 'catatan', value: string) => void;
-  handleBulkSubmit: () => void;
+  handleBulkSubmit: (judulTugas: string, tanggalTugasDibuat: string) => void;
 }
 
 const BulkNilaiEntry: React.FC<BulkNilaiEntryProps> = ({
