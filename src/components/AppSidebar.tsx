@@ -170,18 +170,18 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
   return (
     <Sidebar className="border-r border-gray-200">
       <SidebarHeader className="bg-primary text-white p-6">
-        <div className="flex items-center space-x-3">
-          <div className="bg-white/20 p-2 rounded-lg">
+        <div className="flex items-center space-x-3 min-w-0">
+          <div className="bg-white/20 p-2 rounded-lg flex-shrink-0">
             <School className="h-6 w-6" />
           </div>
-          <div>
-            <h2 className="font-bold text-lg">SMK AL-HUDA</h2>
-            <p className="text-primary-100 text-sm">Sistem Absensi</p>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-bold text-lg truncate">SMK AL-HUDA</h2>
+            <p className="text-primary-100 text-sm truncate">Sistem Absensi</p>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="bg-primary">
+      <SidebarContent className="bg-primary overflow-y-auto overflow-x-hidden">
         {/* Menu Utama */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-primary-100 font-semibold">
@@ -198,17 +198,17 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                         currentPage === item.url ||
                         currentPage.startsWith("nilai-")
                       }
-                      className={`flex items-center text-white hover:bg-primary-600 transition-colors ${
+                      className={`flex items-center text-white hover:bg-primary-600 transition-colors min-w-0 ${
                         currentPage === item.url ||
                         currentPage.startsWith("nilai-")
                           ? 'bg-primary-700 font-semibold'
                           : ''
                       }`}
                     >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      <span className="truncate">{item.title}</span>
                       <svg
-                        className={`ml-auto h-4 w-4 transform duration-150 ${nilaiOpen ? "rotate-90" : ""}`}
+                        className={`ml-auto h-4 w-4 transform duration-150 flex-shrink-0 ${nilaiOpen ? "rotate-90" : ""}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -224,11 +224,11 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                             <SidebarMenuButton
                               onClick={() => handlePageChange(submenu.url)}
                               isActive={currentPage === submenu.url}
-                              className={`ml-7 text-primary-100 hover:bg-primary-800 transition-colors ${
+                              className={`ml-7 text-primary-100 hover:bg-primary-800 transition-colors min-w-0 ${
                                 currentPage === submenu.url ? 'bg-primary-800 font-semibold' : ''
                               }`}
                             >
-                              <span>- {submenu.title}</span>
+                              <span className="truncate">- {submenu.title}</span>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         ))}
@@ -242,16 +242,16 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                       isActive={
                         currentPage === "absensi" || currentPage === "riwayat-absensi"
                       }
-                      className={`flex items-center text-white hover:bg-primary-600 transition-colors ${
+                      className={`flex items-center text-white hover:bg-primary-600 transition-colors min-w-0 ${
                         currentPage === "absensi" || currentPage === "riwayat-absensi"
                           ? 'bg-primary-700 font-semibold'
                           : ''
                       }`}
                     >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      <span className="truncate">{item.title}</span>
                       <svg
-                        className={`ml-auto h-4 w-4 transform duration-150 ${absensiOpen ? "rotate-90" : ""}`}
+                        className={`ml-auto h-4 w-4 transform duration-150 flex-shrink-0 ${absensiOpen ? "rotate-90" : ""}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -266,11 +266,11 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                             <SidebarMenuButton
                               onClick={() => handlePageChange(submenu.url)}
                               isActive={currentPage === submenu.url}
-                              className={`ml-7 text-primary-100 hover:bg-primary-800 transition-colors ${
+                              className={`ml-7 text-primary-100 hover:bg-primary-800 transition-colors min-w-0 ${
                                 currentPage === submenu.url ? 'bg-primary-800 font-semibold' : ''
                               }`}
                             >
-                              <span>- {submenu.title}</span>
+                              <span className="truncate">- {submenu.title}</span>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         ))}
@@ -282,10 +282,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                     <SidebarMenuButton
                       onClick={() => handlePageChange(item.url)}
                       isActive={currentPage === item.url}
-                      className={`text-white hover:bg-primary-600 transition-colors ${currentPage === item.url ? 'bg-primary-700 font-semibold' : ''}`}
+                      className={`text-white hover:bg-primary-600 transition-colors min-w-0 ${currentPage === item.url ? 'bg-primary-700 font-semibold' : ''}`}
                     >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      <span className="truncate">{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
@@ -307,12 +307,12 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                     <SidebarMenuButton
                       onClick={() => handlePageChange(item.url)}
                       isActive={currentPage === item.url}
-                      className={`text-white hover:bg-primary-600 transition-colors ${
+                      className={`text-white hover:bg-primary-600 transition-colors min-w-0 ${
                         currentPage === item.url ? 'bg-primary-700 font-semibold' : ''
                       }`}
                     >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      <span className="truncate">{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -334,12 +334,12 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                     <SidebarMenuButton
                       onClick={() => handlePageChange(item.url)}
                       isActive={currentPage === item.url}
-                      className={`text-white hover:bg-primary-600 transition-colors ${
+                      className={`text-white hover:bg-primary-600 transition-colors min-w-0 ${
                         currentPage === item.url ? 'bg-primary-700 font-semibold' : ''
                       }`}
                     >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      <span className="truncate">{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -350,12 +350,12 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
       </SidebarContent>
 
       <SidebarFooter className="bg-primary-700 p-4">
-        <div className="space-y-3">
+        <div className="space-y-3 min-w-0">
           {/* Info User */}
-          <div className="text-white">
-            <p className="font-medium text-sm">{userSession.guru.nama_lengkap}</p>
-            <p className="text-primary-200 text-xs">{userSession.guru.email}</p>
-            <p className="text-primary-200 text-xs">
+          <div className="text-white min-w-0">
+            <p className="font-medium text-sm truncate">{userSession.guru.nama_lengkap}</p>
+            <p className="text-primary-200 text-xs truncate">{userSession.guru.email}</p>
+            <p className="text-primary-200 text-xs truncate">
               {getRoleDisplayText()}
             </p>
           </div>
@@ -363,10 +363,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
           {/* Tombol Logout */}
           <SidebarMenuButton
             onClick={handleLogout}
-            className="w-full text-white hover:bg-primary-800 transition-colors"
+            className="w-full text-white hover:bg-primary-800 transition-colors min-w-0"
           >
-            <LogOut className="h-4 w-4" />
-            <span>Keluar</span>
+            <LogOut className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">Keluar</span>
           </SidebarMenuButton>
         </div>
       </SidebarFooter>
