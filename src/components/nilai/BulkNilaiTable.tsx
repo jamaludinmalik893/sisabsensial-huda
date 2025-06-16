@@ -1,11 +1,11 @@
+
 import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
-import StudentAvatarCell from "./StudentAvatarCell";
-import ProfilSiswaPopup from "../ProfilSiswaPopup";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Siswa {
   id_siswa: string;
@@ -54,6 +54,16 @@ const BulkNilaiTable: React.FC<BulkNilaiTableProps> = ({
   selectedMapel,
   selectedJenisNilai,
 }) => {
+  // Helper function to get initials from name
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   if (!canShowTable) return null;
 
   return (
@@ -79,9 +89,12 @@ const BulkNilaiTable: React.FC<BulkNilaiTableProps> = ({
                     onClick={() => onSiswaClick(siswa)}
                     title="Lihat profil siswa"
                   >
-                    <StudentAvatarCell siswa={{
-                      ...siswa // pipeline sudah include foto_url & all field
-                    }} />
+                    <Avatar className="h-9 w-9 ring-2 ring-blue-200">
+                      <AvatarImage src={siswa.foto_url} alt={siswa.nama_lengkap} />
+                      <AvatarFallback>
+                        {getInitials(siswa.nama_lengkap)}
+                      </AvatarFallback>
+                    </Avatar>
                   </div>
                 </TableCell>
                 <TableCell>
