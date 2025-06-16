@@ -11,6 +11,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { 
   Home, 
@@ -40,6 +41,8 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
   userSession,
   onLogout 
 }) => {
+  const { isMobile, setOpenMobile } = useSidebar();
+  
   // Expand/collapse state for submenus
   const [nilaiOpen, setNilaiOpen] = useState(() => currentPage === "nilai" || currentPage.startsWith("nilai-"));
   const [absensiOpen, setAbsensiOpen] = useState(() =>
@@ -55,6 +58,22 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
       setAbsensiOpen(true);
     }
   }, [currentPage]);
+
+  // Helper function to handle page change and close mobile sidebar
+  const handlePageChange = (page: string) => {
+    onPageChange(page);
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
+  // Helper function to handle logout and close mobile sidebar
+  const handleLogout = () => {
+    onLogout();
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   const menuUtama = [
     {
@@ -203,7 +222,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                         {item.submenus?.map((submenu) => (
                           <SidebarMenuItem key={submenu.title}>
                             <SidebarMenuButton
-                              onClick={() => onPageChange(submenu.url)}
+                              onClick={() => handlePageChange(submenu.url)}
                               isActive={currentPage === submenu.url}
                               className={`ml-7 text-primary-100 hover:bg-primary-800 transition-colors ${
                                 currentPage === submenu.url ? 'bg-primary-800 font-semibold' : ''
@@ -245,7 +264,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                         {item.submenus?.map((submenu) => (
                           <SidebarMenuItem key={submenu.title}>
                             <SidebarMenuButton
-                              onClick={() => onPageChange(submenu.url)}
+                              onClick={() => handlePageChange(submenu.url)}
                               isActive={currentPage === submenu.url}
                               className={`ml-7 text-primary-100 hover:bg-primary-800 transition-colors ${
                                 currentPage === submenu.url ? 'bg-primary-800 font-semibold' : ''
@@ -261,7 +280,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                 ) : (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
-                      onClick={() => onPageChange(item.url)}
+                      onClick={() => handlePageChange(item.url)}
                       isActive={currentPage === item.url}
                       className={`text-white hover:bg-primary-600 transition-colors ${currentPage === item.url ? 'bg-primary-700 font-semibold' : ''}`}
                     >
@@ -286,7 +305,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                 {menuAdministrasi.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
-                      onClick={() => onPageChange(item.url)}
+                      onClick={() => handlePageChange(item.url)}
                       isActive={currentPage === item.url}
                       className={`text-white hover:bg-primary-600 transition-colors ${
                         currentPage === item.url ? 'bg-primary-700 font-semibold' : ''
@@ -313,7 +332,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                 {menuWaliKelas.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
-                      onClick={() => onPageChange(item.url)}
+                      onClick={() => handlePageChange(item.url)}
                       isActive={currentPage === item.url}
                       className={`text-white hover:bg-primary-600 transition-colors ${
                         currentPage === item.url ? 'bg-primary-700 font-semibold' : ''
@@ -343,7 +362,7 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
           
           {/* Tombol Logout */}
           <SidebarMenuButton
-            onClick={onLogout}
+            onClick={handleLogout}
             className="w-full text-white hover:bg-primary-800 transition-colors"
           >
             <LogOut className="h-4 w-4" />
@@ -356,4 +375,3 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
 };
 
 export default AppSidebar;
-
