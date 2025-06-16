@@ -1,9 +1,9 @@
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, ArrowUpAZ, ArrowDownAZ } from 'lucide-react';
 import { Guru, UserSession } from '@/types';
 
 interface GuruWithRoles extends Guru {
@@ -27,11 +27,42 @@ const getRoleBadgeVariant = (role: string) => {
 };
 
 const GuruTable: React.FC<GuruTableProps> = ({ guruList, onEdit, onDelete, userSession }) => {
+    const [sortAscending, setSortAscending] = useState(true);
+
+    const sortedGuruList = useMemo(() => {
+        return [...guruList].sort((a, b) => {
+            const comparison = a.nama_lengkap.localeCompare(b.nama_lengkap, 'id', { 
+                sensitivity: 'base' 
+            });
+            return sortAscending ? comparison : -comparison;
+        });
+    }, [guruList, sortAscending]);
+
+    const toggleSort = () => {
+        setSortAscending(!sortAscending);
+    };
+
     return (
         <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nama & NIP</TableHead>
+                <TableHead>
+                  <div className="flex items-center gap-2">
+                    <span>Nama & NIP</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={toggleSort}
+                      className="h-6 w-6 p-0"
+                    >
+                      {sortAscending ? (
+                        <ArrowUpAZ className="h-4 w-4" />
+                      ) : (
+                        <ArrowDownAZ className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Peran/Status</TableHead>
                 <TableHead>Wali Kelas</TableHead>
@@ -40,7 +71,7 @@ const GuruTable: React.FC<GuruTableProps> = ({ guruList, onEdit, onDelete, userS
               </TableRow>
             </TableHeader>
             <TableBody>
-              {guruList.map((guru) => (
+              {sortedGuruList.map((guru) => (
                 <TableRow key={guru.id_guru}>
                   <TableCell>
                     <div className="space-y-1">

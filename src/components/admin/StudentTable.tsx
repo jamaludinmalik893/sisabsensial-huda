@@ -1,10 +1,11 @@
-import React from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, ArrowUpAZ, ArrowDownAZ } from 'lucide-react';
 
 interface SiswaWithRelations {
   id_siswa: string;
@@ -41,8 +42,23 @@ const StudentTable: React.FC<StudentTableProps> = ({
   onDelete,
   onSiswaClick
 }) => {
+  const [sortAscending, setSortAscending] = useState(true);
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const sortedSiswaList = useMemo(() => {
+    return [...siswaList].sort((a, b) => {
+      const comparison = a.nama_lengkap.localeCompare(b.nama_lengkap, 'id', { 
+        sensitivity: 'base' 
+      });
+      return sortAscending ? comparison : -comparison;
+    });
+  }, [siswaList, sortAscending]);
+
+  const toggleSort = () => {
+    setSortAscending(!sortAscending);
   };
 
   return (
@@ -55,7 +71,23 @@ const StudentTable: React.FC<StudentTableProps> = ({
           <TableHeader>
             <TableRow>
               <TableHead>Foto</TableHead>
-              <TableHead>Nama Siswa</TableHead>
+              <TableHead>
+                <div className="flex items-center gap-2">
+                  <span>Nama Siswa</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={toggleSort}
+                    className="h-6 w-6 p-0"
+                  >
+                    {sortAscending ? (
+                      <ArrowUpAZ className="h-4 w-4" />
+                    ) : (
+                      <ArrowDownAZ className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </TableHead>
               <TableHead>Kelas</TableHead>
               <TableHead>Jenis Kelamin</TableHead>
               <TableHead>No. Telepon Siswa</TableHead>
@@ -65,7 +97,7 @@ const StudentTable: React.FC<StudentTableProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {siswaList.map((siswa) => (
+            {sortedSiswaList.map((siswa) => (
               <TableRow key={siswa.id_siswa}>
                 <TableCell>
                   <Avatar 
