@@ -1,0 +1,182 @@
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { UserSession } from '@/types';
+import LaporanKehadiran from './laporan/LaporanKehadiran';
+import LaporanNilai from './laporan/LaporanNilai';
+import LaporanGabungan from './laporan/LaporanGabungan';
+import { FileText, Download, Calendar, Filter } from 'lucide-react';
+
+interface LaporanPageProps {
+  userSession: UserSession;
+}
+
+const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
+  const [selectedPeriode, setSelectedPeriode] = useState('bulanan');
+  const [tanggalMulai, setTanggalMulai] = useState('');
+  const [tanggalAkhir, setTanggalAkhir] = useState('');
+  const [selectedKelas, setSelectedKelas] = useState('all');
+  const [selectedMapel, setSelectedMapel] = useState('all');
+  const [selectedSiswa, setSelectedSiswa] = useState('all');
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center gap-3">
+        <FileText className="h-8 w-8 text-blue-600" />
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Laporan Akademik</h1>
+          <p className="text-gray-600">Statistik kehadiran, nilai, dan gabungan</p>
+        </div>
+      </div>
+
+      {/* Filter Global */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filter Laporan
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div>
+              <Label htmlFor="periode">Periode</Label>
+              <Select value={selectedPeriode} onValueChange={setSelectedPeriode}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="harian">Harian</SelectItem>
+                  <SelectItem value="mingguan">Mingguan</SelectItem>
+                  <SelectItem value="bulanan">Bulanan</SelectItem>
+                  <SelectItem value="semester">Semester</SelectItem>
+                  <SelectItem value="custom">Custom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="tanggal-mulai">Tanggal Mulai</Label>
+              <Input
+                type="date"
+                value={tanggalMulai}
+                onChange={(e) => setTanggalMulai(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="tanggal-akhir">Tanggal Akhir</Label>
+              <Input
+                type="date"
+                value={tanggalAkhir}
+                onChange={(e) => setTanggalAkhir(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="kelas">Kelas</Label>
+              <Select value={selectedKelas} onValueChange={setSelectedKelas}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Kelas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Kelas</SelectItem>
+                  <SelectItem value="X-RPL-1">X RPL 1</SelectItem>
+                  <SelectItem value="X-RPL-2">X RPL 2</SelectItem>
+                  <SelectItem value="XI-RPL-1">XI RPL 1</SelectItem>
+                  <SelectItem value="XII-RPL-1">XII RPL 1</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="mapel">Mata Pelajaran</Label>
+              <Select value={selectedMapel} onValueChange={setSelectedMapel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Mapel" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Mapel</SelectItem>
+                  <SelectItem value="matematika">Matematika</SelectItem>
+                  <SelectItem value="pemrograman">Pemrograman</SelectItem>
+                  <SelectItem value="basis-data">Basis Data</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="siswa">Siswa</Label>
+              <Select value={selectedSiswa} onValueChange={setSelectedSiswa}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Siswa" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Siswa</SelectItem>
+                  <SelectItem value="individu">Pilih Individu</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabs untuk jenis laporan */}
+      <Tabs defaultValue="kehadiran" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="kehadiran">Laporan Kehadiran</TabsTrigger>
+          <TabsTrigger value="nilai">Laporan Nilai</TabsTrigger>
+          <TabsTrigger value="gabungan">Laporan Gabungan</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="kehadiran">
+          <LaporanKehadiran 
+            userSession={userSession}
+            filters={{
+              periode: selectedPeriode,
+              tanggalMulai,
+              tanggalAkhir,
+              kelas: selectedKelas,
+              mapel: selectedMapel,
+              siswa: selectedSiswa
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="nilai">
+          <LaporanNilai 
+            userSession={userSession}
+            filters={{
+              periode: selectedPeriode,
+              tanggalMulai,
+              tanggalAkhir,
+              kelas: selectedKelas,
+              mapel: selectedMapel,
+              siswa: selectedSiswa
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="gabungan">
+          <LaporanGabungan 
+            userSession={userSession}
+            filters={{
+              periode: selectedPeriode,
+              tanggalMulai,
+              tanggalAkhir,
+              kelas: selectedKelas,
+              mapel: selectedMapel,
+              siswa: selectedSiswa
+            }}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default LaporanPage;

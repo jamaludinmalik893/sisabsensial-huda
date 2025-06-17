@@ -13,6 +13,7 @@ import AdminKelasPage from '@/components/admin/AdminKelasPage';
 import AdminMapelPage from '@/components/admin/AdminMapelPage';
 import NilaiRekapitulasiPage from '@/components/NilaiRekapitulasiPage';
 import NilaiEntryPage from '@/components/NilaiEntryPage';
+import LaporanPage from '@/components/LaporanPage';
 import { UserSession } from '@/types';
 
 interface MainContentRendererProps {
@@ -40,6 +41,8 @@ const MainContentRenderer: React.FC<MainContentRendererProps> = ({ currentPage, 
       return <NilaiRekapitulasiPage userSession={userSession} />;
     case 'nilai-entry':
       return <NilaiEntryPage userSession={userSession} />;
+    case 'laporan':
+      return <LaporanPage userSession={userSession} />;
     case 'admin-siswa':
       return userSession.isAdmin ? (
         <AdminSiswaPage userSession={userSession} />
