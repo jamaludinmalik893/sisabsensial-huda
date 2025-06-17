@@ -52,6 +52,20 @@ export type Database = {
             referencedRelation: "siswa"
             referencedColumns: ["id_siswa"]
           },
+          {
+            foreignKeyName: "absensi_id_siswa_fkey"
+            columns: ["id_siswa"]
+            isOneToOne: false
+            referencedRelation: "v_statistik_kehadiran_siswa"
+            referencedColumns: ["id_siswa"]
+          },
+          {
+            foreignKeyName: "absensi_id_siswa_fkey"
+            columns: ["id_siswa"]
+            isOneToOne: false
+            referencedRelation: "v_statistik_nilai"
+            referencedColumns: ["id_siswa"]
+          },
         ]
       }
       guru: {
@@ -105,6 +119,13 @@ export type Database = {
             referencedRelation: "kelas"
             referencedColumns: ["id_kelas"]
           },
+          {
+            foreignKeyName: "fk_guru_wali_kelas"
+            columns: ["wali_kelas"]
+            isOneToOne: false
+            referencedRelation: "v_statistik_kehadiran_kelas"
+            referencedColumns: ["id_kelas"]
+          },
         ]
       }
       guru_mata_pelajaran: {
@@ -132,6 +153,13 @@ export type Database = {
             columns: ["id_guru"]
             isOneToOne: false
             referencedRelation: "guru"
+            referencedColumns: ["id_guru"]
+          },
+          {
+            foreignKeyName: "guru_mata_pelajaran_id_guru_fkey"
+            columns: ["id_guru"]
+            isOneToOne: false
+            referencedRelation: "v_statistik_kehadiran_siswa"
             referencedColumns: ["id_guru"]
           },
           {
@@ -168,6 +196,13 @@ export type Database = {
             columns: ["id_guru"]
             isOneToOne: false
             referencedRelation: "guru"
+            referencedColumns: ["id_guru"]
+          },
+          {
+            foreignKeyName: "guru_roles_id_guru_fkey"
+            columns: ["id_guru"]
+            isOneToOne: false
+            referencedRelation: "v_statistik_kehadiran_siswa"
             referencedColumns: ["id_guru"]
           },
         ]
@@ -221,10 +256,24 @@ export type Database = {
             referencedColumns: ["id_guru"]
           },
           {
+            foreignKeyName: "jurnal_harian_id_guru_fkey"
+            columns: ["id_guru"]
+            isOneToOne: false
+            referencedRelation: "v_statistik_kehadiran_siswa"
+            referencedColumns: ["id_guru"]
+          },
+          {
             foreignKeyName: "jurnal_harian_id_kelas_fkey"
             columns: ["id_kelas"]
             isOneToOne: false
             referencedRelation: "kelas"
+            referencedColumns: ["id_kelas"]
+          },
+          {
+            foreignKeyName: "jurnal_harian_id_kelas_fkey"
+            columns: ["id_kelas"]
+            isOneToOne: false
+            referencedRelation: "v_statistik_kehadiran_kelas"
             referencedColumns: ["id_kelas"]
           },
           {
@@ -336,6 +385,20 @@ export type Database = {
             referencedRelation: "siswa"
             referencedColumns: ["id_siswa"]
           },
+          {
+            foreignKeyName: "nilai_id_siswa_fkey"
+            columns: ["id_siswa"]
+            isOneToOne: false
+            referencedRelation: "v_statistik_kehadiran_siswa"
+            referencedColumns: ["id_siswa"]
+          },
+          {
+            foreignKeyName: "nilai_id_siswa_fkey"
+            columns: ["id_siswa"]
+            isOneToOne: false
+            referencedRelation: "v_statistik_nilai"
+            referencedColumns: ["id_siswa"]
+          },
         ]
       }
       siswa: {
@@ -405,19 +468,129 @@ export type Database = {
             referencedColumns: ["id_guru"]
           },
           {
+            foreignKeyName: "siswa_id_guru_wali_fkey"
+            columns: ["id_guru_wali"]
+            isOneToOne: false
+            referencedRelation: "v_statistik_kehadiran_siswa"
+            referencedColumns: ["id_guru"]
+          },
+          {
             foreignKeyName: "siswa_id_kelas_fkey"
             columns: ["id_kelas"]
             isOneToOne: false
             referencedRelation: "kelas"
             referencedColumns: ["id_kelas"]
           },
+          {
+            foreignKeyName: "siswa_id_kelas_fkey"
+            columns: ["id_kelas"]
+            isOneToOne: false
+            referencedRelation: "v_statistik_kehadiran_kelas"
+            referencedColumns: ["id_kelas"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      v_statistik_kehadiran_kelas: {
+        Row: {
+          id_kelas: string | null
+          nama_kelas: string | null
+          persentase_hadir: number | null
+          total_alpha: number | null
+          total_hadir: number | null
+          total_izin: number | null
+          total_pertemuan: number | null
+          total_sakit: number | null
+          total_siswa: number | null
+        }
+        Relationships: []
+      }
+      v_statistik_kehadiran_siswa: {
+        Row: {
+          id_guru: string | null
+          id_siswa: string | null
+          nama_kelas: string | null
+          nama_lengkap: string | null
+          nama_mapel: string | null
+          nisn: string | null
+          persentase_hadir: number | null
+          tanggal_pelajaran: string | null
+          total_alpha: number | null
+          total_hadir: number | null
+          total_izin: number | null
+          total_pertemuan: number | null
+          total_sakit: number | null
+        }
+        Relationships: []
+      }
+      v_statistik_nilai: {
+        Row: {
+          id_siswa: string | null
+          jenis_nilai: string | null
+          jumlah_nilai: number | null
+          nama_kelas: string | null
+          nama_lengkap: string | null
+          nama_mapel: string | null
+          nilai_maksimum: number | null
+          nilai_minimum: number | null
+          nisn: string | null
+          rata_rata: number | null
+          tanggal_nilai: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      get_attendance_statistics: {
+        Args: {
+          p_guru_id: string
+          p_start_date?: string
+          p_end_date?: string
+          p_kelas_id?: string
+          p_mapel_id?: string
+        }
+        Returns: {
+          nama_siswa: string
+          nisn: string
+          kelas: string
+          total_hadir: number
+          total_izin: number
+          total_sakit: number
+          total_alpha: number
+          total_pertemuan: number
+          persentase_hadir: number
+        }[]
+      }
+      get_attendance_trend: {
+        Args: {
+          p_guru_id: string
+          p_start_date?: string
+          p_end_date?: string
+          p_period?: string
+        }
+        Returns: {
+          periode: string
+          persentase_hadir: number
+        }[]
+      }
+      get_class_attendance_stats: {
+        Args: {
+          p_guru_id: string
+          p_start_date?: string
+          p_end_date?: string
+          p_kelas_id?: string
+          p_mapel_id?: string
+        }
+        Returns: {
+          nama_kelas: string
+          total_hadir: number
+          total_izin: number
+          total_sakit: number
+          total_alpha: number
+          persentase_hadir: number
+        }[]
+      }
       get_guru_roles: {
         Args: { guru_id: string }
         Returns: Database["public"]["Enums"]["guru_role"][]

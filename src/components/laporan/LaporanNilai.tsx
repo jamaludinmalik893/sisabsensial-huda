@@ -1,11 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { UserSession } from '@/types';
 import { TrendingUp, Award, BookOpen, Target } from 'lucide-react';
+import { useLaporanNilai } from '@/hooks/useLaporanData';
 import ExportButtons from '../ExportButtons';
 
 interface LaporanNilaiProps {
@@ -20,88 +21,68 @@ interface LaporanNilaiProps {
   };
 }
 
-interface StatistikNilai {
-  nama_siswa: string;
-  nisn: string;
-  kelas: string;
-  rata_rata_nilai: number;
-  nilai_tertinggi: number;
-  nilai_terendah: number;
-  jumlah_tugas: number;
-  tugas_selesai: number;
-  ranking: number;
-}
-
 const LaporanNilai: React.FC<LaporanNilaiProps> = ({ userSession, filters }) => {
-  const [statistikNilai, setStatistikNilai] = useState<StatistikNilai[]>([]);
+  const { statistikNilai, loading, error } = useLaporanNilai(userSession.guru.id_guru, {
+    tanggalMulai: filters.tanggalMulai,
+    tanggalAkhir: filters.tanggalAkhir,
+    kelas: filters.kelas,
+    mapel: filters.mapel
+  });
 
-  // Data dummy untuk contoh
-  const dummyData: StatistikNilai[] = [
-    {
-      nama_siswa: "Ahmad Rizki",
-      nisn: "1234567890",
-      kelas: "X RPL 1",
-      rata_rata_nilai: 88.5,
-      nilai_tertinggi: 95,
-      nilai_terendah: 80,
-      jumlah_tugas: 20,
-      tugas_selesai: 18,
-      ranking: 3
-    },
-    {
-      nama_siswa: "Siti Nurhaliza",
-      nisn: "1234567891",
-      kelas: "X RPL 1",
-      rata_rata_nilai: 92.3,
-      nilai_tertinggi: 98,
-      nilai_terendah: 85,
-      jumlah_tugas: 20,
-      tugas_selesai: 20,
-      ranking: 1
-    },
-    {
-      nama_siswa: "Budi Santoso",
-      nisn: "1234567892",
-      kelas: "X RPL 1",
-      rata_rata_nilai: 85.7,
-      nilai_tertinggi: 92,
-      nilai_terendah: 75,
-      jumlah_tugas: 20,
-      tugas_selesai: 17,
-      ranking: 5
+  // Calculate statistics from real data
+  const stats = React.useMemo(() => {
+    if (!statistikNilai.length) {
+      return {
+        rataRataKelas: 0,
+        nilaiTertinggi: 0,
+        totalTugas: 0,
+        tingkatPenyelesaian: 0
+      };
     }
-  ];
 
-  useEffect(() => {
-    setStatistikNilai(dummyData);
-  }, [filters]);
+    const rataRataKelas = statistikNilai.reduce((acc, curr) => acc + curr.rata_rata_nilai, 0) / statistikNilai.length;
+    const nilaiTertinggi = Math.max(...statistikNilai.map(s => s.nilai_tertinggi));
+    const totalTugas = statistikNilai.reduce((acc, curr) => acc + curr.jumlah_tugas, 0);
+    const totalSelesai = statistikNilai.reduce((acc, curr) => acc + curr.tugas_selesai, 0);
+    const tingkatPenyelesaian = totalTugas > 0 ? Math.round((totalSelesai / totalTugas) * 100) : 0;
 
-  // Data untuk distribusi nilai
-  const distribusiNilai = [
-    { range: '90-100', jumlah: 15, fill: '#22c55e' },
-    { range: '80-89', jumlah: 25, fill: '#3b82f6' },
-    { range: '70-79', jumlah: 18, fill: '#eab308' },
-    { range: '60-69', jumlah: 8, fill: '#f97316' },
-    { range: '<60', jumlah: 4, fill: '#ef4444' }
-  ];
+    return {
+      rataRataKelas: Math.round(rataRataKelas * 10) / 10,
+      nilaiTertinggi,
+      totalTugas,
+      tingkatPenyelesaian
+    };
+  }, [statistikNilai]);
 
-  // Data trend nilai per bulan
-  const trendNilai = [
-    { bulan: 'Jan', rata_rata: 82 },
-    { bulan: 'Feb', rata_rata: 85 },
-    { bulan: 'Mar', rata_rata: 87 },
-    { bulan: 'Apr', rata_rata: 84 },
-    { bulan: 'Mei', rata_rata: 88 },
-    { bulan: 'Jun', rata_rata: 89 }
-  ];
+  // Generate distribution data
+  const distribusiNilai = React.useMemo(() => {
+    if (!statistikNilai.length) return [];
 
-  // Data nilai per mata pelajaran
-  const nilaiMapel = [
-    { mapel: 'Matematika', rata_rata: 85.5, tertinggi: 95, terendah: 70 },
-    { mapel: 'Pemrograman', rata_rata: 88.2, tertinggi: 98, terendah: 75 },
-    { mapel: 'Basis Data', rata_rata: 86.8, tertinggi: 94, terendah: 72 },
-    { mapel: 'PKK', rata_rata: 89.1, tertinggi: 96, terendah: 78 }
-  ];
+    const ranges = {
+      '90-100': 0,
+      '80-89': 0,
+      '70-79': 0,
+      '60-69': 0,
+      '<60': 0
+    };
+
+    statistikNilai.forEach(siswa => {
+      const nilai = siswa.rata_rata_nilai;
+      if (nilai >= 90) ranges['90-100']++;
+      else if (nilai >= 80) ranges['80-89']++;
+      else if (nilai >= 70) ranges['70-79']++;
+      else if (nilai >= 60) ranges['60-69']++;
+      else ranges['<60']++;
+    });
+
+    return [
+      { range: '90-100', jumlah: ranges['90-100'], fill: '#22c55e' },
+      { range: '80-89', jumlah: ranges['80-89'], fill: '#3b82f6' },
+      { range: '70-79', jumlah: ranges['70-79'], fill: '#eab308' },
+      { range: '60-69', jumlah: ranges['60-69'], fill: '#f97316' },
+      { range: '<60', jumlah: ranges['<60'], fill: '#ef4444' }
+    ];
+  }, [statistikNilai]);
 
   const getNilaiGrade = (nilai: number) => {
     if (nilai >= 90) return <Badge className="bg-green-500">A</Badge>;
@@ -132,6 +113,37 @@ const LaporanNilai: React.FC<LaporanNilaiProps> = ({ userSession, filters }) => 
     'Ranking': siswa.ranking
   }));
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="animate-pulse">
+                  <div className="h-8 w-8 bg-gray-200 rounded mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <p className="text-red-600 mb-2">Terjadi kesalahan saat memuat data</p>
+          <p className="text-gray-500 text-sm">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Statistik Overview */}
@@ -142,7 +154,7 @@ const LaporanNilai: React.FC<LaporanNilaiProps> = ({ userSession, filters }) => 
               <Award className="h-8 w-8 text-yellow-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Rata-rata Kelas</p>
-                <p className="text-2xl font-bold text-gray-900">86.8</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.rataRataKelas}</p>
               </div>
             </div>
           </CardContent>
@@ -154,7 +166,7 @@ const LaporanNilai: React.FC<LaporanNilaiProps> = ({ userSession, filters }) => 
               <TrendingUp className="h-8 w-8 text-green-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Nilai Tertinggi</p>
-                <p className="text-2xl font-bold text-green-600">98</p>
+                <p className="text-2xl font-bold text-green-600">{stats.nilaiTertinggi}</p>
               </div>
             </div>
           </CardContent>
@@ -166,7 +178,7 @@ const LaporanNilai: React.FC<LaporanNilaiProps> = ({ userSession, filters }) => 
               <BookOpen className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Tugas</p>
-                <p className="text-2xl font-bold text-blue-600">420</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.totalTugas}</p>
               </div>
             </div>
           </CardContent>
@@ -178,7 +190,7 @@ const LaporanNilai: React.FC<LaporanNilaiProps> = ({ userSession, filters }) => 
               <Target className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Tingkat Penyelesaian</p>
-                <p className="text-2xl font-bold text-purple-600">89%</p>
+                <p className="text-2xl font-bold text-purple-600">{stats.tingkatPenyelesaian}%</p>
               </div>
             </div>
           </CardContent>
@@ -186,133 +198,101 @@ const LaporanNilai: React.FC<LaporanNilaiProps> = ({ userSession, filters }) => 
       </div>
 
       {/* Grafik */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pie Chart Distribusi Nilai */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Distribusi Nilai Siswa</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={distribusiNilai}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ range, percent }) => `${range}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="jumlah"
-                >
-                  {distribusiNilai.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Line Chart Trend Nilai */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Trend Nilai Bulanan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={trendNilai}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="bulan" />
-                <YAxis domain={[70, 100]} />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="rata_rata" stroke="#3b82f6" strokeWidth={3} />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Bar Chart Nilai per Mata Pelajaran */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Nilai per Mata Pelajaran</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={nilaiMapel}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="mapel" />
-              <YAxis domain={[0, 100]} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="rata_rata" fill="#3b82f6" name="Rata-rata" />
-              <Bar dataKey="tertinggi" fill="#22c55e" name="Tertinggi" />
-              <Bar dataKey="terendah" fill="#ef4444" name="Terendah" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {distribusiNilai.some(d => d.jumlah > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Pie Chart Distribusi Nilai */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Distribusi Nilai Siswa</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={distribusiNilai}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ range, percent }) => `${range}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="jumlah"
+                  >
+                    {distribusiNilai.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Tabel Detail Siswa */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>Detail Nilai per Siswa</CardTitle>
-            <ExportButtons 
-              data={exportData}
-              fileName={`laporan-nilai-${new Date().toISOString().split('T')[0]}`}
-              columns={Object.keys(exportData[0] || {})}
-            />
+            {exportData.length > 0 && (
+              <ExportButtons 
+                data={exportData}
+                fileName={`laporan-nilai-${new Date().toISOString().split('T')[0]}`}
+                columns={Object.keys(exportData[0] || {})}
+              />
+            )}
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Ranking</TableHead>
-                <TableHead>Nama Siswa</TableHead>
-                <TableHead>NISN</TableHead>
-                <TableHead>Kelas</TableHead>
-                <TableHead>Rata-rata</TableHead>
-                <TableHead>Grade</TableHead>
-                <TableHead>Tertinggi</TableHead>
-                <TableHead>Terendah</TableHead>
-                <TableHead>Tugas Selesai</TableHead>
-                <TableHead>Persentase Tugas</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {statistikNilai
-                .sort((a, b) => a.ranking - b.ranking)
-                .map((siswa) => (
-                <TableRow key={siswa.nisn}>
-                  <TableCell>{getRankingBadge(siswa.ranking)}</TableCell>
-                  <TableCell className="font-medium">{siswa.nama_siswa}</TableCell>
-                  <TableCell>{siswa.nisn}</TableCell>
-                  <TableCell>{siswa.kelas}</TableCell>
-                  <TableCell className="font-semibold">{siswa.rata_rata_nilai}</TableCell>
-                  <TableCell>{getNilaiGrade(siswa.rata_rata_nilai)}</TableCell>
-                  <TableCell className="text-green-600">{siswa.nilai_tertinggi}</TableCell>
-                  <TableCell className="text-red-600">{siswa.nilai_terendah}</TableCell>
-                  <TableCell>{siswa.tugas_selesai}/{siswa.jumlah_tugas}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span>{Math.round((siswa.tugas_selesai / siswa.jumlah_tugas) * 100)}%</span>
-                      <div className="w-16 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{ width: `${(siswa.tugas_selesai / siswa.jumlah_tugas) * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </TableCell>
+          {statistikNilai.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Ranking</TableHead>
+                  <TableHead>Nama Siswa</TableHead>
+                  <TableHead>NISN</TableHead>
+                  <TableHead>Kelas</TableHead>
+                  <TableHead>Rata-rata</TableHead>
+                  <TableHead>Grade</TableHead>
+                  <TableHead>Tertinggi</TableHead>
+                  <TableHead>Terendah</TableHead>
+                  <TableHead>Tugas Selesai</TableHead>
+                  <TableHead>Persentase Tugas</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {statistikNilai.map((siswa) => (
+                  <TableRow key={siswa.nisn}>
+                    <TableCell>{getRankingBadge(siswa.ranking)}</TableCell>
+                    <TableCell className="font-medium">{siswa.nama_siswa}</TableCell>
+                    <TableCell>{siswa.nisn}</TableCell>
+                    <TableCell>{siswa.kelas}</TableCell>
+                    <TableCell className="font-semibold">{siswa.rata_rata_nilai}</TableCell>
+                    <TableCell>{getNilaiGrade(siswa.rata_rata_nilai)}</TableCell>
+                    <TableCell className="text-green-600">{siswa.nilai_tertinggi}</TableCell>
+                    <TableCell className="text-red-600">{siswa.nilai_terendah}</TableCell>
+                    <TableCell>{siswa.tugas_selesai}/{siswa.jumlah_tugas}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span>{Math.round((siswa.tugas_selesai / siswa.jumlah_tugas) * 100)}%</span>
+                        <div className="w-16 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full" 
+                            style={{ width: `${(siswa.tugas_selesai / siswa.jumlah_tugas) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              Tidak ada data nilai untuk ditampilkan
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
