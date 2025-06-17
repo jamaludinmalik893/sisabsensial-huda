@@ -2,15 +2,15 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UserSession } from '@/types';
+import { useGuruMataPelajaran } from '@/hooks/useGuruMataPelajaran';
 import LaporanKehadiran from './laporan/LaporanKehadiran';
 import LaporanNilai from './laporan/LaporanNilai';
 import LaporanGabungan from './laporan/LaporanGabungan';
-import { FileText, Download, Calendar, Filter } from 'lucide-react';
+import { FileText, Filter } from 'lucide-react';
 
 interface LaporanPageProps {
   userSession: UserSession;
@@ -23,6 +23,9 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
   const [selectedKelas, setSelectedKelas] = useState('all');
   const [selectedMapel, setSelectedMapel] = useState('all');
   const [selectedSiswa, setSelectedSiswa] = useState('all');
+
+  // Fetch mata pelajaran yang diampu guru
+  const { mataPelajaran, loading: loadingMapel } = useGuruMataPelajaran(userSession.guru.id_guru);
 
   return (
     <div className="p-6 space-y-6">
@@ -96,15 +99,17 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
 
             <div>
               <Label htmlFor="mapel">Mata Pelajaran</Label>
-              <Select value={selectedMapel} onValueChange={setSelectedMapel}>
+              <Select value={selectedMapel} onValueChange={setSelectedMapel} disabled={loadingMapel}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Pilih Mapel" />
+                  <SelectValue placeholder={loadingMapel ? "Memuat..." : "Pilih Mapel"} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Semua Mapel</SelectItem>
-                  <SelectItem value="matematika">Matematika</SelectItem>
-                  <SelectItem value="pemrograman">Pemrograman</SelectItem>
-                  <SelectItem value="basis-data">Basis Data</SelectItem>
+                  {mataPelajaran.map((mapel) => (
+                    <SelectItem key={mapel.id_mapel} value={mapel.id_mapel}>
+                      {mapel.nama_mapel}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

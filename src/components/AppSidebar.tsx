@@ -24,7 +24,8 @@ import {
   User,
   School,
   GraduationCap,
-  LogOut
+  LogOut,
+  BarChart3
 } from 'lucide-react';
 import { UserSession } from '@/types';
 
@@ -120,6 +121,14 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
       title: "Profil Siswa",
       url: "profil-siswa",
       icon: Users,
+    },
+  ];
+
+  const menuLaporan = [
+    {
+      title: "Laporan Akademik",
+      url: "laporan",
+      icon: BarChart3,
     },
   ];
 
@@ -290,6 +299,31 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                   </SidebarMenuItem>
                 )
               )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Menu Laporan */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-primary-100 font-semibold">
+            Laporan
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {menuLaporan.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    onClick={() => handlePageChange(item.url)}
+                    isActive={currentPage === item.url}
+                    className={`text-white hover:bg-primary-600 transition-colors min-w-0 ${
+                      currentPage === item.url ? 'bg-primary-700 font-semibold' : ''
+                    }`}
+                  >
+                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                    <span className="truncate">{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
