@@ -170,7 +170,7 @@ const LaporanKehadiran: React.FC<LaporanKehadiranProps> = ({ userSession, filter
             <div className="flex items-center">
               <Users className="h-8 w-8 text-red-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Siswa Alpha > 5%</p>
+                <p className="text-sm font-medium text-gray-600">Siswa Alpha {'>'}5%</p>
                 <p className="text-2xl font-bold text-red-600">12</p>
               </div>
             </div>
