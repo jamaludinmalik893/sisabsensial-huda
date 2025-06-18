@@ -49,6 +49,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
   const [absensiOpen, setAbsensiOpen] = useState(() =>
     currentPage === "absensi" || currentPage === "riwayat-absensi"
   );
+  const [waliKelasOpen, setWaliKelasOpen] = useState(() =>
+    currentPage === "wali-kelas" || currentPage === "wali-kelas-siswa" || 
+    currentPage === "wali-kelas-absen" || currentPage === "wali-kelas-laporan"
+  );
 
   // Expand/collapse logic based on currentPage
   React.useEffect(() => {
@@ -57,6 +61,10 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
     }
     if (currentPage === "absensi" || currentPage === "riwayat-absensi") {
       setAbsensiOpen(true);
+    }
+    if (currentPage === "wali-kelas" || currentPage === "wali-kelas-siswa" || 
+        currentPage === "wali-kelas-absen" || currentPage === "wali-kelas-laporan") {
+      setWaliKelasOpen(true);
     }
   }, [currentPage]);
 
@@ -160,6 +168,20 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
       title: "Wali Kelas",
       url: "wali-kelas",
       icon: Users,
+      submenus: [
+        {
+          title: "Siswa",
+          url: "wali-kelas-siswa",
+        },
+        {
+          title: "Absen Harian",
+          url: "wali-kelas-absen",
+        },
+        {
+          title: "Laporan Akademik",
+          url: "wali-kelas-laporan",
+        },
+      ],
     },
   ];
 
@@ -225,7 +247,6 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </SidebarMenuButton>
-                    {/* Submenu tampil hanya jika nilaiOpen == true */}
                     {nilaiOpen && (
                       <SidebarMenu>
                         {item.submenus?.map((submenu) => (
@@ -366,15 +387,46 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
                 {menuWaliKelas.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
-                      onClick={() => handlePageChange(item.url)}
-                      isActive={currentPage === item.url}
-                      className={`text-white hover:bg-primary-600 transition-colors min-w-0 ${
-                        currentPage === item.url ? 'bg-primary-700 font-semibold' : ''
+                      onClick={() => setWaliKelasOpen((prev) => !prev)}
+                      isActive={
+                        currentPage === "wali-kelas" || currentPage === "wali-kelas-siswa" || 
+                        currentPage === "wali-kelas-absen" || currentPage === "wali-kelas-laporan"
+                      }
+                      className={`flex items-center text-white hover:bg-primary-600 transition-colors min-w-0 ${
+                        currentPage === "wali-kelas" || currentPage === "wali-kelas-siswa" || 
+                        currentPage === "wali-kelas-absen" || currentPage === "wali-kelas-laporan"
+                          ? 'bg-primary-700 font-semibold'
+                          : ''
                       }`}
                     >
                       <item.icon className="h-5 w-5 flex-shrink-0" />
                       <span className="truncate">{item.title}</span>
+                      <svg
+                        className={`ml-auto h-4 w-4 transform duration-150 flex-shrink-0 ${waliKelasOpen ? "rotate-90" : ""}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </SidebarMenuButton>
+                    {waliKelasOpen && (
+                      <SidebarMenu>
+                        {item.submenus?.map((submenu) => (
+                          <SidebarMenuItem key={submenu.title}>
+                            <SidebarMenuButton
+                              onClick={() => handlePageChange(submenu.url)}
+                              isActive={currentPage === submenu.url}
+                              className={`ml-7 text-primary-100 hover:bg-primary-800 transition-colors min-w-0 ${
+                                currentPage === submenu.url ? 'bg-primary-800 font-semibold' : ''
+                              }`}
+                            >
+                              <span className="truncate">- {submenu.title}</span>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
+                    )}
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>

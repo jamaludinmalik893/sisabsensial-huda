@@ -14,6 +14,8 @@ import AdminMapelPage from '@/components/admin/AdminMapelPage';
 import NilaiRekapitulasiPage from '@/components/NilaiRekapitulasiPage';
 import NilaiEntryPage from '@/components/NilaiEntryPage';
 import LaporanPage from '@/components/LaporanPage';
+import AbsenHarianPage from '@/components/wali-kelas/AbsenHarianPage';
+import LaporanAkademikPage from '@/components/wali-kelas/LaporanAkademikPage';
 import { UserSession } from '@/types';
 
 interface MainContentRendererProps {
@@ -36,7 +38,12 @@ const MainContentRenderer: React.FC<MainContentRendererProps> = ({ currentPage, 
     case 'profil-siswa':
       return <ProfilSiswaPage userSession={userSession} />;
     case 'wali-kelas':
+    case 'wali-kelas-siswa':
       return <WaliKelasPage userSession={userSession} />;
+    case 'wali-kelas-absen':
+      return <AbsenHarianPage userSession={userSession} />;
+    case 'wali-kelas-laporan':
+      return <LaporanAkademikPage userSession={userSession} />;
     case 'nilai-rekapitulasi':
       return <NilaiRekapitulasiPage userSession={userSession} />;
     case 'nilai-entry':
