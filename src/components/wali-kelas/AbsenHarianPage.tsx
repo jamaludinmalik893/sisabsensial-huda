@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, Clock, BookOpen, User, Printer } from 'lucide-react';
+import { Calendar, Users, Clock, BookOpen, User, Printer, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import PrintableAbsenHarian from './PrintableAbsenHarian';
 
@@ -32,10 +32,23 @@ interface JurnalHari {
   jam_diklat: number;
 }
 
+interface CatatanAbsensi {
+  id_absensi: string;
+  siswa_nama: string;
+  siswa_nisn: string;
+  status: string;
+  catatan: string;
+  guru_nama: string;
+  mata_pelajaran: string;
+  waktu_mulai: string;
+  waktu_selesai: string;
+}
+
 const AbsenHarianPage: React.FC<AbsenHarianPageProps> = ({ userSession }) => {
   const [tanggalPilihan, setTanggalPilihan] = useState(new Date().toISOString().split('T')[0]);
   const [siswaAbsensi, setSiswaAbsensi] = useState<SiswaAbsensi[]>([]);
   const [jurnalHari, setJurnalHari] = useState<JurnalHari[]>([]);
+  const [catatanAbsensi, setCatatanAbsensi] = useState<CatatanAbsensi[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const printRef = useRef<HTMLDivElement>(null);
@@ -91,6 +104,42 @@ const AbsenHarianPage: React.FC<AbsenHarianPageProps> = ({ userSession }) => {
         absensiData = data || [];
       }
 
+      // Load catatan absensi dengan nama guru dan siswa
+      let catatanData = [];
+      if (jurnalIds.length > 0) {
+        const { data: catatanAbsensiData, error: catatanError } = await supabase
+          .from('absensi')
+          .select(`
+            id_absensi,
+            status,
+            catatan,
+            siswa!inner(nama_lengkap, nisn),
+            jurnal_harian!inner(
+              waktu_mulai,
+              waktu_selesai,
+              mata_pelajaran!inner(nama_mapel),
+              guru!inner(nama_lengkap)
+            )
+          `)
+          .in('id_jurnal', jurnalIds)
+          .not('catatan', 'is', null)
+          .neq('catatan', '');
+
+        if (catatanError) throw catatanError;
+        
+        catatanData = (catatanAbsensiData || []).map(item => ({
+          id_absensi: item.id_absensi,
+          siswa_nama: (item.siswa as any)?.nama_lengkap || '',
+          siswa_nisn: (item.siswa as any)?.nisn || '',
+          status: item.status,
+          catatan: item.catatan || '',
+          guru_nama: (item.jurnal_harian as any)?.guru?.nama_lengkap || '',
+          mata_pelajaran: (item.jurnal_harian as any)?.mata_pelajaran?.nama_mapel || '',
+          waktu_mulai: (item.jurnal_harian as any)?.waktu_mulai || '',
+          waktu_selesai: (item.jurnal_harian as any)?.waktu_selesai || ''
+        }));
+      }
+
       // Process data
       const processedSiswa = (siswaData || []).map(siswa => {
         const statusAbsensi: Record<string, 'Hadir' | 'Izin' | 'Sakit' | 'Alpha' | null> = {};
@@ -118,6 +167,7 @@ const AbsenHarianPage: React.FC<AbsenHarianPageProps> = ({ userSession }) => {
 
       setSiswaAbsensi(processedSiswa);
       setJurnalHari(processedJurnal);
+      setCatatanAbsensi(catatanData);
     } catch (error) {
       console.error('Error loading data absensi:', error);
       toast({
@@ -406,6 +456,73 @@ const AbsenHarianPage: React.FC<AbsenHarianPageProps> = ({ userSession }) => {
           ) : (
             <div className="text-center py-8 text-gray-500">
               Tidak ada jurnal untuk tanggal ini
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Catatan Absensi */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Catatan Absensi Tanggal {new Date(tanggalPilihan).toLocaleDateString('id-ID')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8">Memuat catatan...</div>
+          ) : catatanAbsensi.length > 0 ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Siswa</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Mata Pelajaran</TableHead>
+                    <TableHead>Waktu</TableHead>
+                    <TableHead>Catatan</TableHead>
+                    <TableHead>Guru</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {catatanAbsensi.map((catatan) => (
+                    <TableRow key={catatan.id_absensi}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{catatan.siswa_nama}</div>
+                          <div className="text-sm text-gray-500">{catatan.siswa_nisn}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(catatan.status)}
+                      </TableCell>
+                      <TableCell>{catatan.mata_pelajaran}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {catatan.waktu_mulai} - {catatan.waktu_selesai}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-xs">
+                          <p className="text-sm">{catatan.catatan}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm">{catatan.guru_nama}</span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+              <p>Tidak ada catatan absensi untuk tanggal ini</p>
             </div>
           )}
         </CardContent>
