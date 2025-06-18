@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
@@ -7,8 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Users, GraduationCap, TrendingUp, Award, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, GraduationCap, TrendingUp, Award, FileText, Download, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import LaporanAkademikFilters from './LaporanAkademikFilters';
 
 interface LaporanAkademikPageProps {
   userSession: UserSession;
@@ -35,16 +36,128 @@ interface StatistikSiswa {
   catatan_khusus: string[];
 }
 
+interface StatistikKelas {
+  total_siswa: number;
+  siswa_laki_laki: number;
+  siswa_perempuan: number;
+  rata_kehadiran: number;
+  rata_nilai: number;
+  siswa_kehadiran_baik: number;
+  siswa_nilai_baik: number;
+  siswa_perlu_perhatian: number;
+}
+
 const LaporanAkademikPage: React.FC<LaporanAkademikPageProps> = ({ userSession }) => {
   const [statistikSiswa, setStatistikSiswa] = useState<StatistikSiswa[]>([]);
+  const [filteredSiswa, setFilteredSiswa] = useState<StatistikSiswa[]>([]);
+  const [statistikKelas, setStatistikKelas] = useState<StatistikKelas>({
+    total_siswa: 0,
+    siswa_laki_laki: 0,
+    siswa_perempuan: 0,
+    rata_kehadiran: 0,
+    rata_nilai: 0,
+    siswa_kehadiran_baik: 0,
+    siswa_nilai_baik: 0,
+    siswa_perlu_perhatian: 0
+  });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  const [filters, setFilters] = useState({
+    periode: 'semester',
+    tanggalMulai: '',
+    tanggalAkhir: '',
+    jenisKelamin: 'all',
+    statusKehadiran: 'all',
+    statusNilai: 'all'
+  });
 
   useEffect(() => {
     if (userSession.isWaliKelas && userSession.kelasWali) {
       loadStatistikAkademik();
     }
-  }, [userSession]);
+  }, [userSession, filters.tanggalMulai, filters.tanggalAkhir]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [statistikSiswa, filters]);
+
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const applyFilters = () => {
+    let filtered = [...statistikSiswa];
+
+    // Filter by gender
+    if (filters.jenisKelamin !== 'all') {
+      filtered = filtered.filter(siswa => siswa.jenis_kelamin === filters.jenisKelamin);
+    }
+
+    // Filter by attendance status
+    if (filters.statusKehadiran !== 'all') {
+      switch (filters.statusKehadiran) {
+        case 'baik':
+          filtered = filtered.filter(siswa => siswa.persentase_kehadiran >= 90);
+          break;
+        case 'cukup':
+          filtered = filtered.filter(siswa => siswa.persentase_kehadiran >= 80 && siswa.persentase_kehadiran < 90);
+          break;
+        case 'kurang':
+          filtered = filtered.filter(siswa => siswa.persentase_kehadiran < 80);
+          break;
+      }
+    }
+
+    // Filter by grade status
+    if (filters.statusNilai !== 'all') {
+      switch (filters.statusNilai) {
+        case 'sangat-baik':
+          filtered = filtered.filter(siswa => siswa.rata_rata_nilai >= 85);
+          break;
+        case 'baik':
+          filtered = filtered.filter(siswa => siswa.rata_rata_nilai >= 75 && siswa.rata_rata_nilai < 85);
+          break;
+        case 'cukup':
+          filtered = filtered.filter(siswa => siswa.rata_rata_nilai >= 65 && siswa.rata_rata_nilai < 75);
+          break;
+        case 'kurang':
+          filtered = filtered.filter(siswa => siswa.rata_rata_nilai < 65);
+          break;
+      }
+    }
+
+    setFilteredSiswa(filtered);
+    calculateStatistikKelas(filtered);
+  };
+
+  const calculateStatistikKelas = (siswaData: StatistikSiswa[]) => {
+    const total = siswaData.length;
+    const lakiLaki = siswaData.filter(s => s.jenis_kelamin === 'Laki-laki').length;
+    const perempuan = siswaData.filter(s => s.jenis_kelamin === 'Perempuan').length;
+    const rataKehadiran = total > 0 
+      ? Math.round(siswaData.reduce((sum, s) => sum + s.persentase_kehadiran, 0) / total)
+      : 0;
+    const rataNilai = total > 0
+      ? Math.round(siswaData.reduce((sum, s) => sum + s.rata_rata_nilai, 0) / total * 100) / 100
+      : 0;
+    const kehadiranBaik = siswaData.filter(s => s.persentase_kehadiran >= 90).length;
+    const nilaiBaik = siswaData.filter(s => s.rata_rata_nilai >= 75).length;
+    const perluPerhatian = siswaData.filter(s => 
+      s.persentase_kehadiran < 80 || s.rata_rata_nilai < 65 || s.total_alpha > 5
+    ).length;
+
+    setStatistikKelas({
+      total_siswa: total,
+      siswa_laki_laki: lakiLaki,
+      siswa_perempuan: perempuan,
+      rata_kehadiran: rataKehadiran,
+      rata_nilai: rataNilai,
+      siswa_kehadiran_baik: kehadiranBaik,
+      siswa_nilai_baik: nilaiBaik,
+      siswa_perlu_perhatian: perluPerhatian
+    });
+  };
 
   const loadStatistikAkademik = async () => {
     if (!userSession.kelasWali) return;
@@ -144,6 +257,105 @@ const LaporanAkademikPage: React.FC<LaporanAkademikPageProps> = ({ userSession }
     }
   };
 
+  const loadSiswaKelas = async () => {
+    if (!userSession.kelasWali) return;
+    
+    setLoading(true);
+    try {
+      // Load siswa kelas
+      const { data: siswaData, error: siswaError } = await supabase
+        .from('siswa')
+        .select('id_siswa, nama_lengkap, nisn, jenis_kelamin')
+        .eq('id_kelas', userSession.kelasWali.id_kelas)
+        .order('nama_lengkap');
+
+      if (siswaError) throw siswaError;
+
+      setStatistikSiswa(siswaData);
+    } catch (error) {
+      console.error('Error loading siswa kelas:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat siswa kelas",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadStatistikAbsensi = async () => {
+    if (!userSession.kelasWali) return;
+    
+    setLoading(true);
+    try {
+      // Load statistik kehadiran per siswa
+      const { data: kehadiranData, error: kehadiranError } = await supabase
+        .from('v_statistik_kehadiran_siswa')
+        .select('*')
+        .eq('nama_kelas', userSession.kelasWali.nama_kelas);
+
+      if (kehadiranError) throw kehadiranError;
+
+      setStatistikKelas({
+        total_siswa: kehadiranData?.length || 0,
+        siswa_laki_laki: kehadiranData?.filter(s => s.jenis_kelamin === 'Laki-laki').length || 0,
+        siswa_perempuan: kehadiranData?.filter(s => s.jenis_kelamin === 'Perempuan').length || 0,
+        rata_kehadiran: kehadiranData?.reduce((sum, s) => sum + s.persentase_kehadiran, 0) / (kehadiranData?.length || 1) || 0,
+        rata_nilai: 0,
+        siswa_kehadiran_baik: kehadiranData?.filter(s => s.persentase_kehadiran >= 90).length || 0,
+        siswa_nilai_baik: 0,
+        siswa_perlu_perhatian: kehadiranData?.filter(s => 
+          s.persentase_kehadiran < 80 || s.total_alpha > 5
+        ).length || 0
+      });
+    } catch (error) {
+      console.error('Error loading statistik kehadiran:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat statistik kehadiran",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadNilaiRataRata = async () => {
+    if (!userSession.kelasWali) return;
+    
+    setLoading(true);
+    try {
+      // Load statistik nilai per siswa
+      const { data: nilaiData, error: nilaiError } = await supabase
+        .from('v_statistik_nilai')
+        .select('*')
+        .eq('nama_kelas', userSession.kelasWali.nama_kelas);
+
+      if (nilaiError) throw nilaiError;
+
+      setStatistikKelas({
+        total_siswa: nilaiData?.length || 0,
+        siswa_laki_laki: nilaiData?.filter(s => s.jenis_kelamin === 'Laki-laki').length || 0,
+        siswa_perempuan: nilaiData?.filter(s => s.jenis_kelamin === 'Perempuan').length || 0,
+        rata_kehadiran: 0,
+        rata_nilai: nilaiData?.reduce((sum, s) => sum + s.rata_rata, 0) / (nilaiData?.length || 1) || 0,
+        siswa_kehadiran_baik: 0,
+        siswa_nilai_baik: nilaiData?.filter(s => s.rata_rata >= 75).length || 0,
+        siswa_perlu_perhatian: 0
+      });
+    } catch (error) {
+      console.error('Error loading statistik nilai:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat statistik nilai",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
@@ -169,6 +381,52 @@ const LaporanAkademikPage: React.FC<LaporanAkademikPageProps> = ({ userSession }
     return { totalSiswa, siswaLakiLaki, siswaPerempuan, rataKehadiran, rataNilai };
   };
 
+  const handleExportData = () => {
+    // Create CSV content
+    const headers = [
+      'No', 'NISN', 'Nama Lengkap', 'Jenis Kelamin', 
+      'Total Hadir', 'Total Izin', 'Total Sakit', 'Total Alpha', 
+      'Persentase Kehadiran (%)', 'Rata-rata Nilai', 'Jumlah Tugas',
+      'Nilai Tertinggi', 'Nilai Terendah', 'Catatan'
+    ];
+    
+    const csvContent = [
+      headers.join(','),
+      ...filteredSiswa.map((siswa, index) => [
+        index + 1,
+        siswa.nisn,
+        `"${siswa.nama_lengkap}"`,
+        siswa.jenis_kelamin,
+        siswa.total_hadir,
+        siswa.total_izin,
+        siswa.total_sakit,
+        siswa.total_alpha,
+        siswa.persentase_kehadiran,
+        siswa.rata_rata_nilai,
+        siswa.jumlah_tugas,
+        siswa.nilai_tertinggi,
+        siswa.nilai_terendah,
+        `"${siswa.catatan_khusus.join('; ')}"`
+      ].join(','))
+    ].join('\n');
+
+    // Download CSV
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `laporan-akademik-${userSession.kelasWali?.nama_kelas}-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Sukses",
+      description: "Data laporan berhasil diexport",
+    });
+  };
+
   if (!userSession.isWaliKelas) {
     return (
       <div className="p-6">
@@ -190,47 +448,79 @@ const LaporanAkademikPage: React.FC<LaporanAkademikPageProps> = ({ userSession }
           <h1 className="text-2xl font-bold">Laporan Akademik Wali Kelas</h1>
           <p className="text-gray-600">Kelas {userSession.kelasWali?.nama_kelas}</p>
         </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={handleExportData} variant="outline" disabled={loading}>
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
-      {/* Statistik Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      {/* Filter Component */}
+      <LaporanAkademikFilters
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onRefresh={loadStatistikAkademik}
+        loading={loading}
+      />
+
+      {/* Enhanced Statistics Overview */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center mb-2">
               <Users className="h-6 w-6 text-blue-600" />
             </div>
-            <div className="text-2xl font-bold">{stats.totalSiswa}</div>
+            <div className="text-2xl font-bold">{statistikKelas.total_siswa}</div>
             <div className="text-sm text-gray-500">Total Siswa</div>
           </CardContent>
         </Card>
+        
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{stats.siswaLakiLaki}</div>
+            <div className="text-2xl font-bold text-blue-600">{statistikKelas.siswa_laki_laki}</div>
             <div className="text-sm text-gray-500">Laki-laki</div>
           </CardContent>
         </Card>
+        
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-pink-600">{stats.siswaPerempuan}</div>
+            <div className="text-2xl font-bold text-pink-600">{statistikKelas.siswa_perempuan}</div>
             <div className="text-sm text-gray-500">Perempuan</div>
           </CardContent>
         </Card>
+        
         <Card>
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center mb-2">
               <TrendingUp className="h-6 w-6 text-green-600" />
             </div>
-            <div className="text-2xl font-bold">{stats.rataKehadiran}%</div>
+            <div className="text-2xl font-bold">{statistikKelas.rata_kehadiran}%</div>
             <div className="text-sm text-gray-500">Rata Kehadiran</div>
           </CardContent>
         </Card>
+        
         <Card>
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center mb-2">
               <Award className="h-6 w-6 text-purple-600" />
             </div>
-            <div className="text-2xl font-bold">{stats.rataNilai}</div>
+            <div className="text-2xl font-bold">{statistikKelas.rata_nilai}</div>
             <div className="text-sm text-gray-500">Rata Nilai</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">{statistikKelas.siswa_kehadiran_baik}</div>
+            <div className="text-sm text-gray-500">Kehadiran Baik</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-red-600">{statistikKelas.siswa_perlu_perhatian}</div>
+            <div className="text-sm text-gray-500">Perlu Perhatian</div>
           </CardContent>
         </Card>
       </div>
@@ -256,7 +546,7 @@ const LaporanAkademikPage: React.FC<LaporanAkademikPageProps> = ({ userSession }
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {statistikSiswa.map((siswa) => (
+                  {filteredSiswa.map((siswa) => (
                     <TableRow key={siswa.id_siswa}>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -330,7 +620,7 @@ const LaporanAkademikPage: React.FC<LaporanAkademikPageProps> = ({ userSession }
             </div>
           )}
           
-          {!loading && statistikSiswa.length === 0 && (
+          {!loading && filteredSiswa.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               Tidak ada data siswa di kelas ini
             </div>

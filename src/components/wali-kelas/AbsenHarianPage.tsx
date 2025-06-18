@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, Clock, BookOpen, User } from 'lucide-react';
+import { Calendar, Users, Clock, BookOpen, User, Printer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import PrintableAbsenHarian from './PrintableAbsenHarian';
 
 interface AbsenHarianPageProps {
   userSession: UserSession;
@@ -38,6 +38,7 @@ const AbsenHarianPage: React.FC<AbsenHarianPageProps> = ({ userSession }) => {
   const [jurnalHari, setJurnalHari] = useState<JurnalHari[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (userSession.isWaliKelas && userSession.kelasWali) {
@@ -152,6 +153,92 @@ const AbsenHarianPage: React.FC<AbsenHarianPageProps> = ({ userSession }) => {
     }, 0);
   };
 
+  const handlePrint = () => {
+    const printContent = printRef.current;
+    if (!printContent) return;
+
+    const originalDisplay = printContent.style.display;
+    printContent.style.display = 'block';
+    
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Presensi Harian - ${userSession.kelasWali?.nama_kelas}</title>
+          <style>
+            @page {
+              size: A4;
+              margin: 1cm;
+            }
+            body {
+              font-family: Arial, sans-serif;
+              font-size: 12px;
+              line-height: 1.4;
+              margin: 0;
+              padding: 0;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            th, td {
+              border: 1px solid black;
+              padding: 4px;
+              text-align: center;
+            }
+            th {
+              background-color: #f0f0f0;
+              font-weight: bold;
+            }
+            .text-left {
+              text-align: left;
+            }
+            .text-center {
+              text-align: center;
+            }
+            h1, h2 {
+              margin: 5px 0;
+            }
+            .mb-2 { margin-bottom: 8px; }
+            .mb-4 { margin-bottom: 16px; }
+            .mb-6 { margin-bottom: 24px; }
+            .mt-4 { margin-top: 16px; }
+            .p-1 { padding: 4px; }
+            .p-2 { padding: 8px; }
+            .font-bold { font-weight: bold; }
+            .font-semibold { font-weight: 600; }
+            .text-xs { font-size: 10px; }
+            .text-sm { font-size: 11px; }
+            .text-lg { font-size: 16px; }
+            .w-8 { width: 32px; }
+            .w-6 { width: 24px; }
+            .w-16 { width: 64px; }
+            .h-12 { height: 48px; }
+            .flex { display: flex; }
+            .justify-between { justify-content: space-between; }
+            .justify-end { justify-content: flex-end; }
+          </style>
+        </head>
+        <body>
+          ${printContent.innerHTML}
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+      printContent.style.display = originalDisplay;
+    }, 250);
+  };
+
   if (!userSession.isWaliKelas) {
     return (
       <div className="p-6">
@@ -184,6 +271,10 @@ const AbsenHarianPage: React.FC<AbsenHarianPageProps> = ({ userSession }) => {
           </div>
           <Button onClick={loadDataAbsensi} disabled={loading}>
             {loading ? 'Memuat...' : 'Refresh'}
+          </Button>
+          <Button onClick={handlePrint} variant="outline" disabled={loading}>
+            <Printer className="h-4 w-4 mr-2" />
+            Print
           </Button>
         </div>
       </div>
@@ -319,6 +410,17 @@ const AbsenHarianPage: React.FC<AbsenHarianPageProps> = ({ userSession }) => {
           )}
         </CardContent>
       </Card>
+
+      {/* Printable Component */}
+      <div ref={printRef}>
+        <PrintableAbsenHarian
+          tanggal={tanggalPilihan}
+          siswaAbsensi={siswaAbsensi}
+          jurnalHari={jurnalHari}
+          namaKelas={userSession.kelasWali?.nama_kelas || ''}
+          waliKelas={userSession.guru.nama_lengkap}
+        />
+      </div>
     </div>
   );
 };
