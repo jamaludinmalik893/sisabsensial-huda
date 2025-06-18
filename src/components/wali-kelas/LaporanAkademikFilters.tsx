@@ -54,7 +54,7 @@ const LaporanAkademikFilters: React.FC<LaporanAkademikFiltersProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="tanggal-mulai">Tanggal Mulai</Label>
+            <Label htmlFor="tanggalMulai">Tanggal Mulai</Label>
             <Input
               type="date"
               value={filters.tanggalMulai}
@@ -63,7 +63,7 @@ const LaporanAkademikFilters: React.FC<LaporanAkademikFiltersProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="tanggal-akhir">Tanggal Akhir</Label>
+            <Label htmlFor="tanggalAkhir">Tanggal Akhir</Label>
             <Input
               type="date"
               value={filters.tanggalAkhir}
@@ -72,7 +72,7 @@ const LaporanAkademikFilters: React.FC<LaporanAkademikFiltersProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="jenis-kelamin">Jenis Kelamin</Label>
+            <Label htmlFor="jenisKelamin">Jenis Kelamin</Label>
             <Select value={filters.jenisKelamin} onValueChange={(value) => onFilterChange('jenisKelamin', value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Semua" />
@@ -86,7 +86,7 @@ const LaporanAkademikFilters: React.FC<LaporanAkademikFiltersProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="status-kehadiran">Status Kehadiran</Label>
+            <Label htmlFor="statusKehadiran">Status Kehadiran</Label>
             <Select value={filters.statusKehadiran} onValueChange={(value) => onFilterChange('statusKehadiran', value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Semua" />
@@ -101,7 +101,7 @@ const LaporanAkademikFilters: React.FC<LaporanAkademikFiltersProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="status-nilai">Status Nilai</Label>
+            <Label htmlFor="statusNilai">Status Nilai</Label>
             <Select value={filters.statusNilai} onValueChange={(value) => onFilterChange('statusNilai', value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Semua" />
