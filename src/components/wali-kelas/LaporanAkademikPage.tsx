@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
@@ -255,105 +256,6 @@ const LaporanAkademikPage: React.FC<LaporanAkademikPageProps> = ({ userSession }
       toast({
         title: "Error",
         description: "Gagal memuat statistik akademik",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadSiswaKelas = async () => {
-    if (!userSession.kelasWali) return;
-    
-    setLoading(true);
-    try {
-      // Load siswa kelas
-      const { data: siswaData, error: siswaError } = await supabase
-        .from('siswa')
-        .select('id_siswa, nama_lengkap, nisn, jenis_kelamin')
-        .eq('id_kelas', userSession.kelasWali.id_kelas)
-        .order('nama_lengkap');
-
-      if (siswaError) throw siswaError;
-
-      setStatistikSiswa(siswaData);
-    } catch (error) {
-      console.error('Error loading siswa kelas:', error);
-      toast({
-        title: "Error",
-        description: "Gagal memuat siswa kelas",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadStatistikAbsensi = async () => {
-    if (!userSession.kelasWali) return;
-    
-    setLoading(true);
-    try {
-      // Load statistik kehadiran per siswa
-      const { data: kehadiranData, error: kehadiranError } = await supabase
-        .from('v_statistik_kehadiran_siswa')
-        .select('*')
-        .eq('nama_kelas', userSession.kelasWali.nama_kelas);
-
-      if (kehadiranError) throw kehadiranError;
-
-      setStatistikKelas({
-        total_siswa: kehadiranData?.length || 0,
-        siswa_laki_laki: kehadiranData?.filter(s => s.jenis_kelamin === 'Laki-laki').length || 0,
-        siswa_perempuan: kehadiranData?.filter(s => s.jenis_kelamin === 'Perempuan').length || 0,
-        rata_kehadiran: kehadiranData?.reduce((sum, s) => sum + s.persentase_kehadiran, 0) / (kehadiranData?.length || 1) || 0,
-        rata_nilai: 0,
-        siswa_kehadiran_baik: kehadiranData?.filter(s => s.persentase_kehadiran >= 90).length || 0,
-        siswa_nilai_baik: 0,
-        siswa_perlu_perhatian: kehadiranData?.filter(s => 
-          s.persentase_kehadiran < 80 || s.total_alpha > 5
-        ).length || 0
-      });
-    } catch (error) {
-      console.error('Error loading statistik kehadiran:', error);
-      toast({
-        title: "Error",
-        description: "Gagal memuat statistik kehadiran",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadNilaiRataRata = async () => {
-    if (!userSession.kelasWali) return;
-    
-    setLoading(true);
-    try {
-      // Load statistik nilai per siswa
-      const { data: nilaiData, error: nilaiError } = await supabase
-        .from('v_statistik_nilai')
-        .select('*')
-        .eq('nama_kelas', userSession.kelasWali.nama_kelas);
-
-      if (nilaiError) throw nilaiError;
-
-      setStatistikKelas({
-        total_siswa: nilaiData?.length || 0,
-        siswa_laki_laki: nilaiData?.filter(s => s.jenis_kelamin === 'Laki-laki').length || 0,
-        siswa_perempuan: nilaiData?.filter(s => s.jenis_kelamin === 'Perempuan').length || 0,
-        rata_kehadiran: 0,
-        rata_nilai: nilaiData?.reduce((sum, s) => sum + s.rata_rata, 0) / (nilaiData?.length || 1) || 0,
-        siswa_kehadiran_baik: 0,
-        siswa_nilai_baik: nilaiData?.filter(s => s.rata_rata >= 75).length || 0,
-        siswa_perlu_perhatian: 0
-      });
-    } catch (error) {
-      console.error('Error loading statistik nilai:', error);
-      toast({
-        title: "Error",
-        description: "Gagal memuat statistik nilai",
         variant: "destructive"
       });
     } finally {
@@ -637,3 +539,4 @@ const LaporanAkademikPage: React.FC<LaporanAkademikPageProps> = ({ userSession }
 };
 
 export default LaporanAkademikPage;
+
