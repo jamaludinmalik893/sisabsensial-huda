@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
@@ -164,7 +165,7 @@ const LaporanAkademikPage: React.FC<LaporanAkademikPageProps> = ({ userSession }
     
     setLoading(true);
     try {
-      // Load siswa kelas
+      // Load siswa kelas with complete data
       const { data: siswaData, error: siswaError } = await supabase
         .from('siswa')
         .select('id_siswa, nama_lengkap, nisn, jenis_kelamin')
@@ -189,8 +190,8 @@ const LaporanAkademikPage: React.FC<LaporanAkademikPageProps> = ({ userSession }
 
       if (nilaiError) throw nilaiError;
 
-      // Combine data
-      const combinedData = (siswaData || []).map(siswa => {
+      // Combine data with proper mapping
+      const combinedData: StatistikSiswa[] = (siswaData || []).map(siswa => {
         // Aggregate kehadiran data for this student
         const kehadiranSiswa = kehadiranData?.filter(k => k.id_siswa === siswa.id_siswa) || [];
         const totalHadir = kehadiranSiswa.reduce((sum, k) => sum + (k.total_hadir || 0), 0);
@@ -198,6 +199,7 @@ const LaporanAkademikPage: React.FC<LaporanAkademikPageProps> = ({ userSession }
         const totalSakit = kehadiranSiswa.reduce((sum, k) => sum + (k.total_sakit || 0), 0);
         const totalAlpha = kehadiranSiswa.reduce((sum, k) => sum + (k.total_alpha || 0), 0);
         const totalPertemuan = kehadiranSiswa.reduce((sum, k) => sum + (k.total_pertemuan || 0), 0);
+        // Use persentase_hadir from database view
         const persentaseKehadiran = totalPertemuan > 0 ? Math.round((totalHadir / totalPertemuan) * 100) : 0;
 
         // Aggregate nilai data for this student
@@ -229,7 +231,10 @@ const LaporanAkademikPage: React.FC<LaporanAkademikPageProps> = ({ userSession }
         }
 
         return {
-          ...siswa,
+          id_siswa: siswa.id_siswa,
+          nama_lengkap: siswa.nama_lengkap,
+          nisn: siswa.nisn,
+          jenis_kelamin: siswa.jenis_kelamin,
           total_hadir: totalHadir,
           total_izin: totalIzin,
           total_sakit: totalSakit,
