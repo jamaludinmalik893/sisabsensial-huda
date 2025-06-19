@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserSession } from '@/types';
-import { useLaporanKehadiran } from '@/hooks/useLaporanData';
+import { useLaporanKehadiran } from '@/hooks/useLaporanKehadiran';
 import StatistikOverview from './components/StatistikOverview';
 import SiswaKehadiranTable from './components/SiswaKehadiranTable';
 import KehadiranCharts from './components/KehadiranCharts';
@@ -33,7 +32,12 @@ const LaporanKehadiran: React.FC<LaporanKehadiranProps> = ({
     overview,
     loading,
     error
-  } = useLaporanKehadiran(userSession.guru.id_guru, filters);
+  } = useLaporanKehadiran(userSession.guru.id_guru, {
+    tanggalMulai: filters.tanggalMulai,
+    tanggalAkhir: filters.tanggalAkhir,
+    kelas: filters.kelas,
+    mapel: filters.mapel
+  });
 
   if (loading) {
     return (

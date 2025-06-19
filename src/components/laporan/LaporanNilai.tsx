@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserSession } from '@/types';
-import { useLaporanNilai } from '@/hooks/useLaporanData';
+import { useLaporanNilai } from '@/hooks/useLaporanNilai';
 import { AlertCircle, TrendingUp, Users, Award, Target } from 'lucide-react';
 
 interface LaporanNilaiProps {
@@ -26,7 +25,12 @@ const LaporanNilai: React.FC<LaporanNilaiProps> = ({
   filters,
   onSiswaClick 
 }) => {
-  const { statistikNilai, loading, error } = useLaporanNilai(userSession.guru.id_guru, filters);
+  const { statistikNilai, loading, error } = useLaporanNilai(userSession.guru.id_guru, {
+    tanggalMulai: filters.tanggalMulai,
+    tanggalAkhir: filters.tanggalAkhir,
+    kelas: filters.kelas,
+    mapel: filters.mapel
+  });
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
