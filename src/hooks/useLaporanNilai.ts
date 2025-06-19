@@ -49,7 +49,8 @@ export const useLaporanNilai = (
           if (filters.tanggalAkhir) {
             nilaiQuery = nilaiQuery.lte('tanggal_nilai', filters.tanggalAkhir);
           }
-          if (filters.mapel !== 'all') {
+          // Convert "semua" to null for proper UUID handling
+          if (filters.mapel !== 'all' && filters.mapel !== 'semua') {
             nilaiQuery = nilaiQuery.eq('id_mapel', filters.mapel);
           }
 

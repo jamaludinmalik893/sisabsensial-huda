@@ -33,6 +33,10 @@ export const useLaporanKehadiran = (
         setLoading(true);
         setError(null);
 
+        // Convert "semua" to null for proper UUID handling
+        const kelasId = filters.kelas === 'semua' || filters.kelas === 'all' ? null : filters.kelas;
+        const mapelId = filters.mapel === 'semua' || filters.mapel === 'all' ? null : filters.mapel;
+
         // Get attendance statistics
         const { data: attendanceData, error: attendanceError } = await supabase.rpc(
           'get_attendance_statistics',
@@ -40,8 +44,8 @@ export const useLaporanKehadiran = (
             p_guru_id: guruId,
             p_start_date: filters.tanggalMulai || null,
             p_end_date: filters.tanggalAkhir || null,
-            p_kelas_id: filters.kelas !== 'all' ? filters.kelas : null,
-            p_mapel_id: filters.mapel !== 'all' ? filters.mapel : null
+            p_kelas_id: kelasId,
+            p_mapel_id: mapelId
           }
         );
 
@@ -58,8 +62,8 @@ export const useLaporanKehadiran = (
             p_guru_id: guruId,
             p_start_date: filters.tanggalMulai || null,
             p_end_date: filters.tanggalAkhir || null,
-            p_kelas_id: filters.kelas !== 'all' ? filters.kelas : null,
-            p_mapel_id: filters.mapel !== 'all' ? filters.mapel : null
+            p_kelas_id: kelasId,
+            p_mapel_id: mapelId
           }
         );
 

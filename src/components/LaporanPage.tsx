@@ -21,9 +21,9 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
   const [selectedPeriode, setSelectedPeriode] = useState('bulanan');
   const [tanggalMulai, setTanggalMulai] = useState('');
   const [tanggalAkhir, setTanggalAkhir] = useState('');
-  const [selectedKelas, setSelectedKelas] = useState('semua');
-  const [selectedMapel, setSelectedMapel] = useState('semua');
-  const [selectedSiswa, setSelectedSiswa] = useState('semua');
+  const [selectedKelas, setSelectedKelas] = useState('all');
+  const [selectedMapel, setSelectedMapel] = useState('all');
+  const [selectedSiswa, setSelectedSiswa] = useState('all');
 
   // Student profile popup state
   const [selectedSiswaForPopup, setSelectedSiswaForPopup] = useState<any>(null);
@@ -98,7 +98,7 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
                   <SelectValue placeholder="Pilih Kelas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="semua">Semua Kelas</SelectItem>
+                  <SelectItem value="all">Semua Kelas</SelectItem>
                   <SelectItem value="X-RPL-1">X RPL 1</SelectItem>
                   <SelectItem value="X-RPL-2">X RPL 2</SelectItem>
                   <SelectItem value="XI-RPL-1">XI RPL 1</SelectItem>
@@ -114,7 +114,7 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
                   <SelectValue placeholder={loadingMapel ? "Memuat..." : "Pilih Mapel"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="semua">Semua Mapel</SelectItem>
+                  <SelectItem value="all">Semua Mapel</SelectItem>
                   {mataPelajaran.map((mapel) => (
                     <SelectItem key={mapel.id_mapel} value={mapel.id_mapel}>
                       {mapel.nama_mapel}
@@ -131,7 +131,7 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
                   <SelectValue placeholder="Pilih Siswa" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="semua">Semua Siswa</SelectItem>
+                  <SelectItem value="all">Semua Siswa</SelectItem>
                   <SelectItem value="individu">Pilih Individu</SelectItem>
                 </SelectContent>
               </Select>
