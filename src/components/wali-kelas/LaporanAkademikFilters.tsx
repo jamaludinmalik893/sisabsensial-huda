@@ -78,7 +78,7 @@ const LaporanAkademikFilters: React.FC<LaporanAkademikFiltersProps> = ({
                 <SelectValue placeholder="Semua" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Semua</SelectItem>
+                <SelectItem value="semua">Semua</SelectItem>
                 <SelectItem value="Laki-laki">Laki-laki</SelectItem>
                 <SelectItem value="Perempuan">Perempuan</SelectItem>
               </SelectContent>
@@ -92,7 +92,7 @@ const LaporanAkademikFilters: React.FC<LaporanAkademikFiltersProps> = ({
                 <SelectValue placeholder="Semua" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Semua</SelectItem>
+                <SelectItem value="semua">Semua</SelectItem>
                 <SelectItem value="baik">Kehadiran Baik (≥90%)</SelectItem>
                 <SelectItem value="cukup">Kehadiran Cukup (80-89%)</SelectItem>
                 <SelectItem value="kurang">Kehadiran Kurang (&lt;80%)</SelectItem>
@@ -107,7 +107,7 @@ const LaporanAkademikFilters: React.FC<LaporanAkademikFiltersProps> = ({
                 <SelectValue placeholder="Semua" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Semua</SelectItem>
+                <SelectItem value="semua">Semua</SelectItem>
                 <SelectItem value="sangat-baik">Sangat Baik (≥85)</SelectItem>
                 <SelectItem value="baik">Baik (75-84)</SelectItem>
                 <SelectItem value="cukup">Cukup (65-74)</SelectItem>

@@ -52,7 +52,7 @@ const ProfilSiswaFilter: React.FC<ProfilSiswaFilterProps> = ({
               <SelectValue placeholder="Semua Kelas" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua Kelas</SelectItem>
+              <SelectItem value="semua">Semua Kelas</SelectItem>
               {kelasList.map((kelas) => (
                 <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
                   {kelas.nama_kelas}

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -85,10 +86,10 @@ const RiwayatAbsensiFilters: React.FC<RiwayatAbsensiFiltersProps> = ({
   const columns = ["No", "Nama", ...dateList.map(([date]) => date), "Hadir", "Izin", "Sakit", "Alpha"];
 
   // Mendapatkan nama mapel & kelas dari id terpilih
-  const mapelName = selectedMapel === "all"
+  const mapelName = selectedMapel === "semua"
     ? "Semua Mata Pelajaran"
     : mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel ?? "";
-  const kelasName = selectedKelas === "all"
+  const kelasName = selectedKelas === "semua"
     ? "Semua Kelas"
     : kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas ?? "";
 
@@ -110,7 +111,7 @@ const RiwayatAbsensiFilters: React.FC<RiwayatAbsensiFiltersProps> = ({
               </SelectTrigger>
               <SelectContent>
                 {mapelList.length > 1 && (
-                  <SelectItem value="all">Semua Mata Pelajaran</SelectItem>
+                  <SelectItem value="semua">Semua Mata Pelajaran</SelectItem>
                 )}
                 {mapelList.map((mapel) => (
                   <SelectItem key={mapel.id_mapel} value={mapel.id_mapel}>
@@ -127,7 +128,7 @@ const RiwayatAbsensiFilters: React.FC<RiwayatAbsensiFiltersProps> = ({
                 <SelectValue placeholder="Pilih kelas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Semua Kelas</SelectItem>
+                <SelectItem value="semua">Semua Kelas</SelectItem>
                 {kelasList.map((kelas) => (
                   <SelectItem key={kelas.id_kelas} value={kelas.id_kelas}>
                     {kelas.nama_kelas}
