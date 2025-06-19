@@ -10,6 +10,7 @@ import { useGuruMataPelajaran } from '@/hooks/useGuruMataPelajaran';
 import LaporanKehadiran from './laporan/LaporanKehadiran';
 import LaporanNilai from './laporan/LaporanNilai';
 import LaporanGabungan from './laporan/LaporanGabungan';
+import ProfilSiswaPopup from './ProfilSiswaPopup';
 import { FileText, Filter } from 'lucide-react';
 
 interface LaporanPageProps {
@@ -20,12 +21,21 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
   const [selectedPeriode, setSelectedPeriode] = useState('bulanan');
   const [tanggalMulai, setTanggalMulai] = useState('');
   const [tanggalAkhir, setTanggalAkhir] = useState('');
-  const [selectedKelas, setSelectedKelas] = useState('all');
-  const [selectedMapel, setSelectedMapel] = useState('all');
-  const [selectedSiswa, setSelectedSiswa] = useState('all');
+  const [selectedKelas, setSelectedKelas] = useState('semua');
+  const [selectedMapel, setSelectedMapel] = useState('semua');
+  const [selectedSiswa, setSelectedSiswa] = useState('semua');
+
+  // Student profile popup state
+  const [selectedSiswaForPopup, setSelectedSiswaForPopup] = useState<any>(null);
+  const [isProfilOpen, setIsProfilOpen] = useState(false);
 
   // Fetch mata pelajaran yang diampu guru
   const { mataPelajaran, loading: loadingMapel } = useGuruMataPelajaran(userSession.guru.id_guru);
+
+  const handleSiswaClick = (siswa: any) => {
+    setSelectedSiswaForPopup(siswa);
+    setIsProfilOpen(true);
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -88,7 +98,7 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
                   <SelectValue placeholder="Pilih Kelas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Kelas</SelectItem>
+                  <SelectItem value="semua">Semua Kelas</SelectItem>
                   <SelectItem value="X-RPL-1">X RPL 1</SelectItem>
                   <SelectItem value="X-RPL-2">X RPL 2</SelectItem>
                   <SelectItem value="XI-RPL-1">XI RPL 1</SelectItem>
@@ -104,7 +114,7 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
                   <SelectValue placeholder={loadingMapel ? "Memuat..." : "Pilih Mapel"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Mapel</SelectItem>
+                  <SelectItem value="semua">Semua Mapel</SelectItem>
                   {mataPelajaran.map((mapel) => (
                     <SelectItem key={mapel.id_mapel} value={mapel.id_mapel}>
                       {mapel.nama_mapel}
@@ -121,7 +131,7 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
                   <SelectValue placeholder="Pilih Siswa" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Siswa</SelectItem>
+                  <SelectItem value="semua">Semua Siswa</SelectItem>
                   <SelectItem value="individu">Pilih Individu</SelectItem>
                 </SelectContent>
               </Select>
@@ -149,6 +159,7 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
               mapel: selectedMapel,
               siswa: selectedSiswa
             }}
+            onSiswaClick={handleSiswaClick}
           />
         </TabsContent>
 
@@ -163,6 +174,7 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
               mapel: selectedMapel,
               siswa: selectedSiswa
             }}
+            onSiswaClick={handleSiswaClick}
           />
         </TabsContent>
 
@@ -177,9 +189,20 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
               mapel: selectedMapel,
               siswa: selectedSiswa
             }}
+            onSiswaClick={handleSiswaClick}
           />
         </TabsContent>
       </Tabs>
+
+      {/* Student Profile Popup */}
+      <ProfilSiswaPopup
+        siswa={selectedSiswaForPopup}
+        isOpen={isProfilOpen}
+        onClose={() => {
+          setIsProfilOpen(false);
+          setSelectedSiswaForPopup(null);
+        }}
+      />
     </div>
   );
 };

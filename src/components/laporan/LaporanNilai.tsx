@@ -1,13 +1,12 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserSession } from '@/types';
-import { TrendingUp, Award, BookOpen, Target } from 'lucide-react';
 import { useLaporanNilai } from '@/hooks/useLaporanData';
-import ExportButtons from '../ExportButtons';
+import { AlertCircle, TrendingUp, Users, Award, Target } from 'lucide-react';
 
 interface LaporanNilaiProps {
   userSession: UserSession;
@@ -19,115 +18,56 @@ interface LaporanNilaiProps {
     mapel: string;
     siswa: string;
   };
+  onSiswaClick?: (siswa: any) => void;
 }
 
-const LaporanNilai: React.FC<LaporanNilaiProps> = ({ userSession, filters }) => {
-  const { statistikNilai, loading, error } = useLaporanNilai(userSession.guru.id_guru, {
-    tanggalMulai: filters.tanggalMulai,
-    tanggalAkhir: filters.tanggalAkhir,
-    kelas: filters.kelas,
-    mapel: filters.mapel
-  });
+const LaporanNilai: React.FC<LaporanNilaiProps> = ({ 
+  userSession, 
+  filters,
+  onSiswaClick 
+}) => {
+  const { statistikNilai, loading, error } = useLaporanNilai(userSession.guru.id_guru, filters);
 
-  // Calculate statistics from real data
-  const stats = React.useMemo(() => {
-    if (!statistikNilai.length) {
-      return {
-        rataRataKelas: 0,
-        nilaiTertinggi: 0,
-        totalTugas: 0,
-        tingkatPenyelesaian: 0
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const getPerformanceBadge = (nilai: number) => {
+    if (nilai >= 85) return <Badge className="bg-green-500">Sangat Baik</Badge>;
+    if (nilai >= 75) return <Badge className="bg-blue-500">Baik</Badge>;
+    if (nilai >= 65) return <Badge className="bg-yellow-500">Cukup</Badge>;
+    return <Badge className="bg-red-500">Perlu Perhatian</Badge>;
+  };
+
+  const handleSiswaClick = (siswa: any) => {
+    if (onSiswaClick) {
+      const studentData = {
+        id_siswa: siswa.nama_siswa,
+        nama_lengkap: siswa.nama_siswa,
+        nisn: siswa.nisn,
+        jenis_kelamin: 'Laki-laki',
+        kelas: { nama_kelas: siswa.kelas }
       };
+      onSiswaClick(studentData);
     }
-
-    const rataRataKelas = statistikNilai.reduce((acc, curr) => acc + curr.rata_rata_nilai, 0) / statistikNilai.length;
-    const nilaiTertinggi = Math.max(...statistikNilai.map(s => s.nilai_tertinggi));
-    const totalTugas = statistikNilai.reduce((acc, curr) => acc + curr.jumlah_tugas, 0);
-    const totalSelesai = statistikNilai.reduce((acc, curr) => acc + curr.tugas_selesai, 0);
-    const tingkatPenyelesaian = totalTugas > 0 ? Math.round((totalSelesai / totalTugas) * 100) : 0;
-
-    return {
-      rataRataKelas: Math.round(rataRataKelas * 10) / 10,
-      nilaiTertinggi,
-      totalTugas,
-      tingkatPenyelesaian
-    };
-  }, [statistikNilai]);
-
-  // Generate distribution data
-  const distribusiNilai = React.useMemo(() => {
-    if (!statistikNilai.length) return [];
-
-    const ranges = {
-      '90-100': 0,
-      '80-89': 0,
-      '70-79': 0,
-      '60-69': 0,
-      '<60': 0
-    };
-
-    statistikNilai.forEach(siswa => {
-      const nilai = siswa.rata_rata_nilai;
-      if (nilai >= 90) ranges['90-100']++;
-      else if (nilai >= 80) ranges['80-89']++;
-      else if (nilai >= 70) ranges['70-79']++;
-      else if (nilai >= 60) ranges['60-69']++;
-      else ranges['<60']++;
-    });
-
-    return [
-      { range: '90-100', jumlah: ranges['90-100'], fill: '#22c55e' },
-      { range: '80-89', jumlah: ranges['80-89'], fill: '#3b82f6' },
-      { range: '70-79', jumlah: ranges['70-79'], fill: '#eab308' },
-      { range: '60-69', jumlah: ranges['60-69'], fill: '#f97316' },
-      { range: '<60', jumlah: ranges['<60'], fill: '#ef4444' }
-    ];
-  }, [statistikNilai]);
-
-  const getNilaiGrade = (nilai: number) => {
-    if (nilai >= 90) return <Badge className="bg-green-500">A</Badge>;
-    if (nilai >= 80) return <Badge className="bg-blue-500">B</Badge>;
-    if (nilai >= 70) return <Badge className="bg-yellow-500">C</Badge>;
-    if (nilai >= 60) return <Badge className="bg-orange-500">D</Badge>;
-    return <Badge className="bg-red-500">E</Badge>;
   };
 
-  const getRankingBadge = (ranking: number) => {
-    if (ranking === 1) return <Badge className="bg-yellow-500">🥇 #{ranking}</Badge>;
-    if (ranking === 2) return <Badge className="bg-gray-400">🥈 #{ranking}</Badge>;
-    if (ranking === 3) return <Badge className="bg-amber-600">🥉 #{ranking}</Badge>;
-    return <Badge variant="outline">#{ranking}</Badge>;
-  };
-
-  // Prepare export data
-  const exportData = statistikNilai.map((siswa, index) => ({
-    'No': index + 1,
-    'Nama Siswa': siswa.nama_siswa,
-    'NISN': siswa.nisn,
-    'Kelas': siswa.kelas,
-    'Rata-rata Nilai': siswa.rata_rata_nilai,
-    'Nilai Tertinggi': siswa.nilai_tertinggi,
-    'Nilai Terendah': siswa.nilai_terendah,
-    'Tugas Selesai': `${siswa.tugas_selesai}/${siswa.jumlah_tugas}`,
-    'Persentase Tugas (%)': Math.round((siswa.tugas_selesai / siswa.jumlah_tugas) * 100),
-    'Ranking': siswa.ranking
-  }));
+  // Calculate overview statistics
+  const totalSiswa = statistikNilai.length;
+  const rataRataNilai = totalSiswa > 0 
+    ? Math.round(statistikNilai.reduce((sum, s) => sum + s.rata_rata_nilai, 0) / totalSiswa * 100) / 100
+    : 0;
+  const nilaiTertinggi = totalSiswa > 0 
+    ? Math.max(...statistikNilai.map(s => s.rata_rata_nilai))
+    : 0;
+  const siswaBerprestasi = statistikNilai.filter(s => s.rata_rata_nilai >= 85).length;
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <div className="animate-pulse">
-                  <div className="h-8 w-8 bg-gray-200 rounded mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-8 bg-gray-200 rounded"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Memuat data nilai...</p>
         </div>
       </div>
     );
@@ -135,162 +75,150 @@ const LaporanNilai: React.FC<LaporanNilaiProps> = ({ userSession, filters }) => 
 
   if (error) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <p className="text-red-600 mb-2">Terjadi kesalahan saat memuat data</p>
-          <p className="text-gray-500 text-sm">{error}</p>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 text-red-600">
+            <AlertCircle className="h-5 w-5" />
+            <span>Error: {error}</span>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Statistik Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Overview Statistics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <Award className="h-8 w-8 text-yellow-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Rata-rata Kelas</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.rataRataKelas}</p>
-              </div>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <Users className="h-6 w-6 text-blue-600" />
             </div>
+            <div className="text-2xl font-bold">{totalSiswa}</div>
+            <div className="text-sm text-gray-500">Total Siswa</div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Nilai Tertinggi</p>
-                <p className="text-2xl font-bold text-green-600">{stats.nilaiTertinggi}</p>
-              </div>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <TrendingUp className="h-6 w-6 text-green-600" />
             </div>
+            <div className="text-2xl font-bold">{rataRataNilai}</div>
+            <div className="text-sm text-gray-500">Rata-rata Nilai</div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <BookOpen className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Tugas</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.totalTugas}</p>
-              </div>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <Award className="h-6 w-6 text-purple-600" />
             </div>
+            <div className="text-2xl font-bold">{nilaiTertinggi}</div>
+            <div className="text-sm text-gray-500">Nilai Tertinggi</div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <Target className="h-8 w-8 text-purple-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Tingkat Penyelesaian</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.tingkatPenyelesaian}%</p>
-              </div>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <Target className="h-6 w-6 text-orange-600" />
             </div>
+            <div className="text-2xl font-bold">{siswaBerprestasi}</div>
+            <div className="text-sm text-gray-500">Siswa Berprestasi</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Grafik */}
-      {distribusiNilai.some(d => d.jumlah > 0) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pie Chart Distribusi Nilai */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Distribusi Nilai Siswa</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={distribusiNilai}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ range, percent }) => `${range}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="jumlah"
-                  >
-                    {distribusiNilai.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Tabel Detail Siswa */}
+      {/* Detailed Table */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Detail Nilai per Siswa</CardTitle>
-            {exportData.length > 0 && (
-              <ExportButtons 
-                data={exportData}
-                fileName={`laporan-nilai-${new Date().toISOString().split('T')[0]}`}
-                columns={Object.keys(exportData[0] || {})}
-              />
-            )}
-          </div>
+          <CardTitle>Detail Nilai Siswa</CardTitle>
         </CardHeader>
         <CardContent>
-          {statistikNilai.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Ranking</TableHead>
-                  <TableHead>Nama Siswa</TableHead>
-                  <TableHead>NISN</TableHead>
-                  <TableHead>Kelas</TableHead>
-                  <TableHead>Rata-rata</TableHead>
-                  <TableHead>Grade</TableHead>
-                  <TableHead>Tertinggi</TableHead>
-                  <TableHead>Terendah</TableHead>
-                  <TableHead>Tugas Selesai</TableHead>
-                  <TableHead>Persentase Tugas</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {statistikNilai.map((siswa) => (
-                  <TableRow key={siswa.nisn}>
-                    <TableCell>{getRankingBadge(siswa.ranking)}</TableCell>
-                    <TableCell className="font-medium">{siswa.nama_siswa}</TableCell>
-                    <TableCell>{siswa.nisn}</TableCell>
-                    <TableCell>{siswa.kelas}</TableCell>
-                    <TableCell className="font-semibold">{siswa.rata_rata_nilai}</TableCell>
-                    <TableCell>{getNilaiGrade(siswa.rata_rata_nilai)}</TableCell>
-                    <TableCell className="text-green-600">{siswa.nilai_tertinggi}</TableCell>
-                    <TableCell className="text-red-600">{siswa.nilai_terendah}</TableCell>
-                    <TableCell>{siswa.tugas_selesai}/{siswa.jumlah_tugas}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span>{Math.round((siswa.tugas_selesai / siswa.jumlah_tugas) * 100)}%</span>
-                        <div className="w-16 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
-                            style={{ width: `${(siswa.tugas_selesai / siswa.jumlah_tugas) * 100}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
+          {statistikNilai.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              Tidak ada data nilai untuk ditampilkan
+              Tidak ada data nilai ditemukan
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Ranking</TableHead>
+                    <TableHead>Siswa</TableHead>
+                    <TableHead>Kelas</TableHead>
+                    <TableHead>Rata-rata</TableHead>
+                    <TableHead>Tertinggi</TableHead>
+                    <TableHead>Terendah</TableHead>
+                    <TableHead>Tugas</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {statistikNilai.map((siswa, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <div className="text-center">
+                          <Badge variant={index < 3 ? 'default' : 'outline'}>
+                            #{siswa.ranking}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar 
+                            className="cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all"
+                            onClick={() => handleSiswaClick(siswa)}
+                          >
+                            <AvatarImage src="" alt={siswa.nama_siswa} />
+                            <AvatarFallback className="bg-blue-100 text-blue-600">
+                              {getInitials(siswa.nama_siswa)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <button
+                              onClick={() => handleSiswaClick(siswa)}
+                              className="font-medium hover:text-blue-600 hover:underline cursor-pointer text-left"
+                            >
+                              {siswa.nama_siswa}
+                            </button>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{siswa.kelas}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-xl font-bold">
+                          {siswa.rata_rata_nilai}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-green-600 font-medium">
+                          {siswa.nilai_tertinggi}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-red-600 font-medium">
+                          {siswa.nilai_terendah}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-center">
+                          <span className="text-sm">
+                            {siswa.jumlah_tugas} tugas
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {getPerformanceBadge(siswa.rata_rata_nilai)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
