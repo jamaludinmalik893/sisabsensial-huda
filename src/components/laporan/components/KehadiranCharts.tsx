@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line } from 'recharts';
-import { StatistikKelas, TrendKehadiran } from '@/hooks/useLaporanData';
+import { StatistikKelas, TrendKehadiran } from '@/types/laporan';
 
 interface KehadiranChartsProps {
   statistikKelas: StatistikKelas[];
