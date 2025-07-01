@@ -19,6 +19,7 @@ interface JurnalHari {
   waktu_selesai: string;
   judul_materi: string;
   jam_diklat: number;
+  jam_pelajaran: number;
 }
 
 interface CatatanAbsensi {
@@ -62,6 +63,7 @@ export const useAbsenHarianData = (userSession: UserSession, tanggalPilihan: str
           waktu_mulai,
           waktu_selesai,
           judul_materi,
+          jam_pelajaran,
           mata_pelajaran!inner(nama_mapel),
           guru!inner(nama_lengkap)
         `)
@@ -143,7 +145,8 @@ export const useAbsenHarianData = (userSession: UserSession, tanggalPilihan: str
         waktu_mulai: jurnal.waktu_mulai,
         waktu_selesai: jurnal.waktu_selesai,
         judul_materi: jurnal.judul_materi,
-        jam_diklat: index + 1
+        jam_diklat: index + 1,
+        jam_pelajaran: jurnal.jam_pelajaran || index + 1
       }));
 
       setSiswaAbsensi(processedSiswa);
