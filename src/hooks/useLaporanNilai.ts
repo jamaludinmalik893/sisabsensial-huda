@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { processNilaiData } from './utils/nilaiDataProcessor';
+import { SemesterType } from '@/types/semester';
 import type { StatistikNilai, LaporanFilters } from '@/types/laporan';
 
 export const useLaporanNilai = (
@@ -54,6 +55,12 @@ export const useLaporanNilai = (
             nilaiQuery = nilaiQuery.eq('id_mapel', filters.mapel);
           }
 
+          // Add semester filter
+          if (filters.semester && filters.semester !== 'all') {
+            const [semester] = filters.semester.split('-');
+            nilaiQuery = nilaiQuery.eq('semester', semester);
+          }
+
           const { data: nilaiData, error: nilaiError } = await nilaiQuery;
 
           if (nilaiError) {
@@ -76,7 +83,7 @@ export const useLaporanNilai = (
     };
 
     fetchLaporanNilai();
-  }, [guruId, filters.tanggalMulai, filters.tanggalAkhir, filters.kelas, filters.mapel]);
+  }, [guruId, filters.tanggalMulai, filters.tanggalAkhir, filters.kelas, filters.mapel, filters.semester]);
 
   return {
     statistikNilai,

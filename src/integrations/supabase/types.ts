@@ -16,6 +16,7 @@ export type Database = {
           id_absensi: string
           id_jurnal: string
           id_siswa: string
+          semester: Database["public"]["Enums"]["semester_type"] | null
           status: string
           updated_at: string | null
         }
@@ -25,6 +26,7 @@ export type Database = {
           id_absensi?: string
           id_jurnal: string
           id_siswa: string
+          semester?: Database["public"]["Enums"]["semester_type"] | null
           status: string
           updated_at?: string | null
         }
@@ -34,6 +36,7 @@ export type Database = {
           id_absensi?: string
           id_jurnal?: string
           id_siswa?: string
+          semester?: Database["public"]["Enums"]["semester_type"] | null
           status?: string
           updated_at?: string | null
         }
@@ -216,6 +219,7 @@ export type Database = {
           id_mapel: string
           judul_materi: string
           materi_diajarkan: string
+          semester: Database["public"]["Enums"]["semester_type"] | null
           tanggal_pelajaran: string
           updated_at: string | null
           waktu_mulai: string
@@ -229,6 +233,7 @@ export type Database = {
           id_mapel: string
           judul_materi: string
           materi_diajarkan: string
+          semester?: Database["public"]["Enums"]["semester_type"] | null
           tanggal_pelajaran: string
           updated_at?: string | null
           waktu_mulai: string
@@ -242,6 +247,7 @@ export type Database = {
           id_mapel?: string
           judul_materi?: string
           materi_diajarkan?: string
+          semester?: Database["public"]["Enums"]["semester_type"] | null
           tanggal_pelajaran?: string
           updated_at?: string | null
           waktu_mulai?: string
@@ -339,6 +345,7 @@ export type Database = {
           id_siswa: string
           jenis_nilai: string
           judul_tugas: string
+          semester: Database["public"]["Enums"]["semester_type"] | null
           skor: number
           tanggal_nilai: string
           tanggal_tugas_dibuat: string | null
@@ -352,6 +359,7 @@ export type Database = {
           id_siswa: string
           jenis_nilai: string
           judul_tugas: string
+          semester?: Database["public"]["Enums"]["semester_type"] | null
           skor: number
           tanggal_nilai: string
           tanggal_tugas_dibuat?: string | null
@@ -365,6 +373,7 @@ export type Database = {
           id_siswa?: string
           jenis_nilai?: string
           judul_tugas?: string
+          semester?: Database["public"]["Enums"]["semester_type"] | null
           skor?: number
           tanggal_nilai?: string
           tanggal_tugas_dibuat?: string | null
@@ -543,13 +552,22 @@ export type Database = {
     }
     Functions: {
       get_attendance_statistics: {
-        Args: {
-          p_guru_id: string
-          p_start_date?: string
-          p_end_date?: string
-          p_kelas_id?: string
-          p_mapel_id?: string
-        }
+        Args:
+          | {
+              p_guru_id: string
+              p_start_date?: string
+              p_end_date?: string
+              p_kelas_id?: string
+              p_mapel_id?: string
+            }
+          | {
+              p_guru_id: string
+              p_start_date?: string
+              p_end_date?: string
+              p_kelas_id?: string
+              p_mapel_id?: string
+              p_semester?: Database["public"]["Enums"]["semester_type"]
+            }
         Returns: {
           nama_siswa: string
           nisn: string
@@ -563,25 +581,42 @@ export type Database = {
         }[]
       }
       get_attendance_trend: {
-        Args: {
-          p_guru_id: string
-          p_start_date?: string
-          p_end_date?: string
-          p_period?: string
-        }
+        Args:
+          | {
+              p_guru_id: string
+              p_start_date?: string
+              p_end_date?: string
+              p_period?: string
+            }
+          | {
+              p_guru_id: string
+              p_start_date?: string
+              p_end_date?: string
+              p_period?: string
+              p_semester?: Database["public"]["Enums"]["semester_type"]
+            }
         Returns: {
           periode: string
           persentase_hadir: number
         }[]
       }
       get_class_attendance_stats: {
-        Args: {
-          p_guru_id: string
-          p_start_date?: string
-          p_end_date?: string
-          p_kelas_id?: string
-          p_mapel_id?: string
-        }
+        Args:
+          | {
+              p_guru_id: string
+              p_start_date?: string
+              p_end_date?: string
+              p_kelas_id?: string
+              p_mapel_id?: string
+            }
+          | {
+              p_guru_id: string
+              p_start_date?: string
+              p_end_date?: string
+              p_kelas_id?: string
+              p_mapel_id?: string
+              p_semester?: Database["public"]["Enums"]["semester_type"]
+            }
         Returns: {
           nama_kelas: string
           total_hadir: number
@@ -595,6 +630,10 @@ export type Database = {
         Args: { guru_id: string }
         Returns: Database["public"]["Enums"]["guru_role"][]
       }
+      get_semester_from_date: {
+        Args: { input_date: string }
+        Returns: Database["public"]["Enums"]["semester_type"]
+      }
       guru_has_role: {
         Args: {
           guru_id: string
@@ -605,6 +644,7 @@ export type Database = {
     }
     Enums: {
       guru_role: "admin" | "guru" | "wali_kelas"
+      semester_type: "Ganjil" | "Genap"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -721,6 +761,7 @@ export const Constants = {
   public: {
     Enums: {
       guru_role: ["admin", "guru", "wali_kelas"],
+      semester_type: ["Ganjil", "Genap"],
     },
   },
 } as const

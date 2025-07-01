@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UserSession } from '@/types';
 import { useGuruMataPelajaran } from '@/hooks/useGuruMataPelajaran';
+import { getSemesterOptions, getCurrentSemester } from '@/types/semester';
 import LaporanKehadiran from './laporan/LaporanKehadiran';
 import LaporanNilai from './laporan/LaporanNilai';
 import LaporanGabungan from './laporan/LaporanGabungan';
@@ -18,7 +19,9 @@ interface LaporanPageProps {
 }
 
 const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
+  const currentSemester = getCurrentSemester();
   const [selectedPeriode, setSelectedPeriode] = useState('bulanan');
+  const [selectedSemester, setSelectedSemester] = useState(`${currentSemester.semester}-${currentSemester.tahun}`);
   const [tanggalMulai, setTanggalMulai] = useState('');
   const [tanggalAkhir, setTanggalAkhir] = useState('');
   const [selectedKelas, setSelectedKelas] = useState('all');
@@ -32,6 +35,8 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
   // Fetch mata pelajaran yang diampu guru
   const { mataPelajaran, loading: loadingMapel } = useGuruMataPelajaran(userSession.guru.id_guru);
 
+  const semesterOptions = getSemesterOptions();
+
   const handleSiswaClick = (siswa: any) => {
     setSelectedSiswaForPopup(siswa);
     setIsProfilOpen(true);
@@ -43,7 +48,7 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
         <FileText className="h-8 w-8 text-blue-600" />
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Laporan Akademik</h1>
-          <p className="text-gray-600">Statistik kehadiran, nilai, dan gabungan</p>
+          <p className="text-gray-600">Statistik kehadiran, nilai, dan gabungan per semester</p>
         </div>
       </div>
 
@@ -56,7 +61,24 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
+            <div>
+              <Label htmlFor="semester">Semester</Label>
+              <Select value={selectedSemester} onValueChange={setSelectedSemester}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Semester" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Semester</SelectItem>
+                  {semesterOptions.map((option) => (
+                    <SelectItem key={`${option.semester}-${option.tahun}`} value={`${option.semester}-${option.tahun}`}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <Label htmlFor="periode">Periode</Label>
               <Select value={selectedPeriode} onValueChange={setSelectedPeriode}>
@@ -157,7 +179,8 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
               tanggalAkhir,
               kelas: selectedKelas,
               mapel: selectedMapel,
-              siswa: selectedSiswa
+              siswa: selectedSiswa,
+              semester: selectedSemester
             }}
             onSiswaClick={handleSiswaClick}
           />
@@ -172,7 +195,8 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
               tanggalAkhir,
               kelas: selectedKelas,
               mapel: selectedMapel,
-              siswa: selectedSiswa
+              siswa: selectedSiswa,
+              semester: selectedSemester
             }}
             onSiswaClick={handleSiswaClick}
           />
@@ -187,7 +211,8 @@ const LaporanPage: React.FC<LaporanPageProps> = ({ userSession }) => {
               tanggalAkhir,
               kelas: selectedKelas,
               mapel: selectedMapel,
-              siswa: selectedSiswa
+              siswa: selectedSiswa,
+              semester: selectedSemester
             }}
             onSiswaClick={handleSiswaClick}
           />

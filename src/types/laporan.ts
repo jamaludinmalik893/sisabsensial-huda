@@ -49,4 +49,5 @@ export interface LaporanFilters {
   tanggalAkhir: string;
   kelas: string;
   mapel: string;
+  semester?: string;
 }

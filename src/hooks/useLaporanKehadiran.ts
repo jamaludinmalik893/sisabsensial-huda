@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SemesterType } from '@/types/semester';
 import type { 
   StatistikKehadiran, 
   StatistikKelas, 
@@ -36,6 +37,13 @@ export const useLaporanKehadiran = (
         // Convert "semua" to null for proper UUID handling
         const kelasId = filters.kelas === 'semua' || filters.kelas === 'all' ? null : filters.kelas;
         const mapelId = filters.mapel === 'semua' || filters.mapel === 'all' ? null : filters.mapel;
+        
+        // Parse semester filter
+        let semesterFilter: SemesterType | null = null;
+        if (filters.semester && filters.semester !== 'all') {
+          const [semester] = filters.semester.split('-');
+          semesterFilter = semester as SemesterType;
+        }
 
         // Get attendance statistics
         const { data: attendanceData, error: attendanceError } = await supabase.rpc(
@@ -45,7 +53,8 @@ export const useLaporanKehadiran = (
             p_start_date: filters.tanggalMulai || null,
             p_end_date: filters.tanggalAkhir || null,
             p_kelas_id: kelasId,
-            p_mapel_id: mapelId
+            p_mapel_id: mapelId,
+            p_semester: semesterFilter
           }
         );
 
@@ -63,7 +72,8 @@ export const useLaporanKehadiran = (
             p_start_date: filters.tanggalMulai || null,
             p_end_date: filters.tanggalAkhir || null,
             p_kelas_id: kelasId,
-            p_mapel_id: mapelId
+            p_mapel_id: mapelId,
+            p_semester: semesterFilter
           }
         );
 
@@ -80,7 +90,8 @@ export const useLaporanKehadiran = (
             p_guru_id: guruId,
             p_start_date: filters.tanggalMulai || null,
             p_end_date: filters.tanggalAkhir || null,
-            p_period: 'monthly'
+            p_period: 'monthly',
+            p_semester: semesterFilter
           }
         );
 
@@ -148,7 +159,7 @@ export const useLaporanKehadiran = (
     };
 
     fetchLaporanKehadiran();
-  }, [guruId, filters.tanggalMulai, filters.tanggalAkhir, filters.kelas, filters.mapel]);
+  }, [guruId, filters.tanggalMulai, filters.tanggalAkhir, filters.kelas, filters.mapel, filters.semester]);
 
   return {
     statistikKehadiran,

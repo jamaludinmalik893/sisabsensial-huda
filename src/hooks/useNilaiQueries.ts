@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
 import { Nilai, Siswa, MataPelajaran, Kelas } from '@/types/nilai';
@@ -31,7 +32,7 @@ export function useNilaiQueries(userSession: UserSession) {
 
   // Perbarui query loadNilai agar hanya bergantung pada tabel nilai
   // dan filter berdasarkan mapel yang diajar guru login
-  const loadNilai = async (): Promise<Nilai[]> => {
+  const loadNilai = async (semesterFilter?: string): Promise<Nilai[]> => {
     console.log('DEBUG loadNilai: userSession.guru.id_guru:', userSession.guru.id_guru);
 
     // Dapatkan semua id_mapel yang diampu guru (tanpa join jurnal)
@@ -48,7 +49,7 @@ export function useNilaiQueries(userSession: UserSession) {
       return [];
     }
 
-    const { data, error } = await supabase
+    let nilaiQuery = supabase
       .from('nilai')
       .select(`
         id_nilai,
@@ -58,6 +59,7 @@ export function useNilaiQueries(userSession: UserSession) {
         judul_tugas,
         tanggal_tugas_dibuat,
         tanggal_nilai,
+        semester,
         siswa!inner(
           id_siswa,
           nama_lengkap,
@@ -85,8 +87,15 @@ export function useNilaiQueries(userSession: UserSession) {
           nama_mapel
         )
       `)
-      .in('id_mapel', mapelIds)
-      .order('tanggal_nilai', { ascending: false });
+      .in('id_mapel', mapelIds);
+
+    // Add semester filter if provided
+    if (semesterFilter && semesterFilter !== 'all') {
+      const [semester] = semesterFilter.split('-');
+      nilaiQuery = nilaiQuery.eq('semester', semester);
+    }
+
+    const { data, error } = await nilaiQuery.order('tanggal_nilai', { ascending: false });
 
     console.log("DEBUG loadNilai: hasil Supabase query nilai:", { data, error });
 
