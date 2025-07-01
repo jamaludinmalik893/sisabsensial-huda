@@ -217,6 +217,7 @@ export type Database = {
           id_jurnal: string
           id_kelas: string
           id_mapel: string
+          jam_pelajaran: number | null
           judul_materi: string
           materi_diajarkan: string
           semester: Database["public"]["Enums"]["semester_type"] | null
@@ -231,6 +232,7 @@ export type Database = {
           id_jurnal?: string
           id_kelas: string
           id_mapel: string
+          jam_pelajaran?: number | null
           judul_materi: string
           materi_diajarkan: string
           semester?: Database["public"]["Enums"]["semester_type"] | null
@@ -245,6 +247,7 @@ export type Database = {
           id_jurnal?: string
           id_kelas?: string
           id_mapel?: string
+          jam_pelajaran?: number | null
           judul_materi?: string
           materi_diajarkan?: string
           semester?: Database["public"]["Enums"]["semester_type"] | null

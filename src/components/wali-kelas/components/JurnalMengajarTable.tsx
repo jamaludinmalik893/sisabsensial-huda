@@ -2,16 +2,14 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Clock, User } from 'lucide-react';
+import { User } from 'lucide-react';
 
 interface JurnalHari {
   id_jurnal: string;
   mata_pelajaran: string;
   nama_guru: string;
-  waktu_mulai: string;
-  waktu_selesai: string;
+  jam_pelajaran: number;
   judul_materi: string;
-  jam_diklat: number;
 }
 
 interface JurnalMengajarTableProps {
@@ -23,17 +21,21 @@ const JurnalMengajarTable: React.FC<JurnalMengajarTableProps> = ({
   tanggalPilihan,
   jurnalHari
 }) => {
+  // Sort jurnal by jam_pelajaran
+  const sortedJurnalHari = [...jurnalHari].sort((a, b) => a.jam_pelajaran - b.jam_pelajaran);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Jurnal Mengajar Tanggal {new Date(tanggalPilihan).toLocaleDateString('id-ID')}</CardTitle>
       </CardHeader>
       <CardContent>
-        {jurnalHari.length > 0 ? (
+        {sortedJurnalHari.length > 0 ? (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>JP</TableHead>
                   <TableHead>Program Diklat</TableHead>
                   <TableHead>Nama Guru dan Toolman</TableHead>
                   <TableHead>Pokok Pembahasan</TableHead>
@@ -41,16 +43,15 @@ const JurnalMengajarTable: React.FC<JurnalMengajarTableProps> = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {jurnalHari.map((jurnal) => (
+                {sortedJurnalHari.map((jurnal) => (
                   <TableRow key={jurnal.id_jurnal}>
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{jurnal.mata_pelajaran}</div>
-                        <div className="text-sm text-gray-500">
-                          <Clock className="inline h-3 w-3 mr-1" />
-                          {jurnal.waktu_mulai} - {jurnal.waktu_selesai}
-                        </div>
+                      <div className="font-bold text-center">
+                        {jurnal.jam_pelajaran}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">{jurnal.mata_pelajaran}</div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">

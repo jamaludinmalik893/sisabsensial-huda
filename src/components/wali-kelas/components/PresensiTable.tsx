@@ -15,10 +15,8 @@ interface JurnalHari {
   id_jurnal: string;
   mata_pelajaran: string;
   nama_guru: string;
-  waktu_mulai: string;
-  waktu_selesai: string;
+  jam_pelajaran: number;
   judul_materi: string;
-  jam_diklat: number;
 }
 
 interface PresensiTableProps {
@@ -35,26 +33,27 @@ const PresensiTable: React.FC<PresensiTableProps> = ({
   loading
 }) => {
   const getStatusBadge = (status: string | null) => {
-    if (!status) return <span className="text-gray-400">-</span>;
-    
-    const variants = {
-      'Hadir': 'bg-green-500',
-      'Izin': 'bg-yellow-500', 
-      'Sakit': 'bg-blue-500',
-      'Alpha': 'bg-red-500'
-    };
-    
-    return (
-      <Badge className={variants[status as keyof typeof variants] || 'bg-gray-500'}>
-        {status}
-      </Badge>
-    );
+    switch (status) {
+      case 'Hadir':
+        return <Badge variant="default" className="bg-green-500">H</Badge>;
+      case 'Izin':
+        return <Badge variant="secondary" className="bg-yellow-500">I</Badge>;
+      case 'Sakit':
+        return <Badge variant="secondary" className="bg-blue-500">S</Badge>;
+      case 'Alpha':
+        return <Badge variant="destructive">A</Badge>;
+      default:
+        return <Badge variant="outline">-</Badge>;
+    }
   };
+
+  // Sort jurnal by jam_pelajaran
+  const sortedJurnalHari = [...jurnalHari].sort((a, b) => a.jam_pelajaran - b.jam_pelajaran);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Presensi Harian Bulan {new Date(tanggalPilihan).toLocaleDateString('id-ID', { year: 'numeric', month: 'long' })}</CardTitle>
+        <CardTitle>Presensi Siswa Tanggal {new Date(tanggalPilihan).toLocaleDateString('id-ID')}</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -64,40 +63,52 @@ const PresensiTable: React.FC<PresensiTableProps> = ({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">No.</TableHead>
-                  <TableHead>Nama</TableHead>
-                  {jurnalHari.map((_, index) => (
-                    <TableHead key={index} className="text-center min-w-20">
-                      Jam Diklat Ke {index + 1}
+                  <TableHead className="w-12">No</TableHead>
+                  <TableHead>Nama Siswa</TableHead>
+                  <TableHead>NISN</TableHead>
+                  {sortedJurnalHari.map((jurnal) => (
+                    <TableHead key={jurnal.id_jurnal} className="text-center min-w-16">
+                      <div className="text-xs">
+                        <div>JP {jurnal.jam_pelajaran}</div>
+                        <div className="text-gray-500">{jurnal.mata_pelajaran}</div>
+                      </div>
                     </TableHead>
                   ))}
+                  <TableHead className="text-center">Keterangan</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {siswaAbsensi.map((siswa, index) => (
-                  <TableRow key={siswa.id_siswa}>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{siswa.nama_lengkap}</div>
-                        <div className="text-sm text-gray-500">{siswa.nisn}</div>
-                      </div>
+                {siswaAbsensi.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4 + sortedJurnalHari.length} className="text-center py-8 text-gray-500">
+                      Tidak ada data presensi
                     </TableCell>
-                    {jurnalHari.map((_, jamIndex) => (
-                      <TableCell key={jamIndex} className="text-center">
-                        {getStatusBadge(siswa.status_absensi[`jam_${jamIndex + 1}`])}
-                      </TableCell>
-                    ))}
                   </TableRow>
-                ))}
+                ) : (
+                  siswaAbsensi.map((siswa, index) => (
+                    <TableRow key={siswa.id_siswa}>
+                      <TableCell>{index + 1}</TableCell>
+                      <TableCell className="font-medium">{siswa.nama_lengkap}</TableCell>
+                      <TableCell>{siswa.nisn}</TableCell>
+                      {sortedJurnalHari.map((jurnal) => (
+                        <TableCell key={jurnal.id_jurnal} className="text-center">
+                          {getStatusBadge(siswa.status_absensi[`jp_${jurnal.jam_pelajaran}`])}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center">
+                        {/* Calculate daily summary */}
+                        {(() => {
+                          const statuses = Object.values(siswa.status_absensi);
+                          const hadir = statuses.filter(s => s === 'Hadir').length;
+                          const total = statuses.filter(s => s !== null).length;
+                          return total > 0 ? `${hadir}/${total}` : '-';
+                        })()}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
-          </div>
-        )}
-        
-        {!loading && siswaAbsensi.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            Tidak ada data siswa untuk tanggal ini
           </div>
         )}
       </CardContent>

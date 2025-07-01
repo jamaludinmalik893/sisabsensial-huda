@@ -1,42 +1,29 @@
-export interface Nilai {
-  id_nilai: string;
-  skor: number;
-  jenis_nilai: string;
-  catatan?: string;
-  judul_tugas: string;
-  tanggal_tugas_dibuat: string;
-  tanggal_nilai: string;
-  siswa: {
-    id_siswa: string;
-    nama_lengkap: string;
-    nisn: string;
-    jenis_kelamin: string;
-    tanggal_lahir: string;
-    tempat_lahir: string;
-    alamat: string;
-    nomor_telepon?: string;
-    nama_orang_tua: string;
-    nomor_telepon_orang_tua?: string;
-    tahun_masuk: number;
-    foto_url?: string;
-    kelas?: {
-      id_kelas?: string;
-      nama_kelas: string;
-    };
-    guru_wali?: {
-      nama_lengkap: string;
-    };
-  };
-  mata_pelajaran: {
-    id_mapel?: string;
-    nama_mapel: string;
-  };
-}
 
 export interface Siswa {
   id_siswa: string;
-  nama_lengkap: string;
   nisn: string;
+  nama_lengkap: string;
+  jenis_kelamin: 'Laki-laki' | 'Perempuan';
+  tanggal_lahir: string;
+  tempat_lahir: string;
+  alamat: string;
+  nomor_telepon?: string;
+  nomor_telepon_siswa?: string;
+  nama_orang_tua: string;
+  nomor_telepon_orang_tua?: string;
+  id_kelas: string;
+  id_guru_wali: string;
+  tahun_masuk: number;
+  foto_url?: string;
+  created_at: string;
+  updated_at: string;
+  kelas?: {
+    id_kelas: string;
+    nama_kelas: string;
+  };
+  guru_wali?: {
+    nama_lengkap: string;
+  };
 }
 
 export interface MataPelajaran {
@@ -49,13 +36,38 @@ export interface Kelas {
   nama_kelas: string;
 }
 
-export interface BulkNilaiData {
-  id_siswa: string;
-  id_jurnal?: string; // Ubah jadi optional agar tidak error di bulk entry tanpa jurnal
-  id_mapel: string;
+export interface Nilai {
+  id_nilai: string;
   skor: number;
   jenis_nilai: string;
+  catatan?: string;
   judul_tugas: string;
   tanggal_tugas_dibuat: string;
   tanggal_nilai: string;
+  semester?: 'Ganjil' | 'Genap';
+  siswa?: Siswa;
+  mata_pelajaran?: MataPelajaran;
+}
+
+export interface BulkNilaiEntry {
+  skor: string;
+  catatan: string;
+}
+
+export interface NilaiContextType {
+  siswa: Siswa[];
+  mataPelajaran: MataPelajaran[];
+  kelas: Kelas[];
+  nilai: Nilai[];
+  loading: boolean;
+  convertedBulkValues: Array<{
+    key?: string;
+    skor?: string;
+    catatan?: string;
+  }>;
+  loadSiswaByKelas: (kelasId: string) => Promise<void>;
+  handleBulkValueChange: (siswaId: string, entry: BulkNilaiEntry) => void;
+  handleBulkSubmit: () => Promise<void>;
+  updateNilai: (nilaiId: string, newSkor: number, newCatatan?: string) => Promise<void>;
+  deleteNilai: (nilaiId: string) => Promise<void>;
 }

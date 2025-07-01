@@ -14,10 +14,8 @@ interface JurnalHari {
   id_jurnal: string;
   mata_pelajaran: string;
   nama_guru: string;
-  waktu_mulai: string;
-  waktu_selesai: string;
+  jam_pelajaran: number;
   judul_materi: string;
-  jam_diklat: number;
 }
 
 interface PrintableAbsenHarianProps {
@@ -45,12 +43,6 @@ const PrintableAbsenHarian: React.FC<PrintableAbsenHarianProps> = ({
     }
   };
 
-  const countStatus = (status: 'Hadir' | 'Izin' | 'Sakit' | 'Alpha') => {
-    return siswaAbsensi.reduce((count, siswa) => {
-      return count + Object.values(siswa.status_absensi).filter(s => s === status).length;
-    }, 0);
-  };
-
   const formatTanggal = (tanggalStr: string) => {
     try {
       const date = new Date(tanggalStr);
@@ -59,6 +51,10 @@ const PrintableAbsenHarian: React.FC<PrintableAbsenHarianProps> = ({
       return tanggalStr;
     }
   };
+
+  // Sort jurnal by jam_pelajaran
+  const sortedJurnalHari = [...jurnalHari].sort((a, b) => a.jam_pelajaran - b.jam_pelajaran);
+  const maxJP = Math.max(...sortedJurnalHari.map(j => j.jam_pelajaran), 8);
 
   return (
     <div className="print:block hidden bg-white text-black p-8 min-h-screen">
@@ -86,24 +82,24 @@ const PrintableAbsenHarian: React.FC<PrintableAbsenHarianProps> = ({
             <tr>
               <th className="border border-black p-1 w-8">No.</th>
               <th className="border border-black p-1 text-left">NAMA</th>
-              <th className="border border-black p-1" colSpan={jurnalHari.length || 10}>
-                Jam Diklat Ke
+              <th className="border border-black p-1" colSpan={maxJP}>
+                Jam Pelajaran Ke
               </th>
               <th className="border border-black p-1 w-8">No.</th>
               <th className="border border-black p-1 text-left">NAMA</th>
-              <th className="border border-black p-1" colSpan={jurnalHari.length || 10}>
-                Jam Diklat Ke
+              <th className="border border-black p-1" colSpan={maxJP}>
+                Jam Pelajaran Ke
               </th>
             </tr>
             <tr>
               <th className="border border-black p-1"></th>
               <th className="border border-black p-1"></th>
-              {Array.from({ length: jurnalHari.length || 10 }, (_, i) => (
+              {Array.from({ length: maxJP }, (_, i) => (
                 <th key={i} className="border border-black p-1 w-6">{i + 1}</th>
               ))}
               <th className="border border-black p-1"></th>
               <th className="border border-black p-1"></th>
-              {Array.from({ length: jurnalHari.length || 10 }, (_, i) => (
+              {Array.from({ length: maxJP }, (_, i) => (
                 <th key={i} className="border border-black p-1 w-6">{i + 1}</th>
               ))}
             </tr>
@@ -118,9 +114,9 @@ const PrintableAbsenHarian: React.FC<PrintableAbsenHarianProps> = ({
                   {/* Left side */}
                   <td className="border border-black p-1 text-center">{leftStudent ? rowIndex + 1 : ''}</td>
                   <td className="border border-black p-1 text-left">{leftStudent?.nama_lengkap || ''}</td>
-                  {Array.from({ length: jurnalHari.length || 10 }, (_, jamIndex) => (
-                    <td key={jamIndex} className="border border-black p-1 text-center">
-                      {leftStudent ? getStatusSymbol(leftStudent.status_absensi[`jam_${jamIndex + 1}`]) : ''}
+                  {Array.from({ length: maxJP }, (_, jpIndex) => (
+                    <td key={jpIndex} className="border border-black p-1 text-center">
+                      {leftStudent ? getStatusSymbol(leftStudent.status_absensi[`jp_${jpIndex + 1}`]) : ''}
                     </td>
                   ))}
                   {/* Right side */}
@@ -128,9 +124,9 @@ const PrintableAbsenHarian: React.FC<PrintableAbsenHarianProps> = ({
                     {rightStudent ? rowIndex + Math.ceil(siswaAbsensi.length / 2) + 1 : ''}
                   </td>
                   <td className="border border-black p-1 text-left">{rightStudent?.nama_lengkap || ''}</td>
-                  {Array.from({ length: jurnalHari.length || 10 }, (_, jamIndex) => (
-                    <td key={jamIndex} className="border border-black p-1 text-center">
-                      {rightStudent ? getStatusSymbol(rightStudent.status_absensi[`jam_${jamIndex + 1}`]) : ''}
+                  {Array.from({ length: maxJP }, (_, jpIndex) => (
+                    <td key={jpIndex} className="border border-black p-1 text-center">
+                      {rightStudent ? getStatusSymbol(rightStudent.status_absensi[`jp_${jpIndex + 1}`]) : ''}
                     </td>
                   ))}
                 </tr>
@@ -138,14 +134,6 @@ const PrintableAbsenHarian: React.FC<PrintableAbsenHarianProps> = ({
             })}
           </tbody>
         </table>
-      </div>
-
-      {/* Statistik */}
-      <div className="flex justify-end mb-6">
-        <div className="text-sm">
-          <div>Jumlah Siswa Absen</div>
-          <div>Paraf Guru Pengajar</div>
-        </div>
       </div>
 
       {/* Jurnal Mengajar */}
@@ -159,6 +147,7 @@ const PrintableAbsenHarian: React.FC<PrintableAbsenHarianProps> = ({
         <table className="w-full border-collapse border border-black text-xs">
           <thead>
             <tr>
+              <th className="border border-black p-2">JP</th>
               <th className="border border-black p-2">PROGRAM DIKLAT</th>
               <th className="border border-black p-2">NAMA GURU dan TOOLMAN</th>
               <th className="border border-black p-2">POKOK PEMBAHASAN</th>
@@ -166,10 +155,13 @@ const PrintableAbsenHarian: React.FC<PrintableAbsenHarianProps> = ({
             </tr>
           </thead>
           <tbody>
-            {Array.from({ length: Math.max(jurnalHari.length, 8) }, (_, index) => {
-              const jurnal = jurnalHari[index];
+            {Array.from({ length: Math.max(sortedJurnalHari.length, 8) }, (_, index) => {
+              const jurnal = sortedJurnalHari[index];
               return (
                 <tr key={index} className="h-12">
+                  <td className="border border-black p-2 text-center">
+                    {jurnal?.jam_pelajaran || index + 1}
+                  </td>
                   <td className="border border-black p-2">
                     {jurnal?.mata_pelajaran || ''}
                   </td>
