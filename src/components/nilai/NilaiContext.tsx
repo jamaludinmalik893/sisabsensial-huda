@@ -47,7 +47,7 @@ export const NilaiProvider: React.FC<NilaiProviderProps> = ({ children, userSess
 
   const value: NilaiContextType = {
     nilai: nilaiData.nilaiList,
-    siswa: nilaiData.siswaList,
+    siswa: nilaiData.siswaList as Siswa[],
     mataPelajaran: nilaiData.mapelList,
     kelas: nilaiData.kelasList,
     bulkNilai: [],
@@ -58,7 +58,7 @@ export const NilaiProvider: React.FC<NilaiProviderProps> = ({ children, userSess
     loadNilai: nilaiData.loadNilai,
     // Additional properties for compatibility
     nilaiList: nilaiData.nilaiList,
-    siswaList: nilaiData.siswaList,
+    siswaList: nilaiData.siswaList as Siswa[],
     mapelList: nilaiData.mapelList,
     kelasList: nilaiData.kelasList,
     loading: nilaiData.loading,

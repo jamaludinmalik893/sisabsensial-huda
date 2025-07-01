@@ -12,6 +12,14 @@ import JurnalMengajarTable from './components/JurnalMengajarTable';
 import CatatanAbsensiTable from './components/CatatanAbsensiTable';
 import { useAbsenHarianData } from '@/hooks/useAbsenHarianData';
 
+interface JurnalHari {
+  id_jurnal: string;
+  mata_pelajaran: string;
+  nama_guru: string;
+  jam_pelajaran: number;
+  judul_materi: string;
+}
+
 interface AbsenHarianPageProps {
   userSession: UserSession;
 }
@@ -133,6 +141,12 @@ const AbsenHarianPage: React.FC<AbsenHarianPageProps> = ({ userSession }) => {
     );
   }
 
+  // Cast jurnalHari to ensure it has jam_pelajaran
+  const jurnalHariWithJP = jurnalHari.map(j => ({
+    ...j,
+    jam_pelajaran: j.jam_pelajaran || 1
+  })) as JurnalHari[];
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -168,14 +182,14 @@ const AbsenHarianPage: React.FC<AbsenHarianPageProps> = ({ userSession }) => {
       <PresensiTable
         tanggalPilihan={tanggalPilihan}
         siswaAbsensi={siswaAbsensi}
-        jurnalHari={jurnalHari}
+        jurnalHari={jurnalHariWithJP}
         loading={loading}
       />
 
       {/* Jurnal Mengajar */}
       <JurnalMengajarTable
         tanggalPilihan={tanggalPilihan}
-        jurnalHari={jurnalHari}
+        jurnalHari={jurnalHariWithJP}
       />
 
       {/* Catatan Absensi */}
@@ -190,7 +204,7 @@ const AbsenHarianPage: React.FC<AbsenHarianPageProps> = ({ userSession }) => {
         <PrintableAbsenHarian
           tanggal={tanggalPilihan}
           siswaAbsensi={siswaAbsensi}
-          jurnalHari={jurnalHari}
+          jurnalHari={jurnalHariWithJP}
           namaKelas={userSession.kelasWali?.nama_kelas || ''}
           waliKelas={userSession.guru.nama_lengkap}
         />

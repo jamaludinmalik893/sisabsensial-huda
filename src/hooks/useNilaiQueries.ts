@@ -77,6 +77,8 @@ export function useNilaiQueries(userSession: UserSession) {
           id_guru_wali,
           tahun_masuk,
           foto_url,
+          created_at,
+          updated_at,
           kelas(
             id_kelas,
             nama_kelas
@@ -101,7 +103,18 @@ export function useNilaiQueries(userSession: UserSession) {
     console.log("DEBUG loadNilai: hasil Supabase query nilai:", { data, error });
 
     if (error) throw error;
-    return data || [];
+    
+    // Transform the data to match expected types
+    const transformedData = (data || []).map(item => ({
+      ...item,
+      siswa: item.siswa ? {
+        ...item.siswa,
+        created_at: item.siswa.created_at || new Date().toISOString(),
+        updated_at: item.siswa.updated_at || new Date().toISOString()
+      } : undefined
+    }));
+    
+    return transformedData as Nilai[];
   };
 
   const loadSiswaByKelas = async (kelasId: string) => {

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { UserSession } from '@/types';
 import type { Nilai, MataPelajaran, Kelas } from '@/types/nilai';
@@ -49,10 +50,24 @@ export const useNilaiData = (userSession: UserSession) => {
       // Tambahkan log hasil mentah
       console.log("[DEBUG useNilaiData.ts] siswaDataRaw dari Supabase:", siswaDataRaw);
 
-      // Always convert siswa to full type
-      const siswaData: SiswaIndex[] = siswaDataRaw.map(siswa => convertSiswaToFullSiswa(siswa));
+      // Convert the raw data to the expected format
+      const siswaData: SiswaIndex[] = siswaDataRaw.map(siswa => ({
+        ...siswa,
+        jenis_kelamin: siswa.jenis_kelamin as 'Laki-laki' | 'Perempuan',
+        created_at: siswa.created_at || new Date().toISOString(),
+        updated_at: siswa.updated_at || new Date().toISOString(),
+        guru_wali: siswa.guru_wali ? {
+          id_guru: '',
+          nip: '',
+          nama_lengkap: siswa.guru_wali.nama_lengkap,
+          email: '',
+          status: 'guru',
+          roles: []
+        } : undefined
+      }));
+      
       setSiswaList(siswaData);
-      bulkNilai.initializeBulkValues(siswaData);
+      bulkNilai.initializeBulkValues(siswaData as any);
     } catch (error) {
       console.error('Error loading siswa:', error);
       setSiswaList([]); // fallback to safe empty state
@@ -127,7 +142,7 @@ export const useNilaiData = (userSession: UserSession) => {
       jenisNilai,
       judulTugas,
       tanggalTugasDibuat,
-      siswaList
+      siswaList as any
     );
     
     if (success) {

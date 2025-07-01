@@ -48,7 +48,7 @@ interface Nilai {
 }
 
 interface NilaiOverviewTableProps {
-  filteredNilai: Nilai[];
+  filteredNilai: any[];
   loading: boolean;
   selectedMapel: string;
   selectedKelas: string;
@@ -79,8 +79,11 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
   const [selectedKelas, setSelectedKelas] = useState(defaultSelectedKelas || "all");
   const [selectedJenisNilai, setSelectedJenisNilai] = useState("all");
 
+  // Cast the filteredNilai to ensure it has the required properties
+  const nilaiWithRequiredProps = filteredNilai.filter(nilai => nilai.siswa && nilai.mata_pelajaran) as Nilai[];
+
   // DEBUG: log apa yang diterima di filteredNilai (harusnya sama seperti nilaiList)
-  console.log("NilaiOverviewTable filteredNilai:", filteredNilai);
+  console.log("NilaiOverviewTable filteredNilai:", nilaiWithRequiredProps);
 
   const [selectedSiswa, setSelectedSiswa] = useState<Nilai['siswa'] | null>(null);
   const [isProfilOpen, setIsProfilOpen] = useState(false);
@@ -116,13 +119,13 @@ const NilaiOverviewTable: React.FC<NilaiOverviewTableProps> = ({
 
   // Filter nilai by selected subject, class, and jenis_nilai
   const relevantNilai = useMemo(() => {
-    return filteredNilai.filter(nilai => {
+    return nilaiWithRequiredProps.filter(nilai => {
       const matchMapel = selectedMapel === 'all' || nilai.mata_pelajaran.nama_mapel === mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel;
       const matchKelas = selectedKelas === 'all' || nilai.siswa.kelas?.nama_kelas === kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas;
       const matchJenis = selectedJenisNilai === 'all' || nilai.jenis_nilai === selectedJenisNilai;
       return matchMapel && matchKelas && matchJenis;
     });
-  }, [filteredNilai, selectedMapel, selectedKelas, selectedJenisNilai, mapelList, kelasList]);
+  }, [nilaiWithRequiredProps, selectedMapel, selectedKelas, selectedJenisNilai, mapelList, kelasList]);
 
   // Group nilai by student and task
   const studentGradesData = useMemo(() => {

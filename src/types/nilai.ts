@@ -15,8 +15,8 @@ export interface Siswa {
   id_guru_wali: string;
   tahun_masuk: number;
   foto_url?: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   kelas?: {
     id_kelas: string;
     nama_kelas: string;
@@ -52,6 +52,12 @@ export interface Nilai {
 export interface BulkNilaiEntry {
   skor: string;
   catatan: string;
+}
+
+export interface BulkNilaiData {
+  id_siswa: string;
+  skor: number;
+  catatan?: string;
 }
 
 export interface NilaiContextType {
