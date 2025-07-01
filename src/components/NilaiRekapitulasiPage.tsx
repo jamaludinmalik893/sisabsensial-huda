@@ -22,21 +22,21 @@ const NilaiRekapitulasiPage: React.FC<NilaiRekapitulasiPageProps> = ({ userSessi
 };
 
 function NilaiRekapitulasiContent() {
-  const { nilaiList, mapelList, kelasList, loading, updateNilai, deleteNilai } = useNilai();
+  const { nilai, mataPelajaran, kelas, loading, updateNilai, deleteNilai } = useNilai();
 
   // Kumpulkan daftar tugas dan tanggalnya seperti di NilaiOverviewTable
   const taskInfoList = React.useMemo(() => {
     const taskSet = new Set<string>();
     const taskData: { [key: string]: { name: string, date: string } } = {};
-    nilaiList.forEach(nilai => {
-      const key = `${nilai.judul_tugas}|${nilai.tanggal_tugas_dibuat}`;
+    nilai.forEach(nilaiItem => {
+      const key = `${nilaiItem.judul_tugas}|${nilaiItem.tanggal_tugas_dibuat}`;
       if (!taskSet.has(key)) {
         taskSet.add(key);
-        taskData[key] = { name: nilai.judul_tugas, date: nilai.tanggal_tugas_dibuat };
+        taskData[key] = { name: nilaiItem.judul_tugas, date: nilaiItem.tanggal_tugas_dibuat };
       }
     });
     return Array.from(taskSet).map(key => taskData[key]);
-  }, [nilaiList]);
+  }, [nilai]);
 
   // Susun data export tabel rekap: No, Nama, [tugas-tugas...], Rata-rata
   const exportData = React.useMemo(() => {
@@ -51,7 +51,7 @@ function NilaiRekapitulasiContent() {
       }
     } = {};
 
-    nilaiList.forEach(n => {
+    nilai.forEach(n => {
       const id = n.siswa?.id_siswa ?? "";
       if (!siswaMap[id]) {
         siswaMap[id] = {
@@ -85,7 +85,7 @@ function NilaiRekapitulasiContent() {
         "Rata-rata": avg
       };
     });
-  }, [nilaiList, taskInfoList]);
+  }, [nilai, taskInfoList]);
 
   // Kolom-kolom header export (No, Nama, tugas, rata-rata)
   const exportColumns = React.useMemo(() => [
@@ -104,10 +104,19 @@ function NilaiRekapitulasiContent() {
 
   const mapelName = selectedMapel === "all"
     ? "Semua Mata Pelajaran"
-    : mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel ?? "";
+    : mataPelajaran.find(m => m.id_mapel === selectedMapel)?.nama_mapel ?? "";
   const kelasName = selectedKelas === "all"
     ? "Semua Kelas"
-    : kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas ?? "";
+    : kelas.find(k => k.id_kelas === selectedKelas)?.nama_kelas ?? "";
+
+  // Update function signatures to match expected types
+  const handleUpdateNilai = async (nilaiId: string, newSkor: number, newCatatan: string = "") => {
+    await updateNilai(nilaiId, newSkor, newCatatan);
+  };
+
+  const handleDeleteNilai = async (nilaiId: string) => {
+    await deleteNilai(nilaiId);
+  };
 
   return (
     <div className="relative">
@@ -125,14 +134,14 @@ function NilaiRekapitulasiContent() {
         </div>
       </div>
       <NilaiOverviewTable
-        filteredNilai={nilaiList}
+        filteredNilai={nilai}
         loading={loading}
         selectedMapel={selectedMapel}
         selectedKelas={selectedKelas}
-        mapelList={mapelList}
-        kelasList={kelasList}
-        onUpdateNilai={updateNilai}
-        deleteNilai={deleteNilai}
+        mapelList={mataPelajaran}
+        kelasList={kelas}
+        onUpdateNilai={handleUpdateNilai}
+        deleteNilai={handleDeleteNilai}
       />
     </div>
   );

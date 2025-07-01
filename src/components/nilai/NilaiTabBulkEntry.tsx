@@ -5,9 +5,9 @@ import { useNilai } from "./NilaiContext";
 
 const NilaiTabBulkEntry: React.FC = () => {
   const {
-    siswaList,
-    mapelList,
-    kelasList,
+    siswa,
+    mataPelajaran,
+    kelas,
     convertedBulkValues,
     loadSiswaByKelas,
     handleBulkValueChange,
@@ -32,9 +32,9 @@ const NilaiTabBulkEntry: React.FC = () => {
 
   return (
     <BulkNilaiEntry
-      siswaList={siswaList}
-      mapelList={mapelList}
-      kelasList={kelasList}
+      siswaList={siswa}
+      mapelList={mataPelajaran}
+      kelasList={kelas}
       bulkValues={bulkValuesRecord}
       onLoadSiswa={loadSiswaByKelas}
       onBulkValueChange={handleBulkEntryChange}

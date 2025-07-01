@@ -4,23 +4,32 @@ import NilaiOverviewTable from "./NilaiOverviewTable";
 import { useNilai } from "./NilaiContext";
 
 const NilaiTabOverview: React.FC = () => {
-  const { nilaiList, mapelList, kelasList, loading, updateNilai, deleteNilai } = useNilai();
+  const { nilai, mataPelajaran, kelas, loading, updateNilai, deleteNilai } = useNilai();
 
   // DEBUG: log isi nilaiList yang di-fetch dari Supabase
-  console.log("NilaiTabOverview nilaiList:", nilaiList);
+  console.log("NilaiTabOverview nilaiList:", nilai);
+
+  // Update function signatures to match expected types
+  const handleUpdateNilai = async (nilaiId: string, newSkor: number, newCatatan: string = "") => {
+    await updateNilai(nilaiId, newSkor, newCatatan);
+  };
+
+  const handleDeleteNilai = async (nilaiId: string) => {
+    await deleteNilai(nilaiId);
+  };
 
   // Langsung tampilkan semua nilai tanpa filter
   return (
     <>
       <NilaiOverviewTable
-        filteredNilai={nilaiList}
+        filteredNilai={nilai}
         loading={loading}
         selectedMapel="all"
         selectedKelas="all"
-        mapelList={mapelList}
-        kelasList={kelasList}
-        onUpdateNilai={updateNilai}
-        deleteNilai={deleteNilai}
+        mapelList={mataPelajaran}
+        kelasList={kelas}
+        onUpdateNilai={handleUpdateNilai}
+        deleteNilai={handleDeleteNilai}
       />
     </>
   );

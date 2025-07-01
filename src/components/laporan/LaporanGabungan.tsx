@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -8,17 +9,11 @@ import { UserSession } from '@/types';
 import { useLaporanKehadiran } from '@/hooks/useLaporanKehadiran';
 import { useLaporanNilai } from '@/hooks/useLaporanNilai';
 import { AlertCircle, Users, TrendingUp, Award, GraduationCap } from 'lucide-react';
+import type { LaporanFilters } from '@/types/laporan';
 
 interface LaporanGabunganProps {
   userSession: UserSession;
-  filters: {
-    periode: string;
-    tanggalMulai: string;
-    tanggalAkhir: string;
-    kelas: string;
-    mapel: string;
-    siswa: string;
-  };
+  filters: LaporanFilters;
   onSiswaClick?: (siswa: any) => void;
 }
 
@@ -28,19 +23,9 @@ const LaporanGabungan: React.FC<LaporanGabunganProps> = ({
   onSiswaClick 
 }) => {
   const { statistikKehadiran, loading: loadingKehadiran, error: errorKehadiran } = 
-    useLaporanKehadiran(userSession.guru.id_guru, {
-      tanggalMulai: filters.tanggalMulai,
-      tanggalAkhir: filters.tanggalAkhir,
-      kelas: filters.kelas,
-      mapel: filters.mapel
-    });
+    useLaporanKehadiran(userSession.guru.id_guru, filters);
   const { statistikNilai, loading: loadingNilai, error: errorNilai } = 
-    useLaporanNilai(userSession.guru.id_guru, {
-      tanggalMulai: filters.tanggalMulai,
-      tanggalAkhir: filters.tanggalAkhir,
-      kelas: filters.kelas,
-      mapel: filters.mapel
-    });
+    useLaporanNilai(userSession.guru.id_guru, filters);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);

@@ -22,9 +22,9 @@ const NilaiEntryPage: React.FC<NilaiEntryPageProps> = ({ userSession }) => {
 
 function NilaiEntryContent() {
   const {
-    siswaList,
-    mapelList,
-    kelasList,
+    siswa,
+    mataPelajaran,
+    kelas,
     convertedBulkValues,
     loadSiswaByKelas,
     handleBulkValueChange,
@@ -48,9 +48,9 @@ function NilaiEntryContent() {
 
   return (
     <BulkNilaiEntry
-      siswaList={siswaList}
-      mapelList={mapelList}
-      kelasList={kelasList}
+      siswaList={siswa}
+      mapelList={mataPelajaran}
+      kelasList={kelas}
       bulkValues={bulkValuesRecord}
       onLoadSiswa={loadSiswaByKelas}
       onBulkValueChange={handleBulkEntryChange}

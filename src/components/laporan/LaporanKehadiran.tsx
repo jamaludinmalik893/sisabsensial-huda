@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserSession } from '@/types';
@@ -6,17 +7,11 @@ import StatistikOverview from './components/StatistikOverview';
 import SiswaKehadiranTable from './components/SiswaKehadiranTable';
 import KehadiranCharts from './components/KehadiranCharts';
 import { AlertCircle } from 'lucide-react';
+import type { LaporanFilters } from '@/types/laporan';
 
 interface LaporanKehadiranProps {
   userSession: UserSession;
-  filters: {
-    periode: string;
-    tanggalMulai: string;
-    tanggalAkhir: string;
-    kelas: string;
-    mapel: string;
-    siswa: string;
-  };
+  filters: LaporanFilters;
   onSiswaClick?: (siswa: any) => void;
 }
 
@@ -32,12 +27,7 @@ const LaporanKehadiran: React.FC<LaporanKehadiranProps> = ({
     overview,
     loading,
     error
-  } = useLaporanKehadiran(userSession.guru.id_guru, {
-    tanggalMulai: filters.tanggalMulai,
-    tanggalAkhir: filters.tanggalAkhir,
-    kelas: filters.kelas,
-    mapel: filters.mapel
-  });
+  } = useLaporanKehadiran(userSession.guru.id_guru, filters);
 
   if (loading) {
     return (
