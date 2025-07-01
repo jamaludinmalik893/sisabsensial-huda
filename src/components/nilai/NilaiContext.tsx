@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { UserSession } from "@/types";
+import type { Siswa as SiswaIndex } from "@/types/index";
 import { Nilai, Siswa, MataPelajaran, Kelas, BulkNilaiData } from "@/types/nilai";
 import { useNilaiQueries } from "@/hooks/useNilaiQueries";
 import { useBulkNilai } from "@/hooks/useBulkNilai";
@@ -9,7 +10,7 @@ import { getCurrentSemester, getSemesterOptions } from "@/types/semester";
 
 interface NilaiContextType {
   nilai: Nilai[];
-  siswa: Siswa[];
+  siswa: SiswaIndex[];
   mataPelajaran: MataPelajaran[];
   kelas: Kelas[];
   bulkNilai: BulkNilaiData[];
@@ -20,7 +21,7 @@ interface NilaiContextType {
   loadNilai: (semester?: string) => Promise<void>;
   // Additional properties for compatibility
   nilaiList: Nilai[];
-  siswaList: Siswa[];
+  siswaList: SiswaIndex[];
   mapelList: MataPelajaran[];
   kelasList: Kelas[];
   loading: boolean;
@@ -47,7 +48,7 @@ export const NilaiProvider: React.FC<NilaiProviderProps> = ({ children, userSess
 
   const value: NilaiContextType = {
     nilai: nilaiData.nilaiList,
-    siswa: nilaiData.siswaList as Siswa[],
+    siswa: nilaiData.siswaList as SiswaIndex[],
     mataPelajaran: nilaiData.mapelList,
     kelas: nilaiData.kelasList,
     bulkNilai: [],
@@ -58,7 +59,7 @@ export const NilaiProvider: React.FC<NilaiProviderProps> = ({ children, userSess
     loadNilai: nilaiData.loadNilai,
     // Additional properties for compatibility
     nilaiList: nilaiData.nilaiList,
-    siswaList: nilaiData.siswaList as Siswa[],
+    siswaList: nilaiData.siswaList as SiswaIndex[],
     mapelList: nilaiData.mapelList,
     kelasList: nilaiData.kelasList,
     loading: nilaiData.loading,

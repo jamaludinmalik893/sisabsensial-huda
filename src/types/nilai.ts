@@ -22,7 +22,12 @@ export interface Siswa {
     nama_kelas: string;
   };
   guru_wali?: {
+    id_guru: string;
+    nip: string;
     nama_lengkap: string;
+    email: string;
+    status: string;
+    roles?: ('admin' | 'guru' | 'wali_kelas')[];
   };
 }
 

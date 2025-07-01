@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { UserSession } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -141,7 +140,7 @@ const AbsenHarianPage: React.FC<AbsenHarianPageProps> = ({ userSession }) => {
     );
   }
 
-  // Cast jurnalHari to ensure it has jam_pelajaran
+  // Ensure jurnalHari has jam_pelajaran property
   const jurnalHariWithJP = jurnalHari.map(j => ({
     ...j,
     jam_pelajaran: j.jam_pelajaran || 1

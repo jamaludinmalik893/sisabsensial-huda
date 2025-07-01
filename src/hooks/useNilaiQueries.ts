@@ -1,7 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
-import { Nilai, Siswa, MataPelajaran, Kelas } from '@/types/nilai';
+import { Nilai, MataPelajaran, Kelas } from '@/types/nilai';
+import type { Siswa as SiswaIndex } from '@/types/index';
 import { SemesterType } from '@/types/semester';
 
 export function useNilaiQueries(userSession: UserSession) {
@@ -31,8 +31,6 @@ export function useNilaiQueries(userSession: UserSession) {
     return data || [];
   };
 
-  // Perbarui query loadNilai agar hanya bergantung pada tabel nilai
-  // dan filter berdasarkan mapel yang diajar guru login
   const loadNilai = async (semesterFilter?: string): Promise<Nilai[]> => {
     console.log('DEBUG loadNilai: userSession.guru.id_guru:', userSession.guru.id_guru);
 
@@ -83,7 +81,13 @@ export function useNilaiQueries(userSession: UserSession) {
             id_kelas,
             nama_kelas
           ),
-          guru_wali:guru(nama_lengkap)
+          guru_wali:guru(
+            id_guru,
+            nip,
+            nama_lengkap,
+            email,
+            status
+          )
         ),
         mata_pelajaran!inner(
           id_mapel,
@@ -110,15 +114,22 @@ export function useNilaiQueries(userSession: UserSession) {
       siswa: item.siswa ? {
         ...item.siswa,
         created_at: item.siswa.created_at || new Date().toISOString(),
-        updated_at: item.siswa.updated_at || new Date().toISOString()
+        updated_at: item.siswa.updated_at || new Date().toISOString(),
+        guru_wali: item.siswa.guru_wali ? {
+          id_guru: item.siswa.guru_wali.id_guru || '',
+          nip: item.siswa.guru_wali.nip || '',
+          nama_lengkap: item.siswa.guru_wali.nama_lengkap || '',
+          email: item.siswa.guru_wali.email || '',
+          status: item.siswa.guru_wali.status || 'guru',
+          roles: []
+        } : undefined
       } : undefined
     }));
     
     return transformedData as Nilai[];
   };
 
-  const loadSiswaByKelas = async (kelasId: string) => {
-    // Query Siswa, pastikan select field sudah lengkap
+  const loadSiswaByKelas = async (kelasId: string): Promise<SiswaIndex[]> => {
     const { data, error } = await supabase
       .from('siswa')
       .select(`
@@ -145,17 +156,36 @@ export function useNilaiQueries(userSession: UserSession) {
         ),
         guru_wali:guru (
           id_guru,
-          nama_lengkap
+          nip,
+          nama_lengkap,
+          email,
+          status
         )
       `)
       .eq('id_kelas', kelasId)
       .order('nama_lengkap');
 
     if (error) throw error;
-    // LOG sebelum return
+    
     console.log("[DEBUG useNilaiQueries.ts] Siswa fetch raw result:", data);
 
-    return data || [];
+    // Transform to match SiswaIndex type
+    const transformedData = (data || []).map(siswa => ({
+      ...siswa,
+      jenis_kelamin: siswa.jenis_kelamin as 'Laki-laki' | 'Perempuan',
+      created_at: siswa.created_at || new Date().toISOString(),
+      updated_at: siswa.updated_at || new Date().toISOString(),
+      guru_wali: siswa.guru_wali ? {
+        id_guru: siswa.guru_wali.id_guru || '',
+        nip: siswa.guru_wali.nip || '',
+        nama_lengkap: siswa.guru_wali.nama_lengkap || '',
+        email: siswa.guru_wali.email || '',
+        status: siswa.guru_wali.status || 'guru',
+        roles: [] as ('admin' | 'guru' | 'wali_kelas')[]
+      } : undefined
+    }));
+
+    return transformedData as SiswaIndex[];
   };
 
   const updateNilai = async (nilaiId: string, newSkor: number, newCatatan?: string): Promise<boolean> => {
