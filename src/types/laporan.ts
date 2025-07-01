@@ -50,4 +50,6 @@ export interface LaporanFilters {
   kelas: string;
   mapel: string;
   semester?: string;
+  periode: string;
+  siswa: string;
 }

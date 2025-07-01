@@ -58,7 +58,7 @@ export const useLaporanNilai = (
           // Add semester filter
           if (filters.semester && filters.semester !== 'all') {
             const [semester] = filters.semester.split('-');
-            nilaiQuery = nilaiQuery.eq('semester', semester);
+            nilaiQuery = nilaiQuery.eq('semester', semester as SemesterType);
           }
 
           const { data: nilaiData, error: nilaiError } = await nilaiQuery;

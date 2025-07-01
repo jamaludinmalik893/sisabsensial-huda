@@ -22,16 +22,25 @@ const NilaiTabBulkEntry: React.FC = () => {
     });
   };
 
+  // Convert array to proper format for BulkNilaiEntry
+  const bulkValuesRecord = convertedBulkValues.reduce((acc, item) => {
+    if (item.key) {
+      acc[item.key] = { skor: item.skor || "", catatan: item.catatan || "" };
+    }
+    return acc;
+  }, {} as Record<string, { skor: string; catatan: string }>);
+
   return (
     <BulkNilaiEntry
       siswaList={siswaList}
       mapelList={mapelList}
       kelasList={kelasList}
-      bulkValues={convertedBulkValues}
+      bulkValues={bulkValuesRecord}
       onLoadSiswa={loadSiswaByKelas}
       onBulkValueChange={handleBulkEntryChange}
       onBulkSubmit={handleBulkSubmit}
     />
   );
 };
+
 export default NilaiTabBulkEntry;

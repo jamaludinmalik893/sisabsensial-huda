@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
 import { Nilai, Siswa, MataPelajaran, Kelas } from '@/types/nilai';
+import { SemesterType } from '@/types/semester';
 
 export function useNilaiQueries(userSession: UserSession) {
   const loadMataPelajaranByGuru = async (): Promise<MataPelajaran[]> => {
@@ -92,7 +93,7 @@ export function useNilaiQueries(userSession: UserSession) {
     // Add semester filter if provided
     if (semesterFilter && semesterFilter !== 'all') {
       const [semester] = semesterFilter.split('-');
-      nilaiQuery = nilaiQuery.eq('semester', semester);
+      nilaiQuery = nilaiQuery.eq('semester', semester as SemesterType);
     }
 
     const { data, error } = await nilaiQuery.order('tanggal_nilai', { ascending: false });

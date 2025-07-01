@@ -1,12 +1,14 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { UserSession } from "@/types";
 import { Nilai, Siswa, MataPelajaran, Kelas, BulkNilaiData } from "@/types/nilai";
 import { useNilaiQueries } from "@/hooks/useNilaiQueries";
 import { useBulkNilai } from "@/hooks/useBulkNilai";
+import { useNilaiData } from "@/hooks/useNilaiData";
 import { getCurrentSemester, getSemesterOptions } from "@/types/semester";
 
 interface NilaiContextType {
-  nilai: Nilai;
+  nilai: Nilai[];
   siswa: Siswa[];
   mataPelajaran: MataPelajaran[];
   kelas: Kelas[];
@@ -16,6 +18,17 @@ interface NilaiContextType {
   setSelectedSemester: (semester: string) => void;
   semesterOptions: Array<{semester: string; tahun: number; label: string}>;
   loadNilai: (semester?: string) => Promise<void>;
+  // Additional properties for compatibility
+  nilaiList: Nilai[];
+  siswaList: Siswa[];
+  mapelList: MataPelajaran[];
+  kelasList: Kelas[];
+  loading: boolean;
+  loadSiswaByKelas: (kelasId: string) => Promise<void>;
+  handleBulkValueChange: (siswaId: string, value: any) => void;
+  handleBulkSubmit: (selectedMapel: string, jenisNilai: string, judulTugas: string, tanggalTugasDibuat: string) => Promise<boolean>;
+  updateNilai: (nilaiId: string, newSkor: number, newCatatan?: string) => Promise<boolean>;
+  deleteNilai: (nilaiId: string) => Promise<boolean>;
 }
 
 const NilaiContext = createContext<NilaiContextType | undefined>(undefined);
@@ -30,55 +43,30 @@ export const NilaiProvider: React.FC<NilaiProviderProps> = ({ children, userSess
   const [selectedSemester, setSelectedSemester] = useState(`${currentSemester.semester}-${currentSemester.tahun}`);
   const semesterOptions = getSemesterOptions();
 
-  const {
-    loadMataPelajaranByGuru,
-    loadKelas,
-    loadNilai: loadNilaiQuery,
-    loadSiswaByKelas,
-    updateNilai: updateNilaiQuery,
-    deleteNilai: deleteNilaiQuery
-  } = useNilaiQueries(userSession);
-
-  const { bulkValues, ...nilai } = useNilaiData(userSession);
-  const convertedBulkValues = valuesToBulkNilaiEntry(bulkValues);
-
-  const [nilaiList, setNilaiList] = useState<Nilai[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const loadNilai = async (semester?: string) => {
-    try {
-      setLoading(true);
-      const semesterToUse = semester || selectedSemester;
-      const data = await loadNilaiQuery(semesterToUse);
-      setNilaiList(data);
-    } catch (error) {
-      console.error("Error loading nilai:", error);
-      setNilaiList([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadMapel();
-    loadKelas();
-  }, []);
-
-  useEffect(() => {
-    loadNilai();
-  }, [selectedSemester]);
+  const nilaiData = useNilaiData(userSession);
 
   const value: NilaiContextType = {
-    nilai,
-    siswa: nilai.siswa,
-    mataPelajaran: nilai.mataPelajaran,
-    kelas: nilai.kelas,
-    bulkNilai: nilai.bulkNilai,
-    convertedBulkValues,
+    nilai: nilaiData.nilaiList,
+    siswa: nilaiData.siswaList,
+    mataPelajaran: nilaiData.mapelList,
+    kelas: nilaiData.kelasList,
+    bulkNilai: [],
+    convertedBulkValues: Object.entries(nilaiData.bulkValues).map(([key, value]) => ({ key, ...value })),
     selectedSemester,
     setSelectedSemester,
     semesterOptions,
-    loadNilai
+    loadNilai: nilaiData.loadNilai,
+    // Additional properties for compatibility
+    nilaiList: nilaiData.nilaiList,
+    siswaList: nilaiData.siswaList,
+    mapelList: nilaiData.mapelList,
+    kelasList: nilaiData.kelasList,
+    loading: nilaiData.loading,
+    loadSiswaByKelas: nilaiData.loadSiswaByKelas,
+    handleBulkValueChange: nilaiData.handleBulkValueChange,
+    handleBulkSubmit: nilaiData.handleBulkSubmit,
+    updateNilai: nilaiData.updateNilai,
+    deleteNilai: nilaiData.deleteNilai
   };
 
   return <NilaiContext.Provider value={value}>{children}</NilaiContext.Provider>;
