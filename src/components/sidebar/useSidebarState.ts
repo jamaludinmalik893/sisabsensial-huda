@@ -2,48 +2,42 @@
 import { useState, useEffect } from 'react';
 
 export const useSidebarState = (currentPage: string) => {
-  const [nilaiOpen, setNilaiOpen] = useState(() => 
-    currentPage === "nilai" || currentPage.startsWith("nilai-")
-  );
-  const [absensiOpen, setAbsensiOpen] = useState(() =>
-    currentPage === "absensi" || currentPage === "riwayat-absensi"
-  );
-  const [waliKelasOpen, setWaliKelasOpen] = useState(() =>
-    currentPage === "wali-kelas" || currentPage === "wali-kelas-siswa" || 
-    currentPage === "wali-kelas-absen" || currentPage === "wali-kelas-laporan"
-  );
-
-  useEffect(() => {
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(() => {
+    // Determine which submenu should be open based on current page
     if (currentPage === "nilai" || currentPage.startsWith("nilai-")) {
-      setNilaiOpen(true);
+      return 'Nilai';
     }
     if (currentPage === "absensi" || currentPage === "riwayat-absensi") {
-      setAbsensiOpen(true);
+      return 'Absensi';
     }
     if (currentPage === "wali-kelas" || currentPage === "wali-kelas-siswa" || 
         currentPage === "wali-kelas-absen" || currentPage === "wali-kelas-laporan") {
-      setWaliKelasOpen(true);
+      return 'Wali Kelas';
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    // Update open submenu based on current page
+    if (currentPage === "nilai" || currentPage.startsWith("nilai-")) {
+      setOpenSubmenu('Nilai');
+    } else if (currentPage === "absensi" || currentPage === "riwayat-absensi") {
+      setOpenSubmenu('Absensi');
+    } else if (currentPage === "wali-kelas" || currentPage === "wali-kelas-siswa" || 
+               currentPage === "wali-kelas-absen" || currentPage === "wali-kelas-laporan") {
+      setOpenSubmenu('Wali Kelas');
     }
   }, [currentPage]);
 
   const expandedMenus = {
-    'Nilai': nilaiOpen,
-    'Absensi': absensiOpen,
-    'Wali Kelas': waliKelasOpen
+    'Nilai': openSubmenu === 'Nilai',
+    'Absensi': openSubmenu === 'Absensi',
+    'Wali Kelas': openSubmenu === 'Wali Kelas'
   };
 
   const toggleMenu = (menuTitle: string) => {
-    switch (menuTitle) {
-      case 'Nilai':
-        setNilaiOpen(prev => !prev);
-        break;
-      case 'Absensi':
-        setAbsensiOpen(prev => !prev);
-        break;
-      case 'Wali Kelas':
-        setWaliKelasOpen(prev => !prev);
-        break;
-    }
+    // If the clicked menu is already open, close it; otherwise, open it and close others
+    setOpenSubmenu(prevOpen => prevOpen === menuTitle ? null : menuTitle);
   };
 
   return { expandedMenus, toggleMenu };
