@@ -21,6 +21,7 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
     waktuSelesai,
     siswaList,
     absensiData,
+    absensiCatatan,
     kelasList,
     mapelList,
     loading,
@@ -63,7 +64,6 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
         onMateriDiajarkanChange={setMateriDiajarkan}
         onWaktuMulaiChange={setWaktuMulai}
         onWaktuSelesaiChange={setWaktuSelesai}
-        // Tambahkan prop untuk tanggal
         tanggalPelajaran={tanggalPelajaran}
         onTanggalPelajaranChange={setTanggalPelajaran}
       />
@@ -72,6 +72,7 @@ const AbsensiPage: React.FC<AbsensiPageProps> = ({ userSession }) => {
         <AbsensiList
           siswaList={siswaList}
           absensiData={absensiData}
+          absensiCatatan={absensiCatatan}
           loading={loading}
           onStatusUpdate={updateAbsensiStatus}
           onCatatanUpdate={updateAbsensiCatatan}
