@@ -16,6 +16,7 @@ export type Database = {
           id_absensi: string
           id_jurnal: string
           id_siswa: string
+          jam_pelajaran: number | null
           semester: Database["public"]["Enums"]["semester_type"] | null
           status: string
           updated_at: string | null
@@ -26,6 +27,7 @@ export type Database = {
           id_absensi?: string
           id_jurnal: string
           id_siswa: string
+          jam_pelajaran?: number | null
           semester?: Database["public"]["Enums"]["semester_type"] | null
           status: string
           updated_at?: string | null
@@ -36,6 +38,7 @@ export type Database = {
           id_absensi?: string
           id_jurnal?: string
           id_siswa?: string
+          jam_pelajaran?: number | null
           semester?: Database["public"]["Enums"]["semester_type"] | null
           status?: string
           updated_at?: string | null

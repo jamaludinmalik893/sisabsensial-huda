@@ -3,7 +3,6 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, User } from 'lucide-react';
 
 interface CatatanAbsensi {
   id_absensi: string;
@@ -13,8 +12,7 @@ interface CatatanAbsensi {
   catatan: string;
   guru_nama: string;
   mata_pelajaran: string;
-  waktu_mulai: string;
-  waktu_selesai: string;
+  jam_pelajaran: number;
 }
 
 interface CatatanAbsensiTableProps {
@@ -28,85 +26,81 @@ const CatatanAbsensiTable: React.FC<CatatanAbsensiTableProps> = ({
   catatanAbsensi,
   loading
 }) => {
-  const getStatusBadge = (status: string | null) => {
-    if (!status) return <span className="text-gray-400">-</span>;
-    
-    const variants = {
-      'Hadir': 'bg-green-500',
-      'Izin': 'bg-yellow-500', 
-      'Sakit': 'bg-blue-500',
-      'Alpha': 'bg-red-500'
-    };
-    
-    return (
-      <Badge className={variants[status as keyof typeof variants] || 'bg-gray-500'}>
-        {status}
-      </Badge>
-    );
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'Hadir':
+        return <Badge variant="default" className="bg-green-500">Hadir</Badge>;
+      case 'Izin':
+        return <Badge variant="secondary" className="bg-yellow-500">Izin</Badge>;
+      case 'Sakit':
+        return <Badge variant="secondary" className="bg-blue-500">Sakit</Badge>;
+      case 'Alpha':
+        return <Badge variant="destructive">Alpha</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
+
+  // Sort by jam_pelajaran and then by siswa_nama
+  const sortedCatatan = [...catatanAbsensi].sort((a, b) => {
+    if (a.jam_pelajaran !== b.jam_pelajaran) {
+      return a.jam_pelajaran - b.jam_pelajaran;
+    }
+    return a.siswa_nama.localeCompare(b.siswa_nama);
+  });
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          Catatan Absensi Tanggal {new Date(tanggalPilihan).toLocaleDateString('id-ID')}
-        </CardTitle>
+        <CardTitle>Catatan Absensi Tanggal {new Date(tanggalPilihan).toLocaleDateString('id-ID')}</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="text-center py-8">Memuat catatan...</div>
-        ) : catatanAbsensi.length > 0 ? (
+          <div className="text-center py-8">Memuat data...</div>
+        ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Siswa</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="w-12">No</TableHead>
+                  <TableHead className="w-24">JP</TableHead>
+                  <TableHead>Nama Siswa</TableHead>
+                  <TableHead>NISN</TableHead>
                   <TableHead>Mata Pelajaran</TableHead>
-                  <TableHead>Waktu</TableHead>
-                  <TableHead>Catatan</TableHead>
                   <TableHead>Guru</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Catatan</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {catatanAbsensi.map((catatan) => (
-                  <TableRow key={catatan.id_absensi}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{catatan.siswa_nama}</div>
-                        <div className="text-sm text-gray-500">{catatan.siswa_nisn}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(catatan.status)}
-                    </TableCell>
-                    <TableCell>{catatan.mata_pelajaran}</TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {catatan.waktu_mulai} - {catatan.waktu_selesai}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="max-w-xs">
-                        <p className="text-sm">{catatan.catatan}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm">{catatan.guru_nama}</span>
-                      </div>
+                {sortedCatatan.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                      Tidak ada catatan absensi
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  sortedCatatan.map((catatan, index) => (
+                    <TableRow key={catatan.id_absensi}>
+                      <TableCell>{index + 1}</TableCell>
+                      <TableCell className="text-center font-mono">
+                        {catatan.jam_pelajaran}
+                      </TableCell>
+                      <TableCell className="font-medium">{catatan.siswa_nama}</TableCell>
+                      <TableCell>{catatan.siswa_nisn}</TableCell>
+                      <TableCell>{catatan.mata_pelajaran}</TableCell>
+                      <TableCell>{catatan.guru_nama}</TableCell>
+                      <TableCell>{getStatusBadge(catatan.status)}</TableCell>
+                      <TableCell className="max-w-xs">
+                        <div className="truncate" title={catatan.catatan}>
+                          {catatan.catatan}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-            <p>Tidak ada catatan absensi untuk tanggal ini</p>
           </div>
         )}
       </CardContent>

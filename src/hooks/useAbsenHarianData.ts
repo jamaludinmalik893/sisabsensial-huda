@@ -15,11 +15,8 @@ interface JurnalHari {
   id_jurnal: string;
   mata_pelajaran: string;
   nama_guru: string;
-  waktu_mulai: string;
-  waktu_selesai: string;
-  judul_materi: string;
-  jam_diklat: number;
   jam_pelajaran: number;
+  judul_materi: string;
 }
 
 interface CatatanAbsensi {
@@ -30,8 +27,7 @@ interface CatatanAbsensi {
   catatan: string;
   guru_nama: string;
   mata_pelajaran: string;
-  waktu_mulai: string;
-  waktu_selesai: string;
+  jam_pelajaran: number;
 }
 
 export const useAbsenHarianData = (userSession: UserSession, tanggalPilihan: string) => {
@@ -60,16 +56,14 @@ export const useAbsenHarianData = (userSession: UserSession, tanggalPilihan: str
         .from('jurnal_harian')
         .select(`
           id_jurnal,
-          waktu_mulai,
-          waktu_selesai,
-          judul_materi,
           jam_pelajaran,
+          judul_materi,
           mata_pelajaran!inner(nama_mapel),
           guru!inner(nama_lengkap)
         `)
         .eq('id_kelas', userSession.kelasWali.id_kelas)
         .eq('tanggal_pelajaran', tanggalPilihan)
-        .order('waktu_mulai');
+        .order('jam_pelajaran');
 
       if (jurnalError) throw jurnalError;
 
@@ -80,7 +74,7 @@ export const useAbsenHarianData = (userSession: UserSession, tanggalPilihan: str
       if (jurnalIds.length > 0) {
         const { data, error: absensiError } = await supabase
           .from('absensi')
-          .select('id_siswa, id_jurnal, status')
+          .select('id_siswa, id_jurnal, status, jam_pelajaran')
           .in('id_jurnal', jurnalIds);
 
         if (absensiError) throw absensiError;
@@ -96,10 +90,10 @@ export const useAbsenHarianData = (userSession: UserSession, tanggalPilihan: str
             id_absensi,
             status,
             catatan,
+            jam_pelajaran,
             siswa!inner(nama_lengkap, nisn),
             jurnal_harian!inner(
-              waktu_mulai,
-              waktu_selesai,
+              jam_pelajaran,
               mata_pelajaran!inner(nama_mapel),
               guru!inner(nama_lengkap)
             )
@@ -118,8 +112,7 @@ export const useAbsenHarianData = (userSession: UserSession, tanggalPilihan: str
           catatan: item.catatan || '',
           guru_nama: (item.jurnal_harian as any)?.guru?.nama_lengkap || '',
           mata_pelajaran: (item.jurnal_harian as any)?.mata_pelajaran?.nama_mapel || '',
-          waktu_mulai: (item.jurnal_harian as any)?.waktu_mulai || '',
-          waktu_selesai: (item.jurnal_harian as any)?.waktu_selesai || ''
+          jam_pelajaran: item.jam_pelajaran || (item.jurnal_harian as any)?.jam_pelajaran || 1
         }));
       }
 
@@ -127,9 +120,9 @@ export const useAbsenHarianData = (userSession: UserSession, tanggalPilihan: str
       const processedSiswa = (siswaData || []).map(siswa => {
         const statusAbsensi: Record<string, 'Hadir' | 'Izin' | 'Sakit' | 'Alpha' | null> = {};
         
-        jurnalIds.forEach((jurnalId, index) => {
-          const absen = absensiData.find(a => a.id_siswa === siswa.id_siswa && a.id_jurnal === jurnalId);
-          statusAbsensi[`jam_${index + 1}`] = absen ? absen.status as any : null;
+        jurnalData?.forEach(jurnal => {
+          const absen = absensiData.find(a => a.id_siswa === siswa.id_siswa && a.id_jurnal === jurnal.id_jurnal);
+          statusAbsensi[`jp_${jurnal.jam_pelajaran}`] = absen ? absen.status as any : null;
         });
 
         return {
@@ -138,15 +131,12 @@ export const useAbsenHarianData = (userSession: UserSession, tanggalPilihan: str
         };
       });
 
-      const processedJurnal = (jurnalData || []).map((jurnal, index) => ({
+      const processedJurnal = (jurnalData || []).map((jurnal) => ({
         id_jurnal: jurnal.id_jurnal,
         mata_pelajaran: (jurnal.mata_pelajaran as any)?.nama_mapel || '',
         nama_guru: (jurnal.guru as any)?.nama_lengkap || '',
-        waktu_mulai: jurnal.waktu_mulai,
-        waktu_selesai: jurnal.waktu_selesai,
-        judul_materi: jurnal.judul_materi,
-        jam_diklat: index + 1,
-        jam_pelajaran: jurnal.jam_pelajaran || index + 1
+        jam_pelajaran: jurnal.jam_pelajaran || 1,
+        judul_materi: jurnal.judul_materi
       }));
 
       setSiswaAbsensi(processedSiswa);

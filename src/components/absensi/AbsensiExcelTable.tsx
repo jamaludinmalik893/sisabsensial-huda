@@ -48,7 +48,7 @@ const AbsensiExcelTable: React.FC<AbsensiExcelTableProps> = ({
   mapelList,
   kelasList
 }) => {
-  // Group data by student and date
+  // Group data by student and date with jam_pelajaran
   const attendanceMatrix = useMemo(() => {
     const grouped: Record<string, {
       siswa: RiwayatAbsensi['siswa'];
