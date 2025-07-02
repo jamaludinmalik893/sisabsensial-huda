@@ -13,15 +13,10 @@ interface Siswa {
   foto_url?: string;
 }
 
-interface AbsensiData {
-  id_siswa: string;
-  status: 'Hadir' | 'Izin' | 'Sakit' | 'Alpha';
-  catatan?: string;
-}
-
 interface AbsensiListProps {
   siswaList: Siswa[];
-  absensiData: AbsensiData[];
+  absensiData: { [key: string]: 'Hadir' | 'Izin' | 'Sakit' | 'Alpha' };
+  absensiCatatan: { [key: string]: string };
   loading: boolean;
   onStatusUpdate: (id_siswa: string, status: 'Hadir' | 'Izin' | 'Sakit' | 'Alpha') => void;
   onCatatanUpdate: (id_siswa: string, catatan: string) => void;
@@ -31,6 +26,7 @@ interface AbsensiListProps {
 const AbsensiList: React.FC<AbsensiListProps> = ({
   siswaList,
   absensiData,
+  absensiCatatan,
   loading,
   onStatusUpdate,
   onCatatanUpdate,
@@ -61,7 +57,10 @@ const AbsensiList: React.FC<AbsensiListProps> = ({
   };
 
   const getAbsensiForSiswa = (id_siswa: string) => {
-    return absensiData.find(item => item.id_siswa === id_siswa);
+    return {
+      status: absensiData[id_siswa] || 'Hadir',
+      catatan: absensiCatatan[id_siswa] || ''
+    };
   };
 
   // Calculate attendance statistics
@@ -74,8 +73,8 @@ const AbsensiList: React.FC<AbsensiListProps> = ({
       alpha: 0
     };
 
-    absensiData.forEach(item => {
-      switch (item.status) {
+    Object.values(absensiData).forEach(status => {
+      switch (status) {
         case 'Hadir':
           stats.hadir++;
           break;
@@ -187,8 +186,8 @@ const AbsensiList: React.FC<AbsensiListProps> = ({
                 <StudentAttendanceRow
                   key={siswa.id_siswa}
                   siswa={siswa}
-                  status={absensiSiswa?.status || 'Hadir'}
-                  catatan={absensiSiswa?.catatan || ''}
+                  status={absensiSiswa.status}
+                  catatan={absensiSiswa.catatan}
                   onStatusChange={onStatusUpdate}
                   onCatatanChange={onCatatanUpdate}
                   onSiswaClick={handleSiswaClick}
