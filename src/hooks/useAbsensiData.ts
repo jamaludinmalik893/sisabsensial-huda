@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { UserSession } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -7,13 +8,14 @@ interface Siswa {
   id_siswa: string;
   nama_lengkap: string;
   nisn: string;
-  foto_url?: string;
 }
 
-interface AbsensiData {
-  id_siswa: string;
-  status: 'Hadir' | 'Izin' | 'Sakit' | 'Alpha';
-  catatan?: string;
+interface AbsensiStatus {
+  [key: string]: 'Hadir' | 'Izin' | 'Sakit' | 'Alpha';
+}
+
+interface AbsensiCatatan {
+  [key: string]: string;
 }
 
 interface Kelas {
@@ -27,44 +29,41 @@ interface MataPelajaran {
 }
 
 export const useAbsensiData = (userSession: UserSession) => {
-  const [selectedKelas, setSelectedKelas] = useState<string>('');
-  const [selectedMapel, setSelectedMapel] = useState<string>('');
-  const [judulMateri, setJudulMateri] = useState<string>('');
-  const [materiDiajarkan, setMateriDiajarkan] = useState<string>('');
-  const [waktuMulai, setWaktuMulai] = useState<string>('');
-  const [waktuSelesai, setWaktuSelesai] = useState<string>('');
+  const [selectedKelas, setSelectedKelas] = useState('');
+  const [selectedMapel, setSelectedMapel] = useState('');
+  const [judulMateri, setJudulMateri] = useState('');
+  const [materiDiajarkan, setMateriDiajarkan] = useState('');
+  const [waktuMulai, setWaktuMulai] = useState('');
+  const [waktuSelesai, setWaktuSelesai] = useState('');
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
-  const [absensiData, setAbsensiData] = useState<AbsensiData[]>([]);
+  const [absensiData, setAbsensiData] = useState<AbsensiStatus>({});
+  const [absensiCatatan, setAbsensiCatatan] = useState<AbsensiCatatan>({});
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [mapelList, setMapelList] = useState<MataPelajaran[]>([]);
   const [loading, setLoading] = useState(false);
+  const [tanggalPelajaran, setTanggalPelajaran] = useState(new Date().toISOString().split('T')[0]);
+  
+  const today = new Date().toISOString().split('T')[0];
   const { toast } = useToast();
 
-  // TAMBAHKAN: State tanggal pelajaran (default hari ini, bisa diubah user)
-  const [tanggalPelajaran, setTanggalPelajaran] = useState<string>(new Date().toISOString().split('T')[0]);
-
-  const today = tanggalPelajaran; // Ganti penggunaan today dengan tanggalPelajaran
-
+  // Load kelas list
   useEffect(() => {
-    loadInitialData();
-  }, [userSession]);
+    loadKelas();
+  }, []);
 
+  // Load mata pelajaran based on guru
+  useEffect(() => {
+    if (userSession.guru?.id_guru) {
+      loadMataPelajaranByGuru();
+    }
+  }, [userSession.guru?.id_guru]);
+
+  // Load siswa when kelas is selected
   useEffect(() => {
     if (selectedKelas) {
       loadSiswaByKelas();
     }
   }, [selectedKelas]);
-
-  const loadInitialData = async () => {
-    try {
-      await Promise.all([
-        loadKelas(),
-        loadMataPelajaranByGuru()
-      ]);
-    } catch (error) {
-      console.error('Error loading initial data:', error);
-    }
-  };
 
   const loadKelas = async () => {
     try {
@@ -77,6 +76,11 @@ export const useAbsensiData = (userSession: UserSession) => {
       setKelasList(data || []);
     } catch (error) {
       console.error('Error loading kelas:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat data kelas",
+        variant: "destructive"
+      });
     }
   };
 
@@ -98,34 +102,25 @@ export const useAbsensiData = (userSession: UserSession) => {
       setMapelList(mapelData);
     } catch (error) {
       console.error('Error loading mata pelajaran:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat data mata pelajaran",
+        variant: "destructive"
+      });
     }
   };
 
   const loadSiswaByKelas = async () => {
     try {
-      console.log('Loading siswa for kelas:', selectedKelas);
-
+      setLoading(true);
       const { data, error } = await supabase
         .from('siswa')
-        .select('id_siswa, nama_lengkap, nisn, foto_url')
+        .select('id_siswa, nama_lengkap, nisn')
         .eq('id_kelas', selectedKelas)
         .order('nama_lengkap');
 
-      if (error) {
-        console.error('Error loading siswa:', error);
-        throw error;
-      }
-
-      console.log('Siswa data loaded:', data);
+      if (error) throw error;
       setSiswaList(data || []);
-      
-      // Initialize absensi data
-      const initialAbsensi = (data || []).map(siswa => ({
-        id_siswa: siswa.id_siswa,
-        status: 'Hadir' as const,
-        catatan: ''
-      }));
-      setAbsensiData(initialAbsensi);
     } catch (error) {
       console.error('Error loading siswa:', error);
       toast({
@@ -133,98 +128,119 @@ export const useAbsensiData = (userSession: UserSession) => {
         description: "Gagal memuat data siswa",
         variant: "destructive"
       });
-    }
-  };
-
-  const updateAbsensiStatus = (id_siswa: string, status: 'Hadir' | 'Izin' | 'Sakit' | 'Alpha') => {
-    setAbsensiData(prev => 
-      prev.map(item => 
-        item.id_siswa === id_siswa ? { ...item, status } : item
-      )
-    );
-  };
-
-  const updateAbsensiCatatan = (id_siswa: string, catatan: string) => {
-    setAbsensiData(prev => 
-      prev.map(item => 
-        item.id_siswa === id_siswa ? { ...item, catatan } : item
-      )
-    );
-  };
-
-  const saveAbsensi = async () => {
-    if (!selectedKelas || !selectedMapel || !judulMateri || !materiDiajarkan || !waktuMulai || !waktuSelesai) {
-      toast({
-        title: "Error",
-        description: "Semua field harus diisi",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // CREATE JURNAL DENGAN TANGGAL YANG DIPILIH
-      const { data: jurnalData, error: jurnalError } = await supabase
-        .from('jurnal_harian')
-        .insert({
-          id_guru: userSession.guru.id_guru,
-          id_mapel: selectedMapel,
-          id_kelas: selectedKelas,
-          tanggal_pelajaran: tanggalPelajaran,
-          waktu_mulai: waktuMulai,
-          waktu_selesai: waktuSelesai,
-          judul_materi: judulMateri,
-          materi_diajarkan: materiDiajarkan
-        })
-        .select()
-        .single();
-
-      if (jurnalError) throw jurnalError;
-
-      // Then save absensi
-      const absensiToInsert = absensiData.map(item => ({
-        id_jurnal: jurnalData.id_jurnal,
-        id_siswa: item.id_siswa,
-        status: item.status,
-        catatan: item.catatan
-      }));
-
-      const { error: absensiError } = await supabase
-        .from('absensi')
-        .upsert(absensiToInsert);
-
-      if (absensiError) throw absensiError;
-
-      toast({
-        title: "Berhasil",
-        description: "Jurnal dan absensi berhasil disimpan"
-      });
-
-      // Reset form
-      resetForm();
-    } catch (error) {
-      console.error('Error saving absensi:', error);
-      toast({
-        title: "Error",
-        description: "Gagal menyimpan data",
-        variant: "destructive"
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setSelectedKelas('');
-    setSelectedMapel('');
-    setJudulMateri('');
-    setMateriDiajarkan('');
-    setWaktuMulai('');
-    setWaktuSelesai('');
-    setSiswaList([]);
-    setAbsensiData([]);
-    setTanggalPelajaran(new Date().toISOString().split('T')[0]); // reset tanggal ke hari ini
+  const updateAbsensiStatus = useCallback((siswaId: string, status: 'Hadir' | 'Izin' | 'Sakit' | 'Alpha') => {
+    setAbsensiData(prev => ({
+      ...prev,
+      [siswaId]: status
+    }));
+  }, []);
+
+  const updateAbsensiCatatan = useCallback((siswaId: string, catatan: string) => {
+    setAbsensiCatatan(prev => ({
+      ...prev,
+      [siswaId]: catatan
+    }));
+  }, []);
+
+  const saveAbsensi = async () => {
+    if (!selectedKelas || !selectedMapel || !judulMateri || !waktuMulai) {
+      toast({
+        title: "Error",
+        description: "Harap lengkapi semua data pembelajaran",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Calculate jam_pelajaran range
+      const jamMulai = parseInt(waktuMulai);
+      const jamSelesai = waktuSelesai ? parseInt(waktuSelesai) : jamMulai;
+      
+      // Generate jam pelajaran array
+      const jamPelajaranArray = [];
+      for (let jp = jamMulai; jp <= jamSelesai; jp++) {
+        jamPelajaranArray.push(jp);
+      }
+
+      // Create jurnal entries for each jam pelajaran
+      const jurnalPromises = jamPelajaranArray.map(async (jp) => {
+        const { data: jurnalData, error: jurnalError } = await supabase
+          .from('jurnal_harian')
+          .insert({
+            id_guru: userSession.guru.id_guru,
+            id_kelas: selectedKelas,
+            id_mapel: selectedMapel,
+            tanggal_pelajaran: tanggalPelajaran,
+            waktu_mulai: `${jp.toString().padStart(2, '0')}:00`,
+            waktu_selesai: `${jp.toString().padStart(2, '0')}:45`,
+            judul_materi: judulMateri,
+            materi_diajarkan: materiDiajarkan,
+            jam_pelajaran: jp
+          })
+          .select()
+          .single();
+
+        if (jurnalError) throw jurnalError;
+        return { jurnal: jurnalData, jamPelajaran: jp };
+      });
+
+      const jurnalResults = await Promise.all(jurnalPromises);
+
+      // Create absensi entries
+      const absensiEntries = [];
+      
+      for (const siswa of siswaList) {
+        const status = absensiData[siswa.id_siswa] || 'Hadir';
+        const catatan = absensiCatatan[siswa.id_siswa] || '';
+
+        for (const { jurnal, jamPelajaran } of jurnalResults) {
+          absensiEntries.push({
+            id_jurnal: jurnal.id_jurnal,
+            id_siswa: siswa.id_siswa,
+            status: status,
+            catatan: catatan,
+            jam_pelajaran: jamPelajaran
+          });
+        }
+      }
+
+      const { error: absensiError } = await supabase
+        .from('absensi')
+        .insert(absensiEntries);
+
+      if (absensiError) throw absensiError;
+
+      toast({
+        title: "Berhasil",
+        description: `Absensi berhasil disimpan untuk JP ${jamMulai}${jamSelesai > jamMulai ? ` - ${jamSelesai}` : ''}`,
+      });
+
+      // Reset form
+      setJudulMateri('');
+      setMateriDiajarkan('');
+      setWaktuMulai('');
+      setWaktuSelesai('');
+      setAbsensiData({});
+      setAbsensiCatatan({});
+      
+    } catch (error) {
+      console.error('Error saving absensi:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan data absensi",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return {
@@ -239,9 +255,9 @@ export const useAbsensiData = (userSession: UserSession) => {
     kelasList,
     mapelList,
     loading,
-    today: tanggalPelajaran,      // ganti penggunaan today
-    tanggalPelajaran,             // tambahkan prop tanggalPelajaran
-    setTanggalPelajaran,          // expose setter
+    today,
+    tanggalPelajaran,
+    setTanggalPelajaran,
     setSelectedKelas,
     setSelectedMapel,
     setJudulMateri,

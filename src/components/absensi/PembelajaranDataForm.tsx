@@ -1,25 +1,17 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-
-interface Kelas {
-  id_kelas: string;
-  nama_kelas: string;
-}
-
-interface MataPelajaran {
-  id_mapel: string;
-  nama_mapel: string;
-}
 
 interface PembelajaranDataFormProps {
   selectedKelas: string;
@@ -28,8 +20,8 @@ interface PembelajaranDataFormProps {
   materiDiajarkan: string;
   waktuMulai: string;
   waktuSelesai: string;
-  kelasList: Kelas[];
-  mapelList: MataPelajaran[];
+  kelasList: Array<{id_kelas: string; nama_kelas: string}>;
+  mapelList: Array<{id_mapel: string; nama_mapel: string}>;
   onKelasChange: (value: string) => void;
   onMapelChange: (value: string) => void;
   onJudulMateriChange: (value: string) => void;
@@ -56,67 +48,66 @@ const PembelajaranDataForm: React.FC<PembelajaranDataFormProps> = ({
   onWaktuMulaiChange,
   onWaktuSelesaiChange,
   tanggalPelajaran,
-  onTanggalPelajaranChange,
+  onTanggalPelajaranChange
 }) => {
-  // Konversi yyyy-mm-dd ke Date (untuk DatePicker)
-  const selectedDate = tanggalPelajaran ? new Date(tanggalPelajaran) : undefined;
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      // Format to YYYY-MM-DD to ensure consistency
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      onTanggalPelajaranChange(formattedDate);
+    }
+  };
+
+  const selectedDate = tanggalPelajaran ? new Date(tanggalPelajaran + 'T00:00:00') : undefined;
+
+  // Generate jam pelajaran options (1-10)
+  const jamPelajaranOptions = Array.from({ length: 10 }, (_, i) => i + 1);
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Data Pembelajaran</CardTitle>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="tanggal-pelajaran" className="text-sm font-medium whitespace-nowrap">
-              Tanggal Pembelajaran:
-            </Label>
+        <CardTitle>Data Pembelajaran</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Tanggal Pelajaran */}
+          <div className="space-y-2">
+            <Label htmlFor="tanggal">Tanggal Pelajaran</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-[200px] justify-start text-left font-normal",
+                    "w-full justify-start text-left font-normal",
                     !selectedDate && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate
-                    ? selectedDate.toLocaleDateString("id-ID", { 
-                        day: "2-digit", 
-                        month: "short", 
-                        year: "numeric" 
-                      })
-                    : <span>Pilih tanggal</span>}
+                  {selectedDate ? (
+                    format(selectedDate, "PPP", { locale: id })
+                  ) : (
+                    <span>Pilih tanggal</span>
+                  )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
+              <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
-                  onSelect={(date) => {
-                    if (date) {
-                      // Ubah ke format yyyy-mm-dd
-                      const formatted = date.toISOString().split("T")[0];
-                      onTanggalPelajaranChange(formatted);
-                    }
-                  }}
+                  onSelect={handleDateSelect}
                   initialFocus
-                  className={cn("p-3 pointer-events-auto")}
+                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Grid untuk input utama */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
           {/* Kelas */}
           <div className="space-y-2">
             <Label htmlFor="kelas">Kelas</Label>
             <Select value={selectedKelas} onValueChange={onKelasChange}>
-              <SelectTrigger id="kelas">
-                <SelectValue placeholder="Pilih Kelas" />
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih kelas" />
               </SelectTrigger>
               <SelectContent>
                 {kelasList.map((kelas) => (
@@ -128,12 +119,12 @@ const PembelajaranDataForm: React.FC<PembelajaranDataFormProps> = ({
             </Select>
           </div>
 
-          {/* Mapel */}
+          {/* Mata Pelajaran */}
           <div className="space-y-2">
             <Label htmlFor="mapel">Mata Pelajaran</Label>
             <Select value={selectedMapel} onValueChange={onMapelChange}>
-              <SelectTrigger id="mapel">
-                <SelectValue placeholder="Pilih Mata Pelajaran" />
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih mata pelajaran" />
               </SelectTrigger>
               <SelectContent>
                 {mapelList.map((mapel) => (
@@ -145,56 +136,71 @@ const PembelajaranDataForm: React.FC<PembelajaranDataFormProps> = ({
             </Select>
           </div>
 
-          {/* Waktu - dalam satu kolom dengan flex */}
+          {/* Jam Pelajaran Mulai */}
           <div className="space-y-2">
-            <Label>Waktu Pembelajaran</Label>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <Input
-                  id="waktu-mulai"
-                  type="time"
-                  value={waktuMulai}
-                  onChange={(e) => onWaktuMulaiChange(e.target.value)}
-                  placeholder="Mulai"
-                />
-              </div>
-              <div className="flex items-center px-2 text-sm text-gray-500">s/d</div>
-              <div className="flex-1">
-                <Input
-                  id="waktu-selesai"
-                  type="time"
-                  value={waktuSelesai}
-                  onChange={(e) => onWaktuSelesaiChange(e.target.value)}
-                  placeholder="Selesai"
-                />
-              </div>
-            </div>
+            <Label htmlFor="jamMulai">Jam Pelajaran Ke</Label>
+            <Select value={waktuMulai} onValueChange={onWaktuMulaiChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih jam pelajaran mulai" />
+              </SelectTrigger>
+              <SelectContent>
+                {jamPelajaranOptions.map((jp) => (
+                  <SelectItem key={jp} value={jp.toString()}>
+                    JP {jp}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Jam Pelajaran Selesai */}
+          <div className="space-y-2">
+            <Label htmlFor="jamSelesai">Sampai Jam Pelajaran Ke</Label>
+            <Select value={waktuSelesai} onValueChange={onWaktuSelesaiChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih jam pelajaran selesai" />
+              </SelectTrigger>
+              <SelectContent>
+                {jamPelajaranOptions.map((jp) => (
+                  <SelectItem key={jp} value={jp.toString()}>
+                    JP {jp}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
         {/* Judul Materi */}
         <div className="space-y-2">
-          <Label htmlFor="judul-materi">Judul Materi</Label>
+          <Label htmlFor="judulMateri">Judul Materi</Label>
           <Input
-            id="judul-materi"
-            placeholder="Masukkan judul materi pembelajaran"
+            id="judulMateri"
             value={judulMateri}
             onChange={(e) => onJudulMateriChange(e.target.value)}
+            placeholder="Masukkan judul materi"
           />
         </div>
 
         {/* Materi yang Diajarkan */}
         <div className="space-y-2">
-          <Label htmlFor="materi-diajarkan">Materi yang Diajarkan</Label>
+          <Label htmlFor="materiDiajarkan">Materi yang Diajarkan</Label>
           <Textarea
-            id="materi-diajarkan"
-            placeholder="Deskripsikan materi yang diajarkan secara detail..."
+            id="materiDiajarkan"
             value={materiDiajarkan}
             onChange={(e) => onMateriDiajarkanChange(e.target.value)}
-            rows={4}
-            className="resize-none"
+            placeholder="Deskripsikan materi yang diajarkan"
+            rows={3}
           />
         </div>
+
+        {waktuMulai && waktuSelesai && (
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-700">
+              <strong>Jam Pelajaran:</strong> JP {waktuMulai} - JP {waktuSelesai}
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
