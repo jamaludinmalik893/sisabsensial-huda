@@ -3,6 +3,8 @@ import React, { useMemo } from 'react';
 import { UserSession } from '@/types';
 import RiwayatAbsensiFilters from './absensi/RiwayatAbsensiFilters';
 import AbsensiOverviewTable from './absensi/AbsensiOverviewTable';
+import AbsensiExcelTable from './absensi/AbsensiExcelTable';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRiwayatAbsensiData } from '@/hooks/useRiwayatAbsensiData';
 
 interface RiwayatAbsensiPageProps {
@@ -114,15 +116,35 @@ const RiwayatAbsensiPage: React.FC<RiwayatAbsensiPageProps> = ({ userSession }) 
           Silakan pilih <b>mata pelajaran</b> atau <b>kelas</b> terlebih dahulu untuk melihat rekapitulasi absensi.
         </div>
       ) : (
-        <AbsensiOverviewTable 
-          riwayatAbsensi={riwayatAbsensi}
-          loading={loading}
-          selectedMapel={selectedMapel}
-          selectedKelas={selectedKelas}
-          mapelList={mapelList}
-          kelasList={kelasList}
-          refreshData={refreshData}
-        />
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="overview">Ringkasan</TabsTrigger>
+            <TabsTrigger value="excel">Format Excel</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview">
+            <AbsensiOverviewTable 
+              riwayatAbsensi={riwayatAbsensi}
+              loading={loading}
+              selectedMapel={selectedMapel}
+              selectedKelas={selectedKelas}
+              mapelList={mapelList}
+              kelasList={kelasList}
+              refreshData={refreshData}
+            />
+          </TabsContent>
+          
+          <TabsContent value="excel">
+            <AbsensiExcelTable
+              riwayatAbsensi={riwayatAbsensi}
+              loading={loading}
+              selectedMapel={selectedMapel}
+              selectedKelas={selectedKelas}
+              mapelList={mapelList}
+              kelasList={kelasList}
+            />
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   );

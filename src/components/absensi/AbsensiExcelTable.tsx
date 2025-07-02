@@ -48,15 +48,14 @@ const AbsensiExcelTable: React.FC<AbsensiExcelTableProps> = ({
   mapelList,
   kelasList
 }) => {
-  // Group data by student and date with jam_pelajaran
+  // Group data by student and date
   const attendanceMatrix = useMemo(() => {
     const grouped: Record<string, {
       siswa: RiwayatAbsensi['siswa'];
-      dates: Record<string, Record<number, string>>;
+      dates: Record<string, string>;
     }> = {};
 
     const allDates = new Set<string>();
-    const allJamPelajaran = new Set<number>();
 
     // Filter absensi
     const filteredAbsensi = riwayatAbsensi.filter(absensi => {
@@ -70,10 +69,8 @@ const AbsensiExcelTable: React.FC<AbsensiExcelTableProps> = ({
     filteredAbsensi.forEach(absensi => {
       const siswaId = absensi.siswa.id_siswa;
       const tanggal = absensi.jurnal_harian.tanggal_pelajaran;
-      const jamPelajaran = absensi.jurnal_harian.jam_pelajaran;
 
       allDates.add(tanggal);
-      allJamPelajaran.add(jamPelajaran);
 
       if (!grouped[siswaId]) {
         grouped[siswaId] = {
@@ -82,20 +79,14 @@ const AbsensiExcelTable: React.FC<AbsensiExcelTableProps> = ({
         };
       }
 
-      if (!grouped[siswaId].dates[tanggal]) {
-        grouped[siswaId].dates[tanggal] = {};
-      }
-
-      grouped[siswaId].dates[tanggal][jamPelajaran] = absensi.status;
+      grouped[siswaId].dates[tanggal] = absensi.status;
     });
 
     const sortedDates = Array.from(allDates).sort();
-    const sortedJamPelajaran = Array.from(allJamPelajaran).sort((a, b) => a - b);
 
     return {
       grouped: Object.values(grouped).sort((a, b) => a.siswa.nama_lengkap.localeCompare(b.siswa.nama_lengkap)),
-      dates: sortedDates,
-      jamPelajaran: sortedJamPelajaran
+      dates: sortedDates
     };
   }, [riwayatAbsensi, selectedMapel, selectedKelas, mapelList, kelasList]);
 
@@ -119,40 +110,64 @@ const AbsensiExcelTable: React.FC<AbsensiExcelTableProps> = ({
     }
   };
 
+  const calculateSummary = (studentData: any) => {
+    const attendances = Object.values(studentData.dates);
+    return {
+      hadir: attendances.filter(status => status === 'Hadir').length,
+      izin: attendances.filter(status => status === 'Izin').length,
+      sakit: attendances.filter(status => status === 'Sakit').length,
+      alpha: attendances.filter(status => status === 'Alpha').length,
+      total: attendances.length
+    };
+  };
+
   const exportToExcel = () => {
     const exportData = [];
     
+    // Header information
+    const mapelName = selectedMapel === 'all' ? 'Semua' : mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel;
+    const kelasName = selectedKelas === 'all' ? 'Semua' : kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas;
+    
+    exportData.push(['REKAPITULASI ABSENSI SISWA']);
+    exportData.push(['SMK AL-HUDA KOTA KEDIRI']);
+    exportData.push([]);
+    exportData.push([`Filter: Mata Pelajaran: ${mapelName} | Kelas: ${kelasName}`]);
+    exportData.push([`Tanggal Export: ${new Date().toLocaleDateString('id-ID')}`]);
+    exportData.push([]);
+
     // Header row
-    const headerRow = ['No', 'NISN', 'Nama Siswa'];
+    const headerRow = ['No', 'Nama Siswa'];
     attendanceMatrix.dates.forEach(date => {
-      attendanceMatrix.jamPelajaran.forEach(jp => {
-        headerRow.push(`${new Date(date).toLocaleDateString('id-ID')} JP${jp}`);
-      });
+      headerRow.push(new Date(date).toLocaleDateString('id-ID'));
     });
+    headerRow.push('H', 'I', 'S', 'A', '%');
     exportData.push(headerRow);
 
     // Data rows
     attendanceMatrix.grouped.forEach((student, index) => {
-      const row = [index + 1, student.siswa.nisn, student.siswa.nama_lengkap];
+      const summary = calculateSummary(student);
+      const percentage = summary.total > 0 ? Math.round((summary.hadir / summary.total) * 100) : 0;
+      
+      const row = [index + 1, student.siswa.nama_lengkap];
       
       attendanceMatrix.dates.forEach(date => {
-        attendanceMatrix.jamPelajaran.forEach(jp => {
-          const status = student.dates[date]?.[jp];
-          row.push(getStatusSymbol(status));
-        });
+        const status = student.dates[date];
+        row.push(getStatusSymbol(status));
       });
       
+      row.push(summary.hadir, summary.izin, summary.sakit, summary.alpha, `${percentage}%`);
       exportData.push(row);
     });
 
+    exportData.push([]);
+    exportData.push(['Keterangan:']);
+    exportData.push(['H = Hadir | A = Alpha (Tidak Hadir) | I = Izin | S = Sakit | % = Persentase Kehadiran']);
+
     const worksheet = XLSX.utils.aoa_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Riwayat Absensi');
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Rekapitulasi Absensi');
     
-    const mapelName = selectedMapel === 'all' ? 'Semua' : mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel;
-    const kelasName = selectedKelas === 'all' ? 'Semua' : kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas;
-    
-    XLSX.writeFile(workbook, `Riwayat_Absensi_${kelasName}_${mapelName}.xlsx`);
+    XLSX.writeFile(workbook, `Rekapitulasi_Absensi_${kelasName}_${mapelName}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   if (loading) {
@@ -169,7 +184,15 @@ const AbsensiExcelTable: React.FC<AbsensiExcelTableProps> = ({
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Riwayat Absensi (Format Excel)</CardTitle>
+          <div>
+            <CardTitle>REKAPITULASI ABSENSI SISWA</CardTitle>
+            <p className="text-sm text-gray-600 mt-1">SMK AL-HUDA KOTA KEDIRI</p>
+            <div className="text-sm text-gray-500 mt-2">
+              <p>Filter: Mata Pelajaran: {selectedMapel === 'all' ? 'Semua' : mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel} | 
+                 Kelas: {selectedKelas === 'all' ? 'Semua' : kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas}</p>
+              <p>Tanggal Export: {new Date().toLocaleDateString('id-ID')}</p>
+            </div>
+          </div>
           <Button onClick={exportToExcel} size="sm">
             <Download className="h-4 w-4 mr-2" />
             Export Excel
@@ -182,50 +205,67 @@ const AbsensiExcelTable: React.FC<AbsensiExcelTableProps> = ({
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">No</TableHead>
-                <TableHead className="w-20">NISN</TableHead>
                 <TableHead className="min-w-32">Nama Siswa</TableHead>
-                {attendanceMatrix.dates.map(date => 
-                  attendanceMatrix.jamPelajaran.map(jp => (
-                    <TableHead key={`${date}-${jp}`} className="text-center w-16">
-                      <div className="text-xs">
-                        <div>{new Date(date).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })}</div>
-                        <div>JP{jp}</div>
-                      </div>
-                    </TableHead>
-                  ))
-                )}
+                {attendanceMatrix.dates.map(date => (
+                  <TableHead key={date} className="text-center w-20">
+                    {new Date(date).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' })}
+                  </TableHead>
+                ))}
+                <TableHead className="text-center w-12">H</TableHead>
+                <TableHead className="text-center w-12">I</TableHead>
+                <TableHead className="text-center w-12">S</TableHead>
+                <TableHead className="text-center w-12">A</TableHead>
+                <TableHead className="text-center w-12">%</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {attendanceMatrix.grouped.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3 + (attendanceMatrix.dates.length * attendanceMatrix.jamPelajaran.length)} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={7 + attendanceMatrix.dates.length} className="text-center py-8 text-gray-500">
                     Tidak ada data absensi
                   </TableCell>
                 </TableRow>
               ) : (
-                attendanceMatrix.grouped.map((student, index) => (
-                  <TableRow key={student.siswa.id_siswa}>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>{student.siswa.nisn}</TableCell>
-                    <TableCell className="font-medium">{student.siswa.nama_lengkap}</TableCell>
-                    {attendanceMatrix.dates.map(date => 
-                      attendanceMatrix.jamPelajaran.map(jp => {
-                        const status = student.dates[date]?.[jp];
+                attendanceMatrix.grouped.map((student, index) => {
+                  const summary = calculateSummary(student);
+                  const percentage = summary.total > 0 ? Math.round((summary.hadir / summary.total) * 100) : 0;
+                  
+                  return (
+                    <TableRow key={student.siswa.id_siswa}>
+                      <TableCell>{index + 1}</TableCell>
+                      <TableCell className="font-medium">{student.siswa.nama_lengkap}</TableCell>
+                      {attendanceMatrix.dates.map(date => {
+                        const status = student.dates[date];
                         return (
-                          <TableCell key={`${date}-${jp}`} className="text-center">
+                          <TableCell key={date} className="text-center">
                             <div className={`w-6 h-6 flex items-center justify-center rounded text-xs font-bold ${getStatusColor(status)}`}>
                               {getStatusSymbol(status)}
                             </div>
                           </TableCell>
                         );
-                      })
-                    )}
-                  </TableRow>
-                ))
+                      })}
+                      <TableCell className="text-center font-medium">{summary.hadir}</TableCell>
+                      <TableCell className="text-center font-medium">{summary.izin}</TableCell>
+                      <TableCell className="text-center font-medium">{summary.sakit}</TableCell>
+                      <TableCell className="text-center font-medium">{summary.alpha}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant={percentage >= 75 ? 'default' : 'destructive'} className="text-xs">
+                          {percentage}%
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
+        </div>
+        
+        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+          <p className="text-sm font-medium">Keterangan:</p>
+          <p className="text-xs text-gray-600">
+            H = Hadir | A = Alpha (Tidak Hadir) | I = Izin | S = Sakit | % = Persentase Kehadiran
+          </p>
         </div>
       </CardContent>
     </Card>
