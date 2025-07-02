@@ -1,11 +1,11 @@
-
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, FileText } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
 
 interface RiwayatAbsensi {
   id_absensi: string;
@@ -121,6 +121,118 @@ const AbsensiExcelTable: React.FC<AbsensiExcelTableProps> = ({
     };
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    
+    // Header information
+    const mapelName = selectedMapel === 'all' ? 'Semua' : mapelList.find(m => m.id_mapel === selectedMapel)?.nama_mapel;
+    const kelasName = selectedKelas === 'all' ? 'Semua' : kelasList.find(k => k.id_kelas === selectedKelas)?.nama_kelas;
+    
+    // Set font
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    
+    // Title
+    doc.text('REKAPITULASI ABSENSI SISWA', 105, 20, { align: 'center' });
+    doc.text('SMK AL-HUDA KOTA KEDIRI', 105, 30, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Filter: Mata Pelajaran: ${mapelName} | Kelas: ${kelasName}`, 20, 45);
+    doc.text(`Tanggal Export: ${new Date().toLocaleDateString('id-ID')}`, 20, 52);
+    
+    // Table headers
+    let yPosition = 70;
+    const startX = 20;
+    const colWidth = 15;
+    const nameColWidth = 40;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    
+    // Header row
+    doc.rect(startX, yPosition, 15, 8); // No
+    doc.text('No', startX + 7.5, yPosition + 5, { align: 'center' });
+    
+    doc.rect(startX + 15, yPosition, nameColWidth, 8); // Nama
+    doc.text('Nama Siswa', startX + 15 + nameColWidth/2, yPosition + 5, { align: 'center' });
+    
+    let currentX = startX + 15 + nameColWidth;
+    
+    // Date columns
+    attendanceMatrix.dates.forEach((date, index) => {
+      doc.rect(currentX, yPosition, colWidth, 8);
+      const shortDate = new Date(date).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit' });
+      doc.text(shortDate, currentX + colWidth/2, yPosition + 5, { align: 'center' });
+      currentX += colWidth;
+    });
+    
+    // Summary columns
+    ['H', 'I', 'S', 'A', '%'].forEach(header => {
+      doc.rect(currentX, yPosition, 12, 8);
+      doc.text(header, currentX + 6, yPosition + 5, { align: 'center' });
+      currentX += 12;
+    });
+    
+    yPosition += 8;
+    
+    // Data rows
+    doc.setFont('helvetica', 'normal');
+    attendanceMatrix.grouped.forEach((student, index) => {
+      if (yPosition > 270) { // New page if needed
+        doc.addPage();
+        yPosition = 20;
+      }
+      
+      const summary = calculateSummary(student);
+      const percentage = summary.total > 0 ? Math.round((summary.hadir / summary.total) * 100) : 0;
+      
+      // Row border
+      const rowHeight = 6;
+      let rowX = startX;
+      
+      // No
+      doc.rect(rowX, yPosition, 15, rowHeight);
+      doc.text((index + 1).toString(), rowX + 7.5, yPosition + 4, { align: 'center' });
+      rowX += 15;
+      
+      // Name
+      doc.rect(rowX, yPosition, nameColWidth, rowHeight);
+      const name = student.siswa.nama_lengkap.length > 20 
+        ? student.siswa.nama_lengkap.substring(0, 17) + '...' 
+        : student.siswa.nama_lengkap;
+      doc.text(name, rowX + 2, yPosition + 4);
+      rowX += nameColWidth;
+      
+      // Attendance data
+      attendanceMatrix.dates.forEach(date => {
+        doc.rect(rowX, yPosition, colWidth, rowHeight);
+        const status = student.dates[date];
+        const symbol = getStatusSymbol(status);
+        doc.text(symbol, rowX + colWidth/2, yPosition + 4, { align: 'center' });
+        rowX += colWidth;
+      });
+      
+      // Summary
+      [summary.hadir, summary.izin, summary.sakit, summary.alpha, `${percentage}%`].forEach(value => {
+        doc.rect(rowX, yPosition, 12, rowHeight);
+        doc.text(value.toString(), rowX + 6, yPosition + 4, { align: 'center' });
+        rowX += 12;
+      });
+      
+      yPosition += rowHeight;
+    });
+    
+    // Footer
+    yPosition += 10;
+    doc.setFontSize(8);
+    doc.text('Keterangan:', 20, yPosition);
+    doc.text('H = Hadir | A = Alpha (Tidak Hadir) | I = Izin | S = Sakit | % = Persentase Kehadiran', 20, yPosition + 5);
+    
+    // Save PDF
+    doc.save(`Rekapitulasi_Absensi_${kelasName}_${mapelName}_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   const exportToExcel = () => {
     const exportData = [];
     
@@ -193,10 +305,16 @@ const AbsensiExcelTable: React.FC<AbsensiExcelTableProps> = ({
               <p>Tanggal Export: {new Date().toLocaleDateString('id-ID')}</p>
             </div>
           </div>
-          <Button onClick={exportToExcel} size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export Excel
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={exportToPDF} size="sm" variant="outline">
+              <FileText className="h-4 w-4 mr-2" />
+              Export PDF
+            </Button>
+            <Button onClick={exportToExcel} size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Export Excel
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
